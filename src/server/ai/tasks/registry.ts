@@ -237,6 +237,51 @@ export const PLATFORM_TASKS: TaskDefinition[] = [
     priority: 85,
     timeoutMs: 60_000,
   },
+  {
+    key: "creator.generate",
+    name: "Content Creator Generate",
+    description: "Produce scored content variations grounded in business context.",
+    category: "creator",
+    inputSchema: {
+      type: "object",
+      required: ["platform", "objective", "contentType", "variationCount"],
+      properties: {
+        platform: { type: "string" },
+        objective: { type: "string" },
+        contentType: { type: "string" },
+        variationCount: { type: "number" },
+        campaignName: { type: "string" },
+        rewriteStyle: { type: "string" },
+        sourceVariation: { type: "object" },
+      },
+    },
+    outputSchema: {
+      type: "object",
+      required: ["ok", "variations", "qualityFlags"],
+      properties: {
+        ok: { type: "boolean" },
+        title: { type: "string" },
+        variations: { type: "array" },
+        qualityFlags: { type: "array" },
+      },
+    },
+    outputFormat: "json",
+    promptKey: "creator.generate",
+    contextProviders: [
+      "business_brain",
+      "brand_voice",
+      "marketing_strategy",
+      "campaign",
+      "analytics_summary",
+      "knowledge_base",
+      "content_history",
+      "connected_channels",
+      "customer",
+    ],
+    requiredOutputKeys: ["ok", "variations", "qualityFlags"],
+    priority: 90,
+    timeoutMs: 60_000,
+  },
 ];
 
 export async function ensureAITasks() {

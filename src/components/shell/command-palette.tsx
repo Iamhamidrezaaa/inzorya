@@ -11,6 +11,7 @@ import {
   Inbox,
   Library,
   LineChart,
+  PenLine,
   Plus,
   Radio,
   Settings,
@@ -191,6 +192,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/planner`)}>
               <CalendarDays />
               Open AI Content Planner
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/creator`)}>
+              <PenLine />
+              Open AI Content Creator
             </CommandItem>
             <CommandItem onSelect={() => go(`${b}/business`)}>
               <Briefcase />

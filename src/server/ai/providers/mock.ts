@@ -197,6 +197,122 @@ export class MockAIProvider implements AIProviderAdapter {
         };
       }
 
+      if (joined.includes("creator.generate")) {
+        let count = 3;
+        let contentType = "INSTAGRAM_CAPTION";
+        let rewriteStyle = "";
+        try {
+          const c = joined.match(/"variationCount"\s*:\s*(\d+)/);
+          if (c?.[1]) count = Math.min(10, Math.max(1, Number(c[1])));
+          const t = joined.match(/"contentType"\s*:\s*"([^"]+)"/);
+          if (t?.[1]) contentType = t[1];
+          const r = joined.match(/"rewriteStyle"\s*:\s*"([^"]+)"/);
+          if (r?.[1]) rewriteStyle = r[1];
+        } catch {
+          /* ignore */
+        }
+        const variations = Array.from({ length: count }, (_, i) => {
+          const n = i + 1;
+          const hook = rewriteStyle
+            ? `(${rewriteStyle}) Hook ${n}: Your audience already feels the gap — name it in one line.`
+            : `Hook ${n}: Stop scrolling — this is the angle your competitors skip.`;
+          const body =
+            contentType === "HASHTAGS"
+              ? `#BrandVoice #AudienceFirst #CampaignReady #GrowthLoop #ContentSystem`
+              : `Body ${n}: Built from Business Brain and brand voice. Lead with the audience problem, prove the point with one concrete insight, then invite a clear next step. Keep the tone aligned to marketing goals and prior content performance.`;
+          const slides =
+            contentType === "CAROUSEL"
+              ? [
+                  { order: 1, title: "The gap", text: "What your audience already feels.", isCta: false },
+                  { order: 2, title: "The insight", text: "One proof point from your positioning.", isCta: false },
+                  { order: 3, title: "The move", text: "A practical next step.", isCta: false },
+                  { order: 4, title: "CTA", text: "Save this and take action today.", isCta: true },
+                ]
+              : undefined;
+          const reel =
+            contentType === "REEL_SCRIPT"
+              ? {
+                  openingHook: hook,
+                  scenes: [
+                    { title: "Scene 1", visual: "Close-up talking head", script: "Name the pain in 3 seconds." },
+                    { title: "Scene 2", visual: "Product / process B-roll", script: "Show the simple fix." },
+                    { title: "Scene 3", visual: "Result frame", script: "Prove it with one outcome." },
+                  ],
+                  endingCta: "Follow for the full playbook.",
+                }
+              : undefined;
+          const overall = 78 + ((i * 3) % 15);
+          return {
+            label: `V${n}`,
+            title: `Variation ${n}${rewriteStyle ? ` · ${rewriteStyle}` : ""}`,
+            hook,
+            body,
+            cta: "Comment READY and we’ll outline your next step.",
+            visualDirection: "Clean brand palette, high-contrast text, authentic lifestyle stills.",
+            suggestedCover: "Bold headline on muted brand background with one product cue.",
+            hashtags: ["#Brand", "#Strategy", "#Content", "#Growth"],
+            keywords: ["audience", "campaign", "brand voice", "engagement"],
+            estimatedReadTime: "1 min",
+            carouselSlides: slides,
+            reelBreakdown: reel,
+            score: {
+              brandConsistency: overall - 2,
+              readability: overall + 1,
+              ctaStrength: overall - 4,
+              emotionalImpact: overall - 1,
+              engagementPotential: overall,
+              seoQuality: overall - 6,
+              platformCompatibility: overall + 2,
+              overall,
+              explanation:
+                "Scores reflect brand-fit, clarity, CTA strength, and platform norms using business context — not a generic prompt.",
+            },
+            review: {
+              grammarOk: true,
+              voiceOk: true,
+              lengthOk: true,
+              toneOk: true,
+              ctaOk: true,
+              formattingOk: true,
+              forbiddenHits: [],
+              repetitionNotes: i === 0 ? null : "Hook pattern similar to earlier variation — differentiated by angle.",
+              notes: "Self-review passed. Ready for human approval.",
+              passed: true,
+            },
+            visuals: [
+              { kind: "image", title: "Hero still", detail: "Audience in-context using the product benefit." },
+              { kind: "video", title: "Hook clip", detail: "0–3s pattern interrupt matching opening line." },
+              { kind: "thumbnail", title: "Cover frame", detail: "High-contrast title + brand color block." },
+              { kind: "broll", title: "B-roll", detail: "Hands, workspace, outcome moment." },
+              { kind: "shot_list", title: "Shot list", detail: "1) Hook CU 2) Demo MS 3) Proof insert 4) CTA end card" },
+            ],
+          };
+        });
+        const payload = {
+          ok: true,
+          title: `${contentType.replaceAll("_", " ")} set`,
+          variations,
+          qualityFlags: [
+            {
+              kind: "info",
+              message: "All variations grounded in Business Brain and brand voice context.",
+            },
+            {
+              kind: "watch",
+              message: "Compare hooks side-by-side before approving to avoid repetition.",
+            },
+          ],
+        };
+        const content = JSON.stringify(payload, null, 2);
+        return {
+          content,
+          finishReason: "stop",
+          promptTokens: Math.ceil(JSON.stringify(req.messages).length / 4),
+          completionTokens: Math.ceil(content.length / 4),
+          raw: { mock: true, task: "creator.generate" },
+        };
+      }
+
       const payload = {
         ok: true,
         provider: "mock",

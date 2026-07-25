@@ -226,6 +226,8 @@ model User {
   strategyDocuments     StrategyDocument[]     @relation("StrategyDocumentAuthor")
   businessDecisions     BusinessDecision[]     @relation("BusinessDecisionActor")
   contentPlansCreated   ContentPlan[]          @relation("ContentPlanCreator")
+  generationSessions    GenerationSession[]    @relation("GenerationSessionOwner")
+  generatedContents     GeneratedContent[]     @relation("GeneratedContentAuthor")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -293,6 +295,8 @@ model Workspace {
   strategyConversations StrategyConversation[]
   contentPlans ContentPlan[]
   planningSessions PlanningSession[]
+  generationSessions GenerationSession[]
+  generatedContents GeneratedContent[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -368,6 +372,8 @@ model Brand {
   planningSessions      PlanningSession[]
   planningConstraints   PlanningConstraint[]
   planningTemplates     PlanningTemplate[]
+  generationSessions    GenerationSession[]
+  generatedContents     GeneratedContent[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -2261,5 +2267,217 @@ model PlanningTemplate {
 
   @@unique([brandId, key])
   @@index([planType, sortOrder])
+}
+
+/// EPIC-016 — AI Content Creator
+
+enum CreatorContentType {
+  INSTAGRAM_CAPTION
+  CAROUSEL
+  STORY
+  REEL_SCRIPT
+  VIDEO_HOOK
+  VIDEO_DESCRIPTION
+  THREADS
+  LINKEDIN_POST
+  FACEBOOK_POST
+  X_POST
+  NEWSLETTER
+  BLOG_ARTICLE
+  LANDING_PAGE_COPY
+  EMAIL_CAMPAIGN
+  PRODUCT_DESCRIPTION
+  CTA
+  HEADLINE
+  HASHTAGS
+}
+
+enum CreatorObjective {
+  BRAND_AWARENESS
+  LEAD_GENERATION
+  ENGAGEMENT
+  SALES
+  EDUCATION
+  COMMUNITY
+  RETENTION
+  TRAFFIC
+  LAUNCH
+  SUPPORT
+}
+
+enum GenerationSessionStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum GeneratedContentStatus {
+  DRAFT
+  REVIEWED
+  APPROVED
+  PUSHED
+  ARCHIVED
+}
+
+enum VariationStatus {
+  ACTIVE
+  FAVORITED
+  ARCHIVED
+  RESTORED
+}
+
+model GenerationSession {
+  id            String                   @id @default(cuid())
+  workspaceId   String
+  brandId       String
+  userId        String?
+  platform      String
+  objective     CreatorObjective
+  contentType   CreatorContentType
+  campaignId    String?
+  variationCount Int                     @default(3)
+  status        GenerationSessionStatus  @default(QUEUED)
+  executionId   String?
+  errorMessage  String?
+  settings      Json?
+  workspace     Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand         Brand                    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  user          User?                    @relation("GenerationSessionOwner", fields: [userId], references: [id], onDelete: SetNull)
+  contents      GeneratedContent[]
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  @@index([brandId, createdAt])
+  @@index([workspaceId, createdAt])
+}
+
+model GeneratedContent {
+  id              String                 @id @default(cuid())
+  workspaceId     String
+  brandId         String
+  sessionId       String?
+  createdById     String?
+  parentId        String?
+  platform        String
+  objective       CreatorObjective
+  contentType     CreatorContentType
+  campaignId      String?
+  campaignName    String?
+  title           String
+  status          GeneratedContentStatus @default(DRAFT)
+  favorited       Boolean                @default(false)
+  version         Int                    @default(1)
+  rewriteStyle    String?
+  studioContentId String?
+  qualityFlags    Json?
+  workspace       Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand           Brand                  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  session         GenerationSession?     @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  createdBy       User?                  @relation("GeneratedContentAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  parent          GeneratedContent?      @relation("GeneratedContentVersions", fields: [parentId], references: [id], onDelete: SetNull)
+  versions        GeneratedContent[]     @relation("GeneratedContentVersions")
+  variations      GeneratedVariation[]
+  feedback        GenerationFeedback[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([brandId, status, updatedAt])
+  @@index([brandId, favorited])
+  @@index([sessionId])
+  @@index([parentId])
+}
+
+model GeneratedVariation {
+  id                 String           @id @default(cuid())
+  contentId          String
+  label              String
+  sortOrder          Int              @default(0)
+  status             VariationStatus  @default(ACTIVE)
+  title              String
+  hook               String           @db.Text
+  body               String           @db.Text
+  cta                String?
+  visualDirection    String?          @db.Text
+  suggestedCover     String?
+  hashtags           String[]         @default([])
+  keywords           String[]         @default([])
+  estimatedReadTime  String?
+  carouselSlides     Json?
+  reelBreakdown      Json?
+  reviewNotes        Json?
+  overallScore       Float?
+  content            GeneratedContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  score              ContentScore?
+  brandValidation    BrandValidation?
+  visuals            VisualSuggestion[]
+  feedback           GenerationFeedback[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([contentId, sortOrder])
+  @@index([contentId, status])
+}
+
+model GenerationFeedback {
+  id          String              @id @default(cuid())
+  contentId   String
+  variationId String?
+  rating      Int?
+  note        String?             @db.Text
+  action      String
+  content     GeneratedContent    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  variation   GeneratedVariation? @relation(fields: [variationId], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now())
+
+  @@index([contentId, createdAt])
+}
+
+model ContentScore {
+  id                   String             @id @default(cuid())
+  variationId          String             @unique
+  brandConsistency     Float
+  readability          Float
+  ctaStrength          Float
+  emotionalImpact      Float
+  engagementPotential  Float
+  seoQuality           Float
+  platformCompatibility Float
+  overall              Float
+  explanation          String             @db.Text
+  variation            GeneratedVariation @relation(fields: [variationId], references: [id], onDelete: Cascade)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+model BrandValidation {
+  id              String             @id @default(cuid())
+  variationId     String             @unique
+  passed          Boolean            @default(true)
+  grammarOk       Boolean            @default(true)
+  voiceOk         Boolean            @default(true)
+  lengthOk        Boolean            @default(true)
+  toneOk          Boolean            @default(true)
+  ctaOk           Boolean            @default(true)
+  formattingOk    Boolean            @default(true)
+  forbiddenHits   String[]           @default([])
+  repetitionNotes String?
+  notes           String?            @db.Text
+  variation       GeneratedVariation @relation(fields: [variationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+model VisualSuggestion {
+  id          String             @id @default(cuid())
+  variationId String
+  kind        String
+  title       String
+  detail      String             @db.Text
+  sortOrder   Int                @default(0)
+  variation   GeneratedVariation @relation(fields: [variationId], references: [id], onDelete: Cascade)
+  createdAt   DateTime           @default(now())
+
+  @@index([variationId, sortOrder])
 }
 

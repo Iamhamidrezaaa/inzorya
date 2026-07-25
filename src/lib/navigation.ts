@@ -12,6 +12,7 @@ import {
   Inbox,
   Library,
   LineChart,
+  PenLine,
   Radio,
   Settings,
   Sparkles,
@@ -55,6 +56,7 @@ export function getNavGroups(
         { title: "Strategy", href: `${b}/strategy`, icon: Compass },
         { title: "AI Strategist", href: `${b}/strategist`, icon: Sparkles },
         { title: "AI Content Planner", href: `${b}/planner`, icon: CalendarDays },
+        { title: "AI Content Creator", href: `${b}/creator`, icon: PenLine },
         {
           title: "Inbox",
           href: `${b}/inbox`,
@@ -156,6 +158,13 @@ export const pageCopy = {
     emptyTitle: "Generate a plan",
     emptyDescription:
       "Build calendar-ready content plans — titles and slots only, never captions.",
+  },
+  creator: {
+    title: "AI Content Creator",
+    description: "Context-aware content production with scored variations.",
+    emptyTitle: "Generate content",
+    emptyDescription:
+      "Choose platform, objective, campaign and type — business context does the rest.",
   },
   brain: {
     title: "Business Brain",
