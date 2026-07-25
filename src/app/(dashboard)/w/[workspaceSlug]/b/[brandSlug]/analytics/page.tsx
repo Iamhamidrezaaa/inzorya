@@ -1,14 +1,12 @@
-import { DashboardPage } from "@/components/shared/page";
-import { pageCopy } from "@/lib/navigation";
+import { AnalyticsView } from "@/components/analytics/analytics-view";
 
-export default function Page() {
-  const copy = pageCopy["analytics"];
+type PageProps = {
+  params: Promise<{ workspaceSlug: string; brandSlug: string }>;
+};
+
+export default async function AnalyticsPage({ params }: PageProps) {
+  const { workspaceSlug, brandSlug } = await params;
   return (
-    <DashboardPage
-      title={copy.title}
-      description={copy.description}
-      emptyTitle={copy.emptyTitle}
-      emptyDescription={copy.emptyDescription}
-    />
+    <AnalyticsView workspaceSlug={workspaceSlug} brandSlug={brandSlug} />
   );
 }

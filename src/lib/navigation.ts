@@ -10,6 +10,7 @@ import {
   ImageIcon,
   Inbox,
   Library,
+  LineChart,
   Radio,
   Settings,
   Users,
@@ -59,6 +60,7 @@ export function getNavGroups(
         { title: "Contacts", href: `${b}/contacts`, icon: Users },
         { title: "Channels", href: `${b}/channels`, icon: Radio },
         { title: "Automations", href: `${b}/automations`, icon: Workflow },
+        { title: "Analytics", href: `${b}/analytics`, icon: LineChart },
       ],
     },
     {
@@ -195,9 +197,9 @@ export const pageCopy = {
   },
   analytics: {
     title: "Analytics",
-    description: "Reserved. Not part of this sprint.",
-    emptyTitle: "Not available yet",
-    emptyDescription: "Focus on inbox first.",
+    description: "KPIs, engagement, audience, content, and campaign performance.",
+    emptyTitle: "No analytics yet",
+    emptyDescription: "Connect channels later — mock analytics are available today.",
   },
   automations: {
     title: "Automations",

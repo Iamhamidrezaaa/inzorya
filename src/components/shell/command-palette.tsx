@@ -9,6 +9,7 @@ import {
   FileText,
   Inbox,
   Library,
+  LineChart,
   Plus,
   Radio,
   Settings,
@@ -192,6 +193,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/automations`)}>
               <Workflow />
               Open Automations
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/analytics`)}>
+              <LineChart />
+              Open Analytics
             </CommandItem>
             <CommandItem onSelect={() => go(`${base}/settings`)}>
               <Settings />

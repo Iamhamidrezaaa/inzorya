@@ -330,6 +330,15 @@ model Brand {
   webhookSubscriptions WebhookSubscription[]
   syncJobs       SyncJob[]
   integrationAudits IntegrationAuditLog[]
+  analyticsSnapshots AnalyticsSnapshot[]
+  kpis               Kpi[]
+  audienceSnapshots  AudienceSnapshot[]
+  contentMetrics     ContentMetric[]
+  campaignMetrics    CampaignMetric[]
+  channelMetrics     ChannelMetric[]
+  insights           Insight[]
+  reports            Report[]
+  reportTemplates    ReportTemplate[]
   marketingStrategy MarketingStrategy?
   businessBrain     BusinessBrain?
   createdAt      DateTime            @default(now())
@@ -1409,6 +1418,192 @@ model IntegrationAuditLog {
   @@index([brandId, createdAt])
   @@index([kind, createdAt])
 }
+
+/// Catalog of analytics metric definitions — ready for Meta/provider ingestion later.
+model Metric {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  category    String
+  unit        String   @default("count")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AnalyticsSnapshot {
+  id          String   @id @default(cuid())
+  brandId     String
+  date        DateTime @db.Date
+  granularity String   @default("day")
+  source      String   @default("mock")
+  /// Time-series metric bag: { followers, reach, impressions, ... }
+  values      Json
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([brandId, date, granularity, source])
+  @@index([brandId, date])
+}
+
+model Kpi {
+  id            String   @id @default(cuid())
+  brandId       String
+  metricKey     String
+  label         String
+  currentValue  Float
+  previousValue Float
+  changePct     Float
+  sparkline     Float[]  @default([])
+  unit          String   @default("count")
+  sortOrder     Int      @default(0)
+  brand         Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([brandId, metricKey])
+  @@index([brandId, sortOrder])
+}
+
+model AudienceSnapshot {
+  id         String   @id @default(cuid())
+  brandId    String
+  date       DateTime @db.Date
+  locations  Json
+  ages       Json
+  genders    Json
+  languages  Json
+  activeHours Json
+  devices    Json
+  brand      Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([brandId, date])
+  @@index([brandId, date])
+}
+
+model ContentMetric {
+  id            String   @id @default(cuid())
+  brandId       String
+  externalId    String
+  title         String
+  platform      String
+  contentType   String
+  author        String?
+  status        String   @default("published")
+  publishedAt   DateTime
+  reach         Int      @default(0)
+  likes         Int      @default(0)
+  comments      Int      @default(0)
+  shares        Int      @default(0)
+  saves         Int      @default(0)
+  impressions   Int      @default(0)
+  ctr           Float    @default(0)
+  engagement    Int      @default(0)
+  brand         Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([brandId, externalId])
+  @@index([brandId, publishedAt])
+  @@index([brandId, platform])
+  @@index([brandId, contentType])
+}
+
+model CampaignMetric {
+  id           String   @id @default(cuid())
+  brandId      String
+  campaignKey  String
+  name         String
+  status       String   @default("active")
+  reach        Int      @default(0)
+  engagement   Int      @default(0)
+  clicks       Int      @default(0)
+  conversions  Int      @default(0)
+  spend        Float    @default(0)
+  revenue      Float    @default(0)
+  roi          Float    @default(0)
+  brand        Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([brandId, campaignKey])
+  @@index([brandId])
+}
+
+model ChannelMetric {
+  id           String   @id @default(cuid())
+  brandId      String
+  platform     String
+  date         DateTime @db.Date
+  followers    Int      @default(0)
+  reach        Int      @default(0)
+  impressions  Int      @default(0)
+  engagement   Int      @default(0)
+  messages     Int      @default(0)
+  profileVisits Int     @default(0)
+  brand        Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([brandId, platform, date])
+  @@index([brandId, platform, date])
+}
+
+model Insight {
+  id          String   @id @default(cuid())
+  brandId     String
+  kind        String
+  severity    String   @default("info")
+  title       String
+  body        String   @db.Text
+  metricKey   String?
+  changePct   Float?
+  ruleKey     String
+  rangeStart  DateTime?
+  rangeEnd    DateTime?
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([brandId, createdAt])
+  @@index([brandId, kind])
+}
+
+model ReportTemplate {
+  id          String   @id @default(cuid())
+  brandId     String
+  name        String
+  description String?
+  metrics     String[] @default([])
+  charts      String[] @default([])
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  reports     Report[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([brandId])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  brandId     String
+  templateId  String?
+  name        String
+  rangeLabel  String?
+  metrics     String[] @default([])
+  charts      String[] @default([])
+  payload     Json?
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  template    ReportTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([brandId, createdAt])
+}
+
 
 
 
