@@ -1,0 +1,17 @@
+# Inzorya local stack
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: inzorya-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: inzorya
+      POSTGRES_PASSWORD: inzorya
+      POSTGRES_DB: inzorya
+    volumes:
+      - inzorya_pg_data:/var/lib/postgresql/data
+
+volumes:
+  inzorya_pg_data:

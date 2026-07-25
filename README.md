@@ -2,21 +2,56 @@
 
 **AI Marketing Operating System**
 
-Inzorya is not a social media scheduling tool. It is a workspace-first marketing OS — closer to Notion, Linear, Stripe Dashboard, Cursor, and Vercel than to Hootsuite or Buffer.
+Inzorya is a workspace-first marketing OS — closer to Notion, Linear, Stripe Dashboard, Cursor, and Vercel than to social schedulers.
 
 ## Status
 
-Foundation phase: dashboard information architecture is defined. Product implementation (Next.js App Router shell) comes next. AI agent logic is intentionally out of scope until the SaaS foundation is solid.
+EPIC-001 foundation is implemented:
 
-## Repository
+- Next.js App Router shell
+- Auth (login, register, forgot password)
+- Dashboard shell (sidebar, top bar, command palette, notifications)
+- Brand onboarding
+- All architecture routes with empty / loading / error states
+- Minimal landing page
 
-- [`docs/architecture/dashboard-architecture.md`](./docs/architecture/dashboard-architecture.md) — complete dashboard IA, navigation tree, page contracts, UX rules, folder structure, and scalability plan
+No AI logic. No marketing feature business logic. No fake charts.
 
-## Planned stack
+## Stack
 
-- Next.js (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui
-- React Query · Prisma · PostgreSQL · NextAuth
-- Framer Motion (minimal)
+- Next.js 16 · TypeScript · Tailwind CSS v4 · shadcn/ui
+- React Query · Prisma · PostgreSQL · NextAuth (Auth.js)
+- Framer Motion (available) · Lucide · Zustand
+
+## Local setup
+
+1. Copy env:
+
+```bash
+cp .env.example .env
+```
+
+2. Start Postgres (mapped to host port **5433** to avoid local conflicts):
+
+```bash
+docker compose up -d
+```
+
+3. Install and migrate:
+
+```bash
+npm install --legacy-peer-deps
+npx prisma db push
+npm run dev
+```
+
+`DATABASE_URL` in `.env.example` already uses `localhost:5433`.
+
+4. Open [http://localhost:3000](http://localhost:3000)
+
+## Architecture
+
+See [`docs/architecture/dashboard-architecture.md`](./docs/architecture/dashboard-architecture.md).
 
 ## Remote
 
