@@ -1,0 +1,176 @@
+import type { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import type { OutputFormat } from "@/server/ai/config";
+import type { ContextProviderKey } from "@/server/ai/context/engine";
+
+export type TaskDefinition = {
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+  inputSchema: Record<string, unknown>;
+  outputSchema: Record<string, unknown>;
+  outputFormat: OutputFormat;
+  promptKey: string;
+  contextProviders: ContextProviderKey[];
+  requiredOutputKeys?: string[];
+  priority?: number;
+  timeoutMs?: number;
+  maxRetries?: number;
+  defaultModelKey?: string;
+};
+
+export const PLATFORM_TASKS: TaskDefinition[] = [
+  {
+    key: "platform.echo",
+    name: "Platform Echo",
+    description: "Developer task — echoes input through the AI platform.",
+    category: "platform",
+    inputSchema: {
+      type: "object",
+      required: ["text"],
+      properties: { text: { type: "string" } },
+    },
+    outputSchema: {
+      type: "object",
+      required: ["ok", "summary"],
+      properties: {
+        ok: { type: "boolean" },
+        summary: { type: "string" },
+        echo: { type: "string" },
+      },
+    },
+    outputFormat: "json",
+    promptKey: "platform.echo",
+    contextProviders: ["brand_voice"],
+    requiredOutputKeys: ["ok", "summary"],
+    priority: 10,
+  },
+  {
+    key: "platform.inspect_context",
+    name: "Inspect Context",
+    description: "Returns composed context for debugging.",
+    category: "platform",
+    inputSchema: {
+      type: "object",
+      properties: { note: { type: "string" } },
+    },
+    outputSchema: {
+      type: "object",
+      required: ["ok", "summary"],
+      properties: { ok: { type: "boolean" }, summary: { type: "string" } },
+    },
+    outputFormat: "json",
+    promptKey: "platform.inspect_context",
+    contextProviders: [
+      "business_brain",
+      "brand_voice",
+      "connected_channels",
+      "analytics_summary",
+    ],
+    requiredOutputKeys: ["ok", "summary"],
+  },
+  // Registered task shapes for future product features — not exposed as product UI.
+  {
+    key: "content.generate_caption",
+    name: "Generate Caption",
+    description: "Future task contract — not exposed this sprint.",
+    category: "content",
+    inputSchema: { type: "object", properties: { brief: { type: "string" } } },
+    outputSchema: { type: "object", properties: { caption: { type: "string" } } },
+    outputFormat: "json",
+    promptKey: "content.generate_caption",
+    contextProviders: ["brand_voice", "content_history"],
+    requiredOutputKeys: ["ok"],
+  },
+  {
+    key: "campaign.generate",
+    name: "Generate Campaign",
+    description: "Future task contract — not exposed this sprint.",
+    category: "campaign",
+    inputSchema: { type: "object", properties: { goal: { type: "string" } } },
+    outputSchema: { type: "object", properties: { outline: { type: "string" } } },
+    outputFormat: "json",
+    promptKey: "campaign.generate",
+    contextProviders: ["marketing_strategy", "brand_voice"],
+  },
+  {
+    key: "conversation.analyze",
+    name: "Analyze Conversation",
+    description: "Future task contract — not exposed this sprint.",
+    category: "conversation",
+    inputSchema: { type: "object", properties: { conversationId: { type: "string" } } },
+    outputSchema: { type: "object", properties: { summary: { type: "string" } } },
+    outputFormat: "json",
+    promptKey: "conversation.analyze",
+    contextProviders: ["conversation", "customer"],
+  },
+  {
+    key: "analytics.summarize",
+    name: "Summarize Analytics",
+    description: "Future task contract — not exposed this sprint.",
+    category: "analytics",
+    inputSchema: { type: "object", properties: { range: { type: "string" } } },
+    outputSchema: { type: "object", properties: { summary: { type: "string" } } },
+    outputFormat: "json",
+    promptKey: "analytics.summarize",
+    contextProviders: ["analytics_summary"],
+  },
+  {
+    key: "lead.classify",
+    name: "Classify Lead",
+    description: "Future task contract — not exposed this sprint.",
+    category: "crm",
+    inputSchema: { type: "object", properties: { contactId: { type: "string" } } },
+    outputSchema: { type: "object", properties: { label: { type: "string" } } },
+    outputFormat: "json",
+    promptKey: "lead.classify",
+    contextProviders: ["customer"],
+  },
+  {
+    key: "text.rewrite",
+    name: "Rewrite Text",
+    description: "Future task contract — not exposed this sprint.",
+    category: "writing",
+    inputSchema: { type: "object", properties: { text: { type: "string" } } },
+    outputSchema: { type: "object", properties: { text: { type: "string" } } },
+    outputFormat: "json",
+    promptKey: "text.rewrite",
+    contextProviders: ["brand_voice"],
+  },
+];
+
+export async function ensureAITasks() {
+  for (const task of PLATFORM_TASKS) {
+    await prisma.aITask.upsert({
+      where: { key: task.key },
+      create: {
+        key: task.key,
+        name: task.name,
+        description: task.description,
+        category: task.category,
+        inputSchema: task.inputSchema as Prisma.InputJsonValue,
+        outputSchema: task.outputSchema as Prisma.InputJsonValue,
+        outputFormat: task.outputFormat,
+        promptKey: task.promptKey,
+        priority: task.priority || 50,
+        timeoutMs: task.timeoutMs || 30_000,
+        maxRetries: task.maxRetries || 2,
+        defaultModelKey: task.defaultModelKey || "mock-general",
+        status: "active",
+        meta: { contextProviders: task.contextProviders } as Prisma.InputJsonValue,
+      },
+      update: {
+        name: task.name,
+        description: task.description,
+        inputSchema: task.inputSchema as Prisma.InputJsonValue,
+        outputSchema: task.outputSchema as Prisma.InputJsonValue,
+        meta: { contextProviders: task.contextProviders } as Prisma.InputJsonValue,
+      },
+    });
+  }
+}
+
+export function getTaskDefinition(key: string) {
+  return PLATFORM_TASKS.find((t) => t.key === key);
+}

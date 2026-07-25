@@ -1,0 +1,166 @@
+import { prisma } from "@/lib/db";
+
+const PLATFORM_PROMPTS = [
+  {
+    key: "platform.echo",
+    name: "Platform Echo",
+    category: "platform",
+    description: "Echoes developer playground input.",
+    systemPrompt:
+      "You are the Inzorya AI Platform mock assistant. Return valid JSON with ok, summary, and echo fields. Never claim to be a live model.",
+    developerPrompt: "Keep responses concise and deterministic.",
+    variables: ["text", "context"],
+  },
+  {
+    key: "platform.inspect_context",
+    name: "Inspect Context",
+    category: "platform",
+    description: "Summarizes composed context slices.",
+    systemPrompt:
+      "You inspect composed business context for debugging. Return JSON with ok and summary describing which context providers were present.",
+    developerPrompt: "Do not invent business facts beyond provided context.",
+    variables: ["context"],
+  },
+  {
+    key: "content.generate_caption",
+    name: "Generate Caption",
+    category: "content",
+    description: "Future prompt — not productized this sprint.",
+    systemPrompt: "Generate social captions using brand voice context.",
+    variables: ["brief", "context"],
+  },
+  {
+    key: "campaign.generate",
+    name: "Generate Campaign",
+    category: "campaign",
+    description: "Future prompt — not productized this sprint.",
+    systemPrompt: "Draft campaign outlines from strategy context.",
+    variables: ["goal", "context"],
+  },
+  {
+    key: "conversation.analyze",
+    name: "Analyze Conversation",
+    category: "conversation",
+    description: "Future prompt — not productized this sprint.",
+    systemPrompt: "Analyze conversation quality and intent.",
+    variables: ["conversationId", "context"],
+  },
+  {
+    key: "analytics.summarize",
+    name: "Summarize Analytics",
+    category: "analytics",
+    description: "Future prompt — not productized this sprint.",
+    systemPrompt: "Summarize KPI movements without forecasting.",
+    variables: ["range", "context"],
+  },
+  {
+    key: "lead.classify",
+    name: "Classify Lead",
+    category: "crm",
+    description: "Future prompt — not productized this sprint.",
+    systemPrompt: "Classify leads into discrete labels.",
+    variables: ["contactId", "context"],
+  },
+  {
+    key: "text.rewrite",
+    name: "Rewrite Text",
+    category: "writing",
+    description: "Future prompt — not productized this sprint.",
+    systemPrompt: "Rewrite text in brand voice.",
+    variables: ["text", "context"],
+  },
+];
+
+export async function ensurePrompts(workspaceId?: string | null) {
+  for (const p of PLATFORM_PROMPTS) {
+    const existing = await prisma.prompt.findFirst({
+      where: { key: p.key, workspaceId: workspaceId || null },
+    });
+    if (existing) continue;
+    const prompt = await prisma.prompt.create({
+      data: {
+        workspaceId: workspaceId || null,
+        key: p.key,
+        name: p.name,
+        category: p.category,
+        description: p.description,
+        status: "ACTIVE",
+        currentVersion: 1,
+      },
+    });
+    await prisma.promptVersion.create({
+      data: {
+        promptId: prompt.id,
+        version: 1,
+        systemPrompt: p.systemPrompt,
+        developerPrompt: p.developerPrompt || null,
+        variables: p.variables,
+        changelog: "Initial version",
+      },
+    });
+  }
+}
+
+export async function getActivePrompt(key: string, workspaceId?: string | null) {
+  await ensurePrompts(workspaceId);
+  const prompt =
+    (await prisma.prompt.findFirst({
+      where: { key, workspaceId: workspaceId || null, status: "ACTIVE" },
+      include: { versions: { orderBy: { version: "desc" } } },
+    })) ||
+    (await prisma.prompt.findFirst({
+      where: { key, workspaceId: null, status: "ACTIVE" },
+      include: { versions: { orderBy: { version: "desc" } } },
+    }));
+  if (!prompt) return null;
+  const version =
+    prompt.versions.find((v) => v.version === prompt.currentVersion) ||
+    prompt.versions[0];
+  return { prompt, version };
+}
+
+export async function createPromptVersion(input: {
+  promptId: string;
+  systemPrompt: string;
+  developerPrompt?: string;
+  variables?: string[];
+  changelog?: string;
+}) {
+  const prompt = await prisma.prompt.findUniqueOrThrow({
+    where: { id: input.promptId },
+  });
+  const next = prompt.currentVersion + 1;
+  const version = await prisma.promptVersion.create({
+    data: {
+      promptId: prompt.id,
+      version: next,
+      systemPrompt: input.systemPrompt,
+      developerPrompt: input.developerPrompt || null,
+      variables: input.variables || [],
+      changelog: input.changelog || `Version ${next}`,
+    },
+  });
+  await prisma.prompt.update({
+    where: { id: prompt.id },
+    data: { currentVersion: next, updatedAt: new Date() },
+  });
+  return version;
+}
+
+export async function rollbackPrompt(promptId: string, version: number) {
+  const target = await prisma.promptVersion.findUnique({
+    where: { promptId_version: { promptId, version } },
+  });
+  if (!target) throw new Error("VERSION_NOT_FOUND");
+  return prisma.prompt.update({
+    where: { id: promptId },
+    data: { currentVersion: version },
+  });
+}
+
+export function renderPromptTemplate(
+  template: string,
+  vars: Record<string, string>,
+) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? "");
+}

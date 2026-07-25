@@ -221,6 +221,7 @@ model User {
   automationVersions AutomationVersion[] @relation("AutomationVersionAuthor")
   oauthSessions      OAuthSession[]
   integrationAudits  IntegrationAuditLog[]
+  promptsCreated     Prompt[] @relation("PromptCreator")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -279,6 +280,12 @@ model Workspace {
   activities    Activity[]
   favorites     Favorite[]
   recentItems   RecentItem[]
+  prompts       Prompt[]
+  aiTaskExecutions AITaskExecution[]
+  usageMetrics  UsageMetric[]
+  costRecords   CostRecord[]
+  aiErrors      AIError[]
+  memoryRecords MemoryRecord[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -339,6 +346,9 @@ model Brand {
   insights           Insight[]
   reports            Report[]
   reportTemplates    ReportTemplate[]
+  contextSnapshots   ContextSnapshot[]
+  memoryRecords      MemoryRecord[]
+  aiTaskExecutions   AITaskExecution[]
   marketingStrategy MarketingStrategy?
   businessBrain     BusinessBrain?
   createdAt      DateTime            @default(now())
@@ -1603,6 +1613,259 @@ model Report {
 
   @@index([brandId, createdAt])
 }
+
+enum AIProviderStatus {
+  ACTIVE
+  DISABLED
+  DEGRADED
+}
+
+enum AIModelStatus {
+  ACTIVE
+  DISABLED
+  DEPRECATED
+}
+
+enum PromptStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum AITaskExecutionStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum MemoryScope {
+  CONVERSATION
+  BUSINESS
+  BRAND
+  USER
+  SESSION
+  ACTIVITY
+}
+
+/// Provider catalog — credentials stay in env, never in DB plaintext.
+model AIProvider {
+  id           String           @id @default(cuid())
+  key          String           @unique
+  name         String
+  status       AIProviderStatus @default(ACTIVE)
+  priority     Int              @default(100)
+  baseUrl      String?
+  meta         Json?
+  models       AIModel[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model AIModel {
+  id              String        @id @default(cuid())
+  providerId      String
+  key             String        @unique
+  displayName     String
+  status          AIModelStatus @default(ACTIVE)
+  contextLength   Int           @default(128000)
+  supportsVision  Boolean       @default(false)
+  supportsJson    Boolean       @default(true)
+  supportsStreaming Boolean     @default(true)
+  supportsTools   Boolean       @default(false)
+  inputPricePer1M Float?
+  outputPricePer1M Float?
+  capabilities    String[]      @default([])
+  meta            Json?
+  provider        AIProvider    @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  executions      AITaskExecution[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([providerId, status])
+}
+
+model Prompt {
+  id          String       @id @default(cuid())
+  workspaceId String?
+  key         String
+  name        String
+  category    String
+  description String?
+  status      PromptStatus @default(DRAFT)
+  currentVersion Int       @default(1)
+  createdById String?
+  workspace   Workspace?   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy   User?        @relation("PromptCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  versions    PromptVersion[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([workspaceId, key])
+  @@index([category, status])
+}
+
+model PromptVersion {
+  id             String   @id @default(cuid())
+  promptId       String
+  version        Int
+  systemPrompt   String   @db.Text
+  developerPrompt String? @db.Text
+  variables      String[] @default([])
+  changelog      String?
+  prompt         Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@unique([promptId, version])
+  @@index([promptId, createdAt])
+}
+
+model AITask {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  name          String
+  description   String?
+  category      String
+  inputSchema   Json
+  outputSchema  Json
+  defaultModelKey String?
+  priority      Int      @default(50)
+  timeoutMs     Int      @default(30000)
+  maxRetries    Int      @default(2)
+  outputFormat  String   @default("json")
+  promptKey     String?
+  status        String   @default("active")
+  meta          Json?
+  executions    AITaskExecution[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AITaskExecution {
+  id              String                @id @default(cuid())
+  workspaceId     String?
+  brandId         String?
+  taskId          String
+  modelId         String?
+  status          AITaskExecutionStatus @default(QUEUED)
+  input           Json?
+  output          Json?
+  contextSnapshotId String?
+  providerKey     String?
+  modelKey        String?
+  latencyMs       Int?
+  promptTokens    Int?
+  completionTokens Int?
+  totalTokens     Int?
+  estimatedCostUsd Float?
+  retryCount      Int                   @default(0)
+  errorCode       String?
+  errorMessage    String?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  workspace       Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  brand           Brand?                @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  task            AITask                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  model           AIModel?              @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  contextSnapshot ContextSnapshot?      @relation(fields: [contextSnapshotId], references: [id], onDelete: SetNull)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([workspaceId, createdAt])
+  @@index([brandId, createdAt])
+  @@index([taskId, status])
+  @@index([status, createdAt])
+}
+
+model ContextSnapshot {
+  id          String   @id @default(cuid())
+  brandId     String?
+  taskKey     String?
+  providers   String[] @default([])
+  payload     Json
+  tokenEstimate Int?
+  brand       Brand?   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  executions  AITaskExecution[]
+  createdAt   DateTime @default(now())
+
+  @@index([brandId, createdAt])
+}
+
+model MemoryRecord {
+  id          String      @id @default(cuid())
+  workspaceId String?
+  brandId     String?
+  scope       MemoryScope
+  subjectId   String?
+  key         String
+  content     String      @db.Text
+  meta        Json?
+  /// Embedding reserved — not implemented this sprint
+  embeddingRef String?
+  workspace   Workspace?  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand       Brand?      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([workspaceId, scope])
+  @@index([brandId, scope])
+  @@index([subjectId, key])
+}
+
+model UsageMetric {
+  id           String   @id @default(cuid())
+  workspaceId  String?
+  day          DateTime @db.Date
+  providerKey  String
+  modelKey     String
+  taskKey      String
+  requests     Int      @default(0)
+  successes    Int      @default(0)
+  failures     Int      @default(0)
+  retries      Int      @default(0)
+  latencySumMs Int      @default(0)
+  tokens       Int      @default(0)
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([workspaceId, day, providerKey, modelKey, taskKey])
+  @@index([workspaceId, day])
+}
+
+model CostRecord {
+  id             String   @id @default(cuid())
+  workspaceId    String?
+  executionId    String?
+  providerKey    String
+  modelKey       String
+  estimatedUsd   Float
+  promptTokens   Int      @default(0)
+  completionTokens Int    @default(0)
+  workspace      Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@index([workspaceId, createdAt])
+}
+
+model AIError {
+  id          String   @id @default(cuid())
+  workspaceId String?
+  executionId String?
+  code        String
+  message     String
+  providerKey String?
+  modelKey    String?
+  taskKey     String?
+  meta        Json?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([code, createdAt])
+}
+
 
 
 

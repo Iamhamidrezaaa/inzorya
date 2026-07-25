@@ -50,6 +50,15 @@ export function SettingsHub({
           </p>
         </Link>
         <Link
+          href={`/w/${workspaceSlug}/settings/ai`}
+          className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/40"
+        >
+          <h2 className="text-sm font-semibold">AI Platform</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Providers, usage, prompts, and playground.
+          </p>
+        </Link>
+        <Link
           href={`/w/${workspaceSlug}/b/${brandSlug}/brain`}
           className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/40"
         >
