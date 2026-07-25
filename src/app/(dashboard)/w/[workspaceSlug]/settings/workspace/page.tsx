@@ -1,14 +1,23 @@
-import { DashboardPage } from "@/components/shared/page";
-import { pageCopy } from "@/lib/navigation";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { getWorkspaceForUser } from "@/server/services/workspace";
+import { WorkspaceSettingsForm } from "@/components/settings/workspace-settings-form";
 
-export default function Page() {
-  const copy = pageCopy["settings-workspace"];
+type PageProps = {
+  params: Promise<{ workspaceSlug: string }>;
+};
+
+export default async function WorkspaceSettingsPage({ params }: PageProps) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+  const { workspaceSlug } = await params;
+  const workspace = await getWorkspaceForUser(workspaceSlug, session.user.id);
+  if (!workspace) redirect("/dashboard");
+
   return (
-    <DashboardPage
-      title={copy.title}
-      description={copy.description}
-      emptyTitle={copy.emptyTitle}
-      emptyDescription={copy.emptyDescription}
+    <WorkspaceSettingsForm
+      workspaceSlug={workspace.slug}
+      initialName={workspace.name}
     />
   );
 }

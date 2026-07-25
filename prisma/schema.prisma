@@ -14,18 +14,67 @@ enum WorkspaceRole {
   VIEWER
 }
 
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContentPlatform {
+  INSTAGRAM
+  LINKEDIN
+  X
+  FACEBOOK
+  YOUTUBE
+  BLOG
+  EMAIL
+  OTHER
+}
+
+enum ChannelPlatform {
+  INSTAGRAM
+  FACEBOOK
+  WHATSAPP
+  TELEGRAM
+  X
+  LINKEDIN
+  YOUTUBE
+  TIKTOK
+}
+
+enum ChannelStatus {
+  DISCONNECTED
+  CONNECTED
+  PENDING
+  ERROR
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
 model User {
-  id            String    @id @default(cuid())
+  id            String            @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String            @unique
   emailVerified DateTime?
   image         String?
   passwordHash  String?
   accounts      Account[]
   sessions      Session[]
   memberships   WorkspaceMember[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  assigned      Conversation[]    @relation("ConversationAssignee")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 }
 
 model Account {
@@ -97,17 +146,214 @@ model WorkspaceMember {
 }
 
 model Brand {
-  id          String    @id @default(cuid())
-  workspaceId String
-  name        String
-  slug        String
-  description String?
-  website     String?
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  archivedAt  DateTime?
+  id             String              @id @default(cuid())
+  workspaceId    String
+  name           String
+  slug           String
+  description    String?
+  website        String?
+  logoUrl        String?
+  industry       String?
+  brandVoice     String?             @db.Text
+  targetAudience String?             @db.Text
+  primaryColor   String?             @default("#14b8a6")
+  secondaryColor String?             @default("#0f172a")
+  workspace      Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile?
+  documents      KnowledgeDocument[]
+  contents       ContentItem[]
+  media          MediaAsset[]
+  campaigns      Campaign[]
+  contacts       Contact[]
+  channelConnections ChannelConnection[]
+  conversations  Conversation[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  archivedAt     DateTime?
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
+}
+
+model BusinessProfile {
+  id                    String   @id @default(cuid())
+  brandId               String   @unique
+  businessSummary       String?  @db.Text
+  industry              String?
+  website               String?
+  country               String?
+  languages             String[] @default([])
+  businessGoals         String?  @db.Text
+  mainProducts          String?  @db.Text
+  targetAudience        String?  @db.Text
+  competitors           String?  @db.Text
+  brandPersonality      String?  @db.Text
+  preferredTone         String?
+  contentStyle          String?  @db.Text
+  mainCta               String?
+  postingFrequency      String?
+  preferredPlatforms    String[] @default([])
+  marketingChallenges   String?  @db.Text
+  monthlyBudget         String?
+  teamSize              String?
+  onboardingStep        Int      @default(0)
+  onboardingCompletedAt DateTime?
+  brand                 Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+/// Catalog of supported social platforms. OAuth providers plug in via ChannelConnection later.
+model SocialChannel {
+  id          String              @id @default(cuid())
+  platform    ChannelPlatform     @unique
+  name        String
+  description String?
+  connections ChannelConnection[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model ChannelConnection {
+  id                String              @id @default(cuid())
+  brandId           String
+  socialChannelId   String
+  status            ChannelStatus       @default(DISCONNECTED)
+  accountName       String?
+  accountHandle     String?
+  /// Reserved for real OAuth account id
+  externalAccountId String?
+  /// Reserved for encrypted tokens / provider metadata (never store plaintext tokens in UI mocks)
+  providerMeta      Json?
+  lastSyncAt        DateTime?
+  brand             Brand               @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  socialChannel     SocialChannel       @relation(fields: [socialChannelId], references: [id], onDelete: Cascade)
+  permissions       ChannelPermission[]
+  conversations     Conversation[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@unique([brandId, socialChannelId])
+  @@index([brandId])
+  @@index([status])
+}
+
+model ChannelPermission {
+  id           String            @id @default(cuid())
+  connectionId String
+  scope        String
+  label        String
+  granted      Boolean           @default(false)
+  connection   ChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@unique([connectionId, scope])
+  @@index([connectionId])
+}
+
+model KnowledgeDocument {
+  id        String   @id @default(cuid())
+  brandId   String
+  title     String
+  body      String   @default("") @db.Text
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId])
+  @@index([brandId, title])
+}
+
+model ContentItem {
+  id        String          @id @default(cuid())
+  brandId   String
+  title     String
+  body      String          @default("") @db.Text
+  status    ContentStatus   @default(DRAFT)
+  platform  ContentPlatform @default(OTHER)
+  brand     Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([brandId])
+  @@index([brandId, status])
+}
+
+model MediaAsset {
+  id           String   @id @default(cuid())
+  brandId      String
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  brand        Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@index([brandId])
+}
+
+model Campaign {
+  id        String   @id @default(cuid())
+  brandId   String
+  name      String
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId])
+}
+
+model Contact {
+  id                String         @id @default(cuid())
+  brandId           String
+  name              String?
+  instagramUsername String?
+  phone             String?
+  email             String?
+  tags              String[]       @default([])
+  notes             String?        @db.Text
+  brand             Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  conversations     Conversation[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([brandId])
+  @@index([brandId, instagramUsername])
+}
+
+model Conversation {
+  id            String             @id @default(cuid())
+  brandId       String
+  contactId     String
+  channelId     String?
+  status        ConversationStatus @default(OPEN)
+  isUnread      Boolean            @default(true)
+  assigneeId    String?
+  subject       String?
+  lastMessageAt DateTime           @default(now())
+  brand         Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  contact       Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  channel       ChannelConnection? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  assignee      User?              @relation("ConversationAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  messages      Message[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([brandId, status])
+  @@index([brandId, isUnread])
+  @@index([brandId, lastMessageAt])
+  @@index([contactId])
+}
+
+model Message {
+  id             String           @id @default(cuid())
+  conversationId String
+  body           String           @db.Text
+  direction      MessageDirection
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime         @default(now())
+
+  @@index([conversationId, createdAt])
 }

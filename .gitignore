@@ -39,3 +39,7 @@ next-env.d.ts
 # Misc
 *.pem
 .vercel
+
+# Uploads (keep folder)
+public/uploads/**
+!public/uploads/.gitkeep

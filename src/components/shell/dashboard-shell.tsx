@@ -6,6 +6,7 @@ import { CommandPalette } from "@/components/shell/command-palette";
 import { FadeIn } from "@/components/shared/fade-in";
 import { cn } from "@/lib/utils";
 import { useShellStore } from "@/hooks/use-shell-store";
+import type { NavBadges } from "@/lib/navigation";
 
 type BrandOption = { id: string; name: string; slug: string };
 type WorkspaceOption = {
@@ -19,6 +20,7 @@ type DashboardShellProps = {
   workspace: WorkspaceOption;
   workspaces: WorkspaceOption[];
   brandSlug?: string | null;
+  badges?: NavBadges;
   children: React.ReactNode;
 };
 
@@ -26,6 +28,7 @@ export function DashboardShell({
   workspace,
   workspaces,
   brandSlug,
+  badges,
   children,
 }: DashboardShellProps) {
   const { sidebarCollapsed } = useShellStore();
@@ -36,11 +39,14 @@ export function DashboardShell({
         workspaceSlug={workspace.slug}
         brandSlug={brandSlug}
         workspaceName={workspace.name}
+        badges={badges}
       />
       <div
         className={cn(
           "flex min-w-0 flex-1 flex-col",
-          sidebarCollapsed ? "md:max-w-[calc(100%-3.5rem)]" : "md:max-w-[calc(100%-15rem)]",
+          sidebarCollapsed
+            ? "md:max-w-[calc(100%-3.5rem)]"
+            : "md:max-w-[calc(100%-15rem)]",
         )}
       >
         <TopBar
@@ -52,10 +58,7 @@ export function DashboardShell({
           <FadeIn>{children}</FadeIn>
         </main>
       </div>
-      <CommandPalette
-        workspaceSlug={workspace.slug}
-        brandSlug={brandSlug}
-      />
+      <CommandPalette workspaceSlug={workspace.slug} brandSlug={brandSlug} />
     </div>
   );
 }

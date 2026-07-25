@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import {
   getUserWorkspaces,
   getWorkspaceForUser,
@@ -31,8 +32,18 @@ export default async function WorkspaceLayout({
   }
 
   if (workspace.brands.length === 0) {
-    redirect(`/onboarding/brand?workspace=${workspace.slug}`);
+    redirect(`/onboarding/business?workspace=${workspace.slug}`);
   }
+
+  const primaryBrand = workspace.brands[0];
+  const [inbox, knowledge, content, media] = await Promise.all([
+    prisma.conversation.count({
+      where: { brandId: primaryBrand.id, isUnread: true },
+    }),
+    prisma.knowledgeDocument.count({ where: { brandId: primaryBrand.id } }),
+    prisma.contentItem.count({ where: { brandId: primaryBrand.id } }),
+    prisma.mediaAsset.count({ where: { brandId: primaryBrand.id } }),
+  ]);
 
   const shellWorkspaces = workspaces.map((ws) => ({
     id: ws.id,
@@ -60,7 +71,8 @@ export default async function WorkspaceLayout({
     <DashboardShell
       workspace={shellWorkspace}
       workspaces={shellWorkspaces}
-      brandSlug={workspace.brands[0]?.slug}
+      brandSlug={primaryBrand.slug}
+      badges={{ inbox, knowledge, content, media }}
     >
       {children}
     </DashboardShell>

@@ -6,16 +6,15 @@ Inzorya is a workspace-first marketing OS — closer to Notion, Linear, Stripe D
 
 ## Status
 
-EPIC-001 foundation is implemented:
+**EPIC-003 — Social Channels + Business Brain**
 
-- Next.js App Router shell
-- Auth (login, register, forgot password)
-- Dashboard shell (sidebar, top bar, command palette, notifications)
-- Brand onboarding
-- All architecture routes with empty / loading / error states
-- Minimal landing page
+- Business onboarding wizard (save / resume / finish)
+- Business profile page
+- Channels foundation: Instagram, Facebook, WhatsApp, Telegram, LinkedIn, X, YouTube, TikTok
+- Mock connect/disconnect with permissions + last sync (OAuth-ready models)
+- Home shows business completion, channels, knowledge, drafts, conversations
 
-No AI logic. No marketing feature business logic. No fake charts.
+No Meta API. No OAuth. No webhooks. No AI.
 
 ## Stack
 

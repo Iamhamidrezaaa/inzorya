@@ -73,7 +73,7 @@ export default function RegisterPage() {
     }
 
     router.push(
-      `/onboarding/brand?workspace=${data.workspaceSlug ?? ""}`,
+      `/onboarding/business?workspace=${data.workspaceSlug ?? ""}`,
     );
     router.refresh();
   });

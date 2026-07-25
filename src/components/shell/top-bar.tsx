@@ -156,7 +156,7 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
             {workspace.brands.length === 0 ? (
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(`/onboarding/brand?workspace=${workspace.slug}`)
+                  router.push(`/onboarding/business?workspace=${workspace.slug}`)
                 }
               >
                 Create first brand

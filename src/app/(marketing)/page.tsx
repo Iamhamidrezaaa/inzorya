@@ -30,9 +30,9 @@ export default async function LandingPage() {
           Inzorya
         </h1>
         <p className="mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-          Run brand, knowledge, campaigns, content, and automations from one
-          premium workspace. Built like Linear and Vercel — not like a social
-          calendar.
+          The AI customer conversation operating system. Manage inbox,
+          contacts, and brand knowledge in one calm workspace — like Intercom
+          and ManyChat, not a post scheduler.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           {session?.user ? (

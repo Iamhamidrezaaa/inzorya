@@ -1,47 +1,33 @@
-import Link from "next/link";
-import { PageHeader } from "@/components/shared/page";
-import { pageCopy } from "@/lib/navigation";
-
-const sections = [
-  { href: "workspace", label: "Workspace", description: "Name and preferences" },
-  { href: "brands", label: "Brands", description: "Create and archive brands" },
-  { href: "billing", label: "Billing", description: "Plans and invoices" },
-  {
-    href: "notifications",
-    label: "Notifications",
-    description: "Event delivery preferences",
-  },
-  { href: "security", label: "Security", description: "Sessions and access" },
-  { href: "api", label: "API", description: "Keys and webhooks" },
-] as const;
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { getWorkspaceForUser } from "@/server/services/workspace";
+import { SettingsHub } from "@/components/settings/settings-hub";
 
 type PageProps = {
   params: Promise<{ workspaceSlug: string }>;
 };
 
-export default async function SettingsIndexPage({ params }: PageProps) {
+export default async function SettingsPage({ params }: PageProps) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
   const { workspaceSlug } = await params;
-  const copy = pageCopy.settings;
+  const [user, workspace] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, email: true },
+    }),
+    getWorkspaceForUser(workspaceSlug, session.user.id),
+  ]);
+
+  if (!user || !workspace?.brands[0]) redirect("/dashboard");
 
   return (
-    <div>
-      <PageHeader title={copy.title} description={copy.description} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        {sections.map((section) => (
-          <Link
-            key={section.href}
-            href={`/w/${workspaceSlug}/settings/${section.href}`}
-            className="rounded-xl border border-border bg-card/50 p-5 transition-colors hover:bg-accent/40"
-          >
-            <div className="text-sm font-medium text-foreground">
-              {section.label}
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {section.description}
-            </p>
-          </Link>
-        ))}
-      </div>
-    </div>
+    <SettingsHub
+      initialName={user.name ?? ""}
+      initialEmail={user.email}
+      brandSlug={workspace.brands[0].slug}
+    />
   );
 }

@@ -16,7 +16,7 @@ export default async function DashboardEntryPage() {
   }
 
   if (workspace.brands.length === 0) {
-    redirect(`/onboarding/brand?workspace=${workspace.slug}`);
+    redirect(`/onboarding/business?workspace=${workspace.slug}`);
   }
 
   redirect(`/w/${workspace.slug}/home`);

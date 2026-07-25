@@ -1,14 +1,10 @@
-import { DashboardPage } from "@/components/shared/page";
-import { pageCopy } from "@/lib/navigation";
+import { MediaManager } from "@/components/media/media-manager";
 
-export default function Page() {
-  const copy = pageCopy["media"];
-  return (
-    <DashboardPage
-      title={copy.title}
-      description={copy.description}
-      emptyTitle={copy.emptyTitle}
-      emptyDescription={copy.emptyDescription}
-    />
-  );
+type PageProps = {
+  params: Promise<{ workspaceSlug: string; brandSlug: string }>;
+};
+
+export default async function MediaPage({ params }: PageProps) {
+  const { workspaceSlug, brandSlug } = await params;
+  return <MediaManager workspaceSlug={workspaceSlug} brandSlug={brandSlug} />;
 }

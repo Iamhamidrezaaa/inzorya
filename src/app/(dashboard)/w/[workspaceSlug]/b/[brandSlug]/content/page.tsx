@@ -1,14 +1,19 @@
-import { DashboardPage } from "@/components/shared/page";
-import { pageCopy } from "@/lib/navigation";
+import { ContentLibrary } from "@/components/content/content-library";
 
-export default function Page() {
-  const copy = pageCopy["content"];
+type PageProps = {
+  params: Promise<{ workspaceSlug: string; brandSlug: string }>;
+  searchParams: Promise<{ status?: string }>;
+};
+
+export default async function ContentPage({ params, searchParams }: PageProps) {
+  const { workspaceSlug, brandSlug } = await params;
+  const { status } = await searchParams;
+
   return (
-    <DashboardPage
-      title={copy.title}
-      description={copy.description}
-      emptyTitle={copy.emptyTitle}
-      emptyDescription={copy.emptyDescription}
+    <ContentLibrary
+      workspaceSlug={workspaceSlug}
+      brandSlug={brandSlug}
+      initialStatus={status}
     />
   );
 }

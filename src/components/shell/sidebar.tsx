@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
-import { getNavGroups } from "@/lib/navigation";
+import { getNavGroups, type NavBadges } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { useShellStore } from "@/hooks/use-shell-store";
 import { Button } from "@/components/ui/button";
@@ -18,19 +19,21 @@ type SidebarProps = {
   workspaceSlug: string;
   brandSlug?: string | null;
   workspaceName: string;
+  badges?: NavBadges;
 };
 
 export function Sidebar({
   workspaceSlug,
   brandSlug,
   workspaceName,
+  badges,
 }: SidebarProps) {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar, mobileNavOpen, setMobileNavOpen } =
     useShellStore();
   const brandFromPath = pathname.match(/\/b\/([^/]+)/)?.[1] ?? null;
   const activeBrandSlug = brandFromPath ?? brandSlug;
-  const groups = getNavGroups(workspaceSlug, activeBrandSlug);
+  const groups = getNavGroups(workspaceSlug, activeBrandSlug, badges);
 
   const content = (
     <div className="flex h-full flex-col">
@@ -70,6 +73,8 @@ export function Sidebar({
                   const active =
                     pathname === item.href ||
                     pathname.startsWith(`${item.href}/`);
+                  const badge =
+                    item.badge && item.badge > 0 ? item.badge : null;
                   const link = (
                     <Link
                       key={item.href + item.title}
@@ -79,13 +84,27 @@ export function Sidebar({
                       className={cn(
                         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                         active
-                          ? "bg-accent text-accent-foreground"
+                          ? "bg-accent text-accent-foreground shadow-[inset_2px_0_0_0_var(--primary)]"
                           : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
                         sidebarCollapsed && "justify-center px-0",
                       )}
                     >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {!sidebarCollapsed ? <span>{item.title}</span> : null}
+                      <item.icon
+                        className={cn(
+                          "h-4 w-4 shrink-0",
+                          active && "text-primary",
+                        )}
+                      />
+                      {!sidebarCollapsed ? (
+                        <>
+                          <span className="flex-1 truncate">{item.title}</span>
+                          {badge ? (
+                            <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {badge > 99 ? "99+" : badge}
+                            </span>
+                          ) : null}
+                        </>
+                      ) : null}
                     </Link>
                   );
 
@@ -93,7 +112,10 @@ export function Sidebar({
                     return (
                       <Tooltip key={item.title}>
                         <TooltipTrigger asChild>{link}</TooltipTrigger>
-                        <TooltipContent side="right">{item.title}</TooltipContent>
+                        <TooltipContent side="right">
+                          {item.title}
+                          {badge ? ` (${badge})` : ""}
+                        </TooltipContent>
                       </Tooltip>
                     );
                   }
@@ -128,14 +150,14 @@ export function Sidebar({
 
   return (
     <>
-      <aside
-        className={cn(
-          "hidden h-svh shrink-0 border-r border-border bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:flex md:flex-col",
-          sidebarCollapsed ? "md:w-14" : "md:w-60",
-        )}
+      <motion.aside
+        initial={false}
+        animate={{ width: sidebarCollapsed ? 56 : 240 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        className="hidden h-svh shrink-0 overflow-hidden border-r border-border bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:flex md:flex-col"
       >
         {content}
-      </aside>
+      </motion.aside>
 
       {mobileNavOpen ? (
         <div className="fixed inset-0 z-50 md:hidden">

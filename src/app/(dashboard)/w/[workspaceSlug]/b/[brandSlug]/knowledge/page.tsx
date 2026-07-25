@@ -1,14 +1,19 @@
-import { DashboardPage } from "@/components/shared/page";
-import { pageCopy } from "@/lib/navigation";
+import { KnowledgeWorkspace } from "@/components/knowledge/knowledge-workspace";
 
-export default function Page() {
-  const copy = pageCopy["knowledge"];
+type PageProps = {
+  params: Promise<{ workspaceSlug: string; brandSlug: string }>;
+  searchParams: Promise<{ doc?: string }>;
+};
+
+export default async function KnowledgePage({ params, searchParams }: PageProps) {
+  const { workspaceSlug, brandSlug } = await params;
+  const { doc } = await searchParams;
+
   return (
-    <DashboardPage
-      title={copy.title}
-      description={copy.description}
-      emptyTitle={copy.emptyTitle}
-      emptyDescription={copy.emptyDescription}
+    <KnowledgeWorkspace
+      workspaceSlug={workspaceSlug}
+      brandSlug={brandSlug}
+      initialDocId={doc}
     />
   );
 }

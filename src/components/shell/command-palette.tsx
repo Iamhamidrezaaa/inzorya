@@ -74,7 +74,7 @@ export function CommandPalette({
         <CommandGroup heading="Actions">
           <CommandItem
             onSelect={() =>
-              go(`/onboarding/brand?workspace=${workspaceSlug}`)
+              go(`/onboarding/business?workspace=${workspaceSlug}`)
             }
           >
             Create brand

@@ -1,27 +1,22 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  BarChart3,
-  Bot,
-  Building2,
-  CalendarDays,
+  Briefcase,
   FileText,
   FolderKanban,
   Home,
   ImageIcon,
+  Inbox,
   Library,
-  ListTodo,
-  Plug,
+  Radio,
   Settings,
-  Sparkles,
   Users,
-  Workflow,
 } from "lucide-react";
 
 export type NavItem = {
   title: string;
   href: string;
   icon: LucideIcon;
-  brandScoped?: boolean;
+  badge?: number;
 };
 
 export type NavGroup = {
@@ -29,94 +24,54 @@ export type NavGroup = {
   items: NavItem[];
 };
 
+export type NavBadges = {
+  inbox?: number;
+  knowledge?: number;
+  content?: number;
+  media?: number;
+};
+
 export function getNavGroups(
   workspaceSlug: string,
   brandSlug?: string | null,
+  badges: NavBadges = {},
 ): NavGroup[] {
   const base = `/w/${workspaceSlug}`;
-  const brandBase = brandSlug ? `${base}/b/${brandSlug}` : null;
+  const b = brandSlug ? `${base}/b/${brandSlug}` : base;
 
   return [
     {
-      label: "Home",
-      items: [{ title: "Home", href: `${base}/home`, icon: Home }],
-    },
-    {
       label: "Operate",
       items: [
-        { title: "Workspace", href: `${base}/workspace`, icon: Building2 },
+        { title: "Home", href: `${base}/home`, icon: Home },
         {
-          title: "Brand",
-          href: brandBase ? `${brandBase}/brand` : `${base}/workspace`,
-          icon: Sparkles,
-          brandScoped: true,
+          title: "Inbox",
+          href: `${b}/inbox`,
+          icon: Inbox,
+          badge: badges.inbox,
         },
+        { title: "Contacts", href: `${b}/contacts`, icon: Users },
+        { title: "Channels", href: `${b}/channels`, icon: Radio },
+        { title: "Business", href: `${b}/business`, icon: Briefcase },
         {
           title: "Knowledge",
-          href: brandBase ? `${brandBase}/knowledge` : `${base}/workspace`,
+          href: `${b}/knowledge`,
           icon: Library,
-          brandScoped: true,
-        },
-        {
-          title: "Campaigns",
-          href: brandBase ? `${brandBase}/campaigns` : `${base}/workspace`,
-          icon: FolderKanban,
-          brandScoped: true,
+          badge: badges.knowledge,
         },
         {
           title: "Content",
-          href: brandBase ? `${brandBase}/content` : `${base}/workspace`,
+          href: `${b}/content`,
           icon: FileText,
-          brandScoped: true,
+          badge: badges.content,
         },
+        { title: "Campaigns", href: `${b}/campaigns`, icon: FolderKanban },
         {
           title: "Media",
-          href: brandBase ? `${brandBase}/media` : `${base}/workspace`,
+          href: `${b}/media`,
           icon: ImageIcon,
-          brandScoped: true,
+          badge: badges.media,
         },
-        {
-          title: "Calendar",
-          href: brandBase ? `${brandBase}/calendar` : `${base}/workspace`,
-          icon: CalendarDays,
-          brandScoped: true,
-        },
-      ],
-    },
-    {
-      label: "Intelligence",
-      items: [
-        {
-          title: "Analytics",
-          href: brandBase ? `${brandBase}/analytics` : `${base}/workspace`,
-          icon: BarChart3,
-          brandScoped: true,
-        },
-        {
-          title: "Automations",
-          href: brandBase ? `${brandBase}/automations` : `${base}/workspace`,
-          icon: Workflow,
-          brandScoped: true,
-        },
-        {
-          title: "AI Agents",
-          href: brandBase ? `${brandBase}/agents` : `${base}/workspace`,
-          icon: Bot,
-          brandScoped: true,
-        },
-        {
-          title: "Tasks",
-          href: brandBase ? `${brandBase}/tasks` : `${base}/workspace`,
-          icon: ListTodo,
-          brandScoped: true,
-        },
-      ],
-    },
-    {
-      label: "Organize",
-      items: [
-        { title: "Team", href: `${base}/team`, icon: Users },
-        { title: "Integrations", href: `${base}/integrations`, icon: Plug },
         { title: "Settings", href: `${base}/settings`, icon: Settings },
       ],
     },
@@ -134,179 +89,189 @@ export type PageMeta = {
 export const pageCopy = {
   home: {
     title: "Home",
-    description: "What needs attention across your workspace today.",
-    emptyTitle: "Your operating overview is ready",
-    emptyDescription:
-      "Focus items, approvals, and automation health will appear here as you build campaigns and content.",
+    description: "Conversation overview for this workspace.",
+    emptyTitle: "Your inbox is ready",
+    emptyDescription: "Connect a channel and conversations will land here.",
   },
-  workspace: {
-    title: "Workspace",
-    description: "Health, brands, and collaboration for this workspace.",
-    emptyTitle: "Workspace is set up",
+  inbox: {
+    title: "Inbox",
+    description: "Customer conversations across connected channels.",
+    emptyTitle: "No conversations yet",
     emptyDescription:
-      "Add brands, invite teammates, and connect channels to populate workspace health.",
+      "When customers message you, threads appear here. Create a contact to start one manually.",
   },
-  brand: {
-    title: "Brand",
-    description: "Identity, voice, channels, and guidelines for this brand.",
-    emptyTitle: "Define this brand",
-    emptyDescription:
-      "Brand profile, channels, and guidelines will live here so every surface stays on-message.",
+  contacts: {
+    title: "Contacts",
+    description: "People you talk to across Instagram and other channels.",
+    emptyTitle: "No contacts yet",
+    emptyDescription: "Add a customer to start tracking conversations.",
+  },
+  channels: {
+    title: "Channels",
+    description: "Connect the places customers reach you.",
+    emptyTitle: "No channels connected",
+    emptyDescription: "Mark a channel as connected to prepare for inbox routing.",
   },
   knowledge: {
     title: "Knowledge",
-    description: "The source of truth your operating system will run on.",
+    description: "The source of truth your team (and future AI) will use.",
     emptyTitle: "No knowledge yet",
-    emptyDescription:
-      "Add documents and sources so Inzorya stays aligned with your brand facts and claims.",
+    emptyDescription: "Add documents so replies stay on-brand.",
   },
   "knowledge-sources": {
     title: "Sources",
-    description: "Imported and linked knowledge sources for this brand.",
-    emptyTitle: "No sources connected",
-    emptyDescription: "Import docs, URLs, and files that ground brand knowledge.",
+    description: "Imported knowledge sources.",
+    emptyTitle: "No sources",
+    emptyDescription: "Sources can expand later.",
   },
   "knowledge-ask": {
     title: "Ask Knowledge",
-    description: "Query your brand knowledge base. AI responses ship in a later sprint.",
-    emptyTitle: "Ask is reserved",
-    emptyDescription:
-      "This surface is ready for retrieval once knowledge and AI foundations are connected.",
-  },
-  campaigns: {
-    title: "Campaigns",
-    description: "Plan and operate marketing campaigns as first-class projects.",
-    emptyTitle: "No campaigns yet",
-    emptyDescription:
-      "Create a campaign to turn strategy into scheduled work across channels.",
+    description: "Reserved for later AI retrieval.",
+    emptyTitle: "Coming later",
+    emptyDescription: "No AI in this sprint.",
   },
   content: {
     title: "Content",
-    description: "Library of drafts, approvals, scheduled, and published pieces.",
+    description: "Supporting content library — secondary to conversations.",
     emptyTitle: "No content yet",
-    emptyDescription: "Create your first piece or open the approvals queue when work arrives.",
+    emptyDescription: "Create drafts when you need them. Inbox comes first.",
   },
   "content-approvals": {
     title: "Approvals",
-    description: "Content waiting for review before it can move forward.",
+    description: "Content waiting for review.",
     emptyTitle: "Nothing to approve",
-    emptyDescription: "When teammates submit content for review, it will appear here.",
+    emptyDescription: "Approvals stay secondary to inbox.",
+  },
+  campaigns: {
+    title: "Campaigns",
+    description: "Campaign shells for later outreach work.",
+    emptyTitle: "No campaigns yet",
+    emptyDescription: "Campaigns are secondary. Conversations are the product.",
   },
   media: {
     title: "Media",
-    description: "Images, video, audio, and brand files for this brand.",
+    description: "Images for replies and content.",
     emptyTitle: "Media library is empty",
-    emptyDescription: "Upload assets once. Reuse them across campaigns and content.",
-  },
-  calendar: {
-    title: "Calendar",
-    description: "Time view of scheduled content and campaign milestones.",
-    emptyTitle: "Nothing scheduled",
-    emptyDescription: "Scheduled content will appear on this calendar as you publish plans.",
+    emptyDescription: "Upload images to reuse in conversations and content.",
   },
   analytics: {
     title: "Analytics",
-    description: "Performance across campaigns, content, and channels.",
-    emptyTitle: "No analytics yet",
-    emptyDescription:
-      "Connect channels and publish content to unlock performance views. No placeholder charts.",
+    description: "Reserved. Not part of this sprint.",
+    emptyTitle: "Not available yet",
+    emptyDescription: "Focus on inbox first.",
   },
   automations: {
     title: "Automations",
-    description: "Workflows that move work from trigger to action.",
-    emptyTitle: "No automations yet",
-    emptyDescription: "Define triggers and actions when you are ready to operationalize marketing.",
+    description: "Reserved. No automation logic yet.",
+    emptyTitle: "Not available yet",
+    emptyDescription: "Automations ship later.",
   },
   "automation-runs": {
-    title: "Automation runs",
-    description: "Operational history for automation executions.",
-    emptyTitle: "No runs yet",
-    emptyDescription: "Run history will appear here once automations execute.",
+    title: "Runs",
+    description: "Reserved.",
+    emptyTitle: "Not available yet",
+    emptyDescription: "No runs yet.",
   },
   agents: {
     title: "AI Agents",
-    description: "Agent roster and workspaces. Inference ships in a later epic.",
-    emptyTitle: "Agents are reserved",
-    emptyDescription:
-      "This route is part of the operating system shell. Agent logic will plug in without reshaping navigation.",
+    description: "Reserved. No agents in this sprint.",
+    emptyTitle: "Not available yet",
+    emptyDescription: "Agents come after the conversation foundation.",
   },
   tasks: {
     title: "Tasks",
-    description: "Human work queue tied to campaigns, content, and approvals.",
-    emptyTitle: "No tasks yet",
-    emptyDescription: "Capture work so nothing lives only in chat or email.",
+    description: "Reserved.",
+    emptyTitle: "Not available yet",
+    emptyDescription: "Inbox is the priority.",
+  },
+  calendar: {
+    title: "Calendar",
+    description: "Reserved.",
+    emptyTitle: "Not available yet",
+    emptyDescription: "Conversations first.",
+  },
+  brand: {
+    title: "Brand",
+    description: "Identity and voice for this brand.",
+    emptyTitle: "Define brand",
+    emptyDescription: "Complete brand profile.",
+  },
+  workspace: {
+    title: "Workspace",
+    description: "Workspace overview.",
+    emptyTitle: "Workspace ready",
+    emptyDescription: "Use Settings for workspace configuration.",
   },
   team: {
     title: "Team",
-    description: "Members, roles, and invites for this workspace.",
-    emptyTitle: "You are the first member",
-    emptyDescription: "Invite editors and viewers when you are ready to collaborate.",
+    description: "Members and roles.",
+    emptyTitle: "Team",
+    emptyDescription: "Invite flow comes later.",
   },
   "team-roles": {
     title: "Roles",
-    description: "Permissions for owners, admins, editors, and viewers.",
-    emptyTitle: "Default roles are active",
-    emptyDescription: "Custom role matrices can expand here without changing the shell.",
+    description: "Permission roles.",
+    emptyTitle: "Default roles",
+    emptyDescription: "Custom roles later.",
   },
   "team-invites": {
     title: "Invites",
-    description: "Pending invitations to this workspace.",
-    emptyTitle: "No pending invites",
-    emptyDescription: "Invites you send will appear here until they are accepted.",
+    description: "Pending invites.",
+    emptyTitle: "No invites",
+    emptyDescription: "Invites ship later.",
   },
   integrations: {
     title: "Integrations",
-    description: "Connected apps and channel health for this workspace.",
-    emptyTitle: "No integrations connected",
-    emptyDescription: "Browse the catalog and connect the channels your brands publish to.",
+    description: "Moved to Channels.",
+    emptyTitle: "Use Channels",
+    emptyDescription: "Connect Instagram and other channels from Channels.",
   },
   "integrations-catalog": {
     title: "Catalog",
-    description: "Available integrations you can connect.",
-    emptyTitle: "Catalog will grow here",
-    emptyDescription:
-      "Integration cards will list available connectors. Connection flows ship with the integrations epic.",
+    description: "Use Channels instead.",
+    emptyTitle: "Use Channels",
+    emptyDescription: "Channel cards live under Channels.",
   },
   settings: {
     title: "Settings",
-    description: "Workspace configuration, brands, billing, and security.",
-    emptyTitle: "Settings are available",
-    emptyDescription: "Choose a settings section to configure this workspace.",
+    description: "Profile, workspace, and brand.",
+    emptyTitle: "Settings",
+    emptyDescription: "Manage how Inzorya is configured for your team.",
   },
   "settings-workspace": {
     title: "Workspace settings",
-    description: "Name, slug, and workspace-level preferences.",
-    emptyTitle: "Workspace settings",
-    emptyDescription: "Editable workspace fields will live in this form surface.",
+    description: "Workspace name and preferences.",
+    emptyTitle: "Workspace",
+    emptyDescription: "Edit workspace details.",
   },
   "settings-brands": {
-    title: "Brand management",
-    description: "Create, archive, and organize brands in this workspace.",
-    emptyTitle: "Manage brands here",
-    emptyDescription: "Brand list management expands from the onboarding create flow.",
+    title: "Brands",
+    description: "Brand management.",
+    emptyTitle: "Brands",
+    emptyDescription: "Manage brands from Brand settings.",
   },
   "settings-billing": {
     title: "Billing",
-    description: "Plans and invoices. Billing providers connect later.",
-    emptyTitle: "Billing is not configured",
-    emptyDescription: "Seat-based billing will attach to the workspace tenant boundary.",
+    description: "Billing comes later.",
+    emptyTitle: "Not configured",
+    emptyDescription: "Billing ships later.",
   },
   "settings-notifications": {
-    title: "Notification preferences",
-    description: "Choose which workspace events reach you.",
-    emptyTitle: "Defaults are on",
-    emptyDescription: "Granular notification toggles will appear in this settings section.",
+    title: "Notifications",
+    description: "Notification preferences.",
+    emptyTitle: "Defaults on",
+    emptyDescription: "More toggles later.",
   },
   "settings-security": {
     title: "Security",
-    description: "Sessions, password, and access controls.",
-    emptyTitle: "Security controls",
-    emptyDescription: "Session management and security options expand here.",
+    description: "Security controls.",
+    emptyTitle: "Security",
+    emptyDescription: "Expand later.",
   },
   "settings-api": {
     title: "API",
-    description: "API keys and webhooks for programmatic access.",
-    emptyTitle: "No API keys yet",
-    emptyDescription: "Keys and webhook endpoints will be issued from this surface.",
+    description: "API keys later.",
+    emptyTitle: "No keys",
+    emptyDescription: "API access ships later.",
   },
 } as const satisfies Record<string, PageMeta>;

@@ -1,14 +1,38 @@
-import { DashboardPage } from "@/components/shared/page";
-import { pageCopy } from "@/lib/navigation";
+import { notFound, redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { getBrandForWorkspace, getWorkspaceForUser } from "@/server/services/workspace";
+import { BrandEditor } from "@/components/brand/brand-editor";
 
-export default function Page() {
-  const copy = pageCopy["brand"];
+type PageProps = {
+  params: Promise<{ workspaceSlug: string; brandSlug: string }>;
+};
+
+export default async function BrandPage({ params }: PageProps) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
+  const { workspaceSlug, brandSlug } = await params;
+  const workspace = await getWorkspaceForUser(workspaceSlug, session.user.id);
+  if (!workspace) notFound();
+
+  const brand = await getBrandForWorkspace(workspace.id, brandSlug);
+  if (!brand) notFound();
+
   return (
-    <DashboardPage
-      title={copy.title}
-      description={copy.description}
-      emptyTitle={copy.emptyTitle}
-      emptyDescription={copy.emptyDescription}
+    <BrandEditor
+      workspaceSlug={workspaceSlug}
+      brand={{
+        name: brand.name,
+        slug: brand.slug,
+        description: brand.description,
+        website: brand.website,
+        industry: brand.industry,
+        brandVoice: brand.brandVoice,
+        targetAudience: brand.targetAudience,
+        primaryColor: brand.primaryColor,
+        secondaryColor: brand.secondaryColor,
+        logoUrl: brand.logoUrl,
+      }}
     />
   );
 }
