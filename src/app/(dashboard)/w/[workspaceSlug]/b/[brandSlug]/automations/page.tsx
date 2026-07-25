@@ -1,14 +1,12 @@
-import { DashboardPage } from "@/components/shared/page";
-import { pageCopy } from "@/lib/navigation";
+import { AutomationsList } from "@/components/automations/automations-list";
 
-export default function Page() {
-  const copy = pageCopy["automations"];
+type PageProps = {
+  params: Promise<{ workspaceSlug: string; brandSlug: string }>;
+};
+
+export default async function AutomationsPage({ params }: PageProps) {
+  const { workspaceSlug, brandSlug } = await params;
   return (
-    <DashboardPage
-      title={copy.title}
-      description={copy.description}
-      emptyTitle={copy.emptyTitle}
-      emptyDescription={copy.emptyDescription}
-    />
+    <AutomationsList workspaceSlug={workspaceSlug} brandSlug={brandSlug} />
   );
 }

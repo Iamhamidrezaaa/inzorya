@@ -13,6 +13,7 @@ import {
   Radio,
   Settings,
   Users,
+  Workflow,
 } from "lucide-react";
 
 export type NavItem = {
@@ -57,6 +58,7 @@ export function getNavGroups(
         },
         { title: "Contacts", href: `${b}/contacts`, icon: Users },
         { title: "Channels", href: `${b}/channels`, icon: Radio },
+        { title: "Automations", href: `${b}/automations`, icon: Workflow },
       ],
     },
     {
@@ -199,15 +201,15 @@ export const pageCopy = {
   },
   automations: {
     title: "Automations",
-    description: "Reserved. No automation logic yet.",
-    emptyTitle: "Not available yet",
-    emptyDescription: "Automations ship later.",
+    description: "Visual marketing workflows — triggers, conditions, and actions.",
+    emptyTitle: "No automations yet",
+    emptyDescription: "Create a workflow or start from a template.",
   },
   "automation-runs": {
     title: "Runs",
-    description: "Reserved.",
-    emptyTitle: "Not available yet",
-    emptyDescription: "No runs yet.",
+    description: "Mocked execution history for designed workflows.",
+    emptyTitle: "No runs yet",
+    emptyDescription: "Execution engine ships later — design flows today.",
   },
   agents: {
     title: "AI Agents",

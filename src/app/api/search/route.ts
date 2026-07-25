@@ -28,6 +28,7 @@ export async function GET(request: Request) {
       { id: "inbox", title: "Inbox", href: `${b}/inbox`, group: "Pages" },
       { id: "contacts", title: "Contacts", href: `${b}/contacts`, group: "Pages" },
       { id: "channels", title: "Channels", href: `${b}/channels`, group: "Pages" },
+      { id: "automations", title: "Automations", href: `${b}/automations`, group: "Pages" },
       { id: "business", title: "Business Profile", href: `${b}/business`, group: "Pages" },
       { id: "knowledge", title: "Knowledge", href: `${b}/knowledge`, group: "Pages" },
       { id: "studio", title: "Content Studio", href: `${b}/studio`, group: "Pages" },

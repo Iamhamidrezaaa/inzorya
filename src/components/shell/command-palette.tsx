@@ -13,6 +13,7 @@ import {
   Radio,
   Settings,
   Users,
+  Workflow,
   Zap,
 } from "lucide-react";
 import {
@@ -187,6 +188,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/channels`)}>
               <Radio />
               Open Channels
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/automations`)}>
+              <Workflow />
+              Open Automations
             </CommandItem>
             <CommandItem onSelect={() => go(`${base}/settings`)}>
               <Settings />
