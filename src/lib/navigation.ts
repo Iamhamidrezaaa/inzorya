@@ -14,6 +14,7 @@ import {
   Inbox,
   Library,
   LineChart,
+  ListTodo,
   PenLine,
   Radar,
   Radio,
@@ -67,6 +68,7 @@ export function getNavGroups(
           href: `${b}/decisions`,
           icon: BriefcaseBusiness,
         },
+        { title: "Task Engine", href: `${b}/work`, icon: ListTodo },
         {
           title: "Inbox",
           href: `${b}/inbox`,
@@ -196,6 +198,13 @@ export const pageCopy = {
     emptyTitle: "Generate today's brief",
     emptyDescription:
       "Surface priorities, risks, and recommended actions — not another metrics dump.",
+  },
+  work: {
+    title: "AI Marketing Workspace",
+    description: "Execution layer — turn AI recommendations into finished work.",
+    emptyTitle: "Create your first task",
+    emptyDescription:
+      "Convert decisions, campaigns, and ideas into actionable work in one click.",
   },
   brain: {
     title: "Business Brain",

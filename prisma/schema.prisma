@@ -231,6 +231,11 @@ model User {
   opportunityFeedback   OpportunityFeedback[]  @relation("OpportunityFeedbackAuthor")
   suggestedRepliesReviewed SuggestedReply[] @relation("SuggestedReplyReviewer")
   decisionActions DecisionAction[] @relation("DecisionActionActor")
+  tasksOwned MarketingTask[] @relation("TaskOwner")
+  tasksCreated MarketingTask[] @relation("TaskCreator")
+  taskComments TaskComment[] @relation("TaskCommentAuthor")
+  taskActivities TaskActivity[] @relation("TaskActivityActor")
+  tasksWatching TaskWatcher[] @relation("TaskWatcher")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -303,6 +308,7 @@ model Workspace {
   businessOpportunities BusinessOpportunity[]
   communityRules CommunityRule[]
   executiveBriefs ExecutiveBrief[]
+  marketingProjects MarketingProject[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -391,6 +397,11 @@ model Brand {
   businessPriorities    BusinessPriority[]
   executiveMemories     ExecutiveMemory[]
   marketingInsights     MarketingInsight[]
+  marketingGoals        MarketingGoal[]
+  marketingProjects     MarketingProject[]
+  marketingTasks        MarketingTask[]
+  taskLabels            TaskLabel[]
+  marketingMilestones   Milestone[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -754,6 +765,8 @@ model Campaign {
   archivedAt  DateTime?
   brand       Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   contents    ContentItem[]
+  projects    MarketingProject[]
+  tasks       MarketingTask[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -3065,5 +3078,251 @@ model MarketingInsight {
 
   @@index([brandId, createdAt])
   @@index([briefId])
+}
+
+/// EPIC-020 — AI Marketing Workspace & Task Engine
+
+enum MarketingTaskType {
+  CONTENT_CREATION
+  DESIGN
+  VIDEO_EDITING
+  COPYWRITING
+  APPROVAL
+  PUBLISHING
+  CAMPAIGN_SETUP
+  FOLLOW_UP
+  MEETING
+  RESEARCH
+  CUSTOMER_RESPONSE
+  CUSTOM
+}
+
+enum MarketingTaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  IN_REVIEW
+  DONE
+  ARCHIVED
+}
+
+enum MarketingTaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ProjectHealth {
+  HEALTHY
+  AT_RISK
+  DELAYED
+  BLOCKED
+  COMPLETED
+}
+
+enum TaskSource {
+  STRATEGIST
+  PLANNER
+  CREATOR
+  OPPORTUNITY
+  COMMUNITY
+  CRM
+  ANALYTICS
+  DECISION_CENTER
+  MANUAL
+}
+
+model MarketingGoal {
+  id          String              @id @default(cuid())
+  brandId     String
+  title       String
+  description String?             @db.Text
+  targetDate  DateTime?
+  progress    Float               @default(0)
+  status      String              @default("ACTIVE")
+  brand       Brand               @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  projects    MarketingProject[]
+  tasks       MarketingTask[]
+  milestones  Milestone[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([brandId, status])
+}
+
+model MarketingProject {
+  id            String         @id @default(cuid())
+  workspaceId   String
+  brandId       String
+  goalId        String?
+  campaignId    String?
+  title         String
+  description   String?        @db.Text
+  health        ProjectHealth  @default(HEALTHY)
+  status        String         @default("ACTIVE")
+  startDate     DateTime?
+  endDate       DateTime?
+  source        TaskSource     @default(MANUAL)
+  sourceKey     String?
+  sourceContext Json?
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand         Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  goal          MarketingGoal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  campaign      Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  milestones    Milestone[]
+  tasks         MarketingTask[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([brandId, sourceKey])
+  @@index([brandId, health, status])
+  @@index([workspaceId])
+}
+
+model Milestone {
+  id          String            @id @default(cuid())
+  brandId     String
+  projectId   String?
+  goalId      String?
+  title       String
+  description String?           @db.Text
+  dueDate     DateTime?
+  completedAt DateTime?
+  sortOrder   Int               @default(0)
+  brand       Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  project     MarketingProject? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  goal        MarketingGoal?    @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  tasks       MarketingTask[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([brandId, dueDate])
+  @@index([projectId, sortOrder])
+}
+
+model TaskLabel {
+  id        String             @id @default(cuid())
+  brandId   String
+  name      String
+  color     String             @default("#14b8a6")
+  brand     Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  tasks     MarketingTaskLabel[]
+  createdAt DateTime           @default(now())
+
+  @@unique([brandId, name])
+}
+
+model MarketingTask {
+  id               String                 @id @default(cuid())
+  brandId          String
+  projectId        String?
+  campaignId       String?
+  goalId           String?
+  milestoneId      String?
+  parentId         String?
+  title            String
+  description      String?                @db.Text
+  type             MarketingTaskType      @default(CUSTOM)
+  status           MarketingTaskStatus    @default(TODO)
+  priority         MarketingTaskPriority  @default(MEDIUM)
+  dueDate          DateTime?
+  startDate        DateTime?
+  estimatedMinutes Int?
+  platform         String?
+  ownerId          String?
+  createdById      String?
+  source           TaskSource             @default(MANUAL)
+  sourceKey        String?
+  sourceContext    Json?
+  checklist        Json?
+  attachments      Json?
+  sortOrder        Int                    @default(0)
+  blockedReason    String?
+  nextAction       String?
+  brand            Brand                  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  project          MarketingProject?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  campaign         Campaign?              @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  goal             MarketingGoal?         @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  milestone        Milestone?             @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  parent           MarketingTask?         @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: SetNull)
+  subtasks         MarketingTask[]        @relation("TaskSubtasks")
+  owner            User?                  @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy        User?                  @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  labels           MarketingTaskLabel[]
+  comments         TaskComment[]
+  activities       TaskActivity[]
+  watchers         TaskWatcher[]
+  blockedBy        TaskDependency[]       @relation("DependencyBlocked")
+  blocking         TaskDependency[]       @relation("DependencyBlocking")
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@unique([brandId, sourceKey])
+  @@index([brandId, status, priority])
+  @@index([brandId, dueDate])
+  @@index([ownerId, status])
+  @@index([projectId, sortOrder])
+  @@index([parentId])
+}
+
+model MarketingTaskLabel {
+  taskId  String
+  labelId String
+  task    MarketingTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label   TaskLabel     @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+}
+
+model TaskComment {
+  id        String        @id @default(cuid())
+  taskId    String
+  authorId  String?
+  body      String        @db.Text
+  mentions  String[]      @default([])
+  task      MarketingTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    User?         @relation("TaskCommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([taskId, createdAt])
+}
+
+model TaskDependency {
+  id           String        @id @default(cuid())
+  fromTaskId   String
+  toTaskId     String
+  kind         String        @default("blocks")
+  fromTask     MarketingTask @relation("DependencyBlocking", fields: [fromTaskId], references: [id], onDelete: Cascade)
+  toTask       MarketingTask @relation("DependencyBlocked", fields: [toTaskId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+
+  @@unique([fromTaskId, toTaskId])
+  @@index([toTaskId])
+}
+
+model TaskActivity {
+  id        String        @id @default(cuid())
+  taskId    String
+  actorId   String?
+  kind      String
+  message   String
+  meta      Json?
+  task      MarketingTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor     User?         @relation("TaskActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt DateTime      @default(now())
+
+  @@index([taskId, createdAt])
+}
+
+model TaskWatcher {
+  taskId String
+  userId String
+  task   MarketingTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user   User          @relation("TaskWatcher", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@id([taskId, userId])
 }
 

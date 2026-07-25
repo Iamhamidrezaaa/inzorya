@@ -405,6 +405,46 @@ export const PLATFORM_TASKS: TaskDefinition[] = [
     priority: 95,
     timeoutMs: 60_000,
   },
+  {
+    key: "task.assist",
+    name: "Task Engine Assist",
+    description: "Break down work, estimate effort, detect blockers, suggest order.",
+    category: "execution",
+    inputSchema: {
+      type: "object",
+      required: ["mode", "tasks"],
+      properties: {
+        mode: { type: "string" },
+        tasks: { type: "array" },
+        capacity: { type: "object" },
+      },
+    },
+    outputSchema: {
+      type: "object",
+      required: ["ok"],
+      properties: {
+        ok: { type: "boolean" },
+        subtasks: { type: "array" },
+        estimates: { type: "array" },
+        order: { type: "array" },
+        blockers: { type: "array" },
+        nextActions: { type: "array" },
+        workload: { type: "object" },
+        dependencies: { type: "array" },
+      },
+    },
+    outputFormat: "json",
+    promptKey: "task.assist",
+    contextProviders: [
+      "business_brain",
+      "marketing_strategy",
+      "campaign",
+      "content_history",
+    ],
+    requiredOutputKeys: ["ok"],
+    priority: 88,
+    timeoutMs: 45_000,
+  },
 ];
 
 export async function ensureAITasks() {

@@ -746,6 +746,134 @@ export class MockAIProvider implements AIProviderAdapter {
         };
       }
 
+      if (joined.includes("task.assist")) {
+        let taskIds: string[] = [];
+        try {
+          const matches = joined.match(/"id"\s*:\s*"([^"]+)"/g) || [];
+          taskIds = matches
+            .map((m) => m.match(/"([^"]+)"$/)?.[1] || "")
+            .filter(Boolean)
+            .slice(0, 8);
+        } catch {
+          /* ignore */
+        }
+        if (!taskIds.length) taskIds = ["task-1"];
+        const mode = joined.includes("breakdown")
+          ? "breakdown"
+          : joined.includes("workload")
+            ? "workload"
+            : joined.includes("order")
+              ? "order"
+              : joined.includes("blocker")
+                ? "blockers"
+                : joined.includes("estimate")
+                  ? "estimate"
+                  : "next_action";
+        const payload =
+          mode === "breakdown"
+            ? {
+                ok: true,
+                subtasks: [
+                  {
+                    parentId: taskIds[0],
+                    title: "Write caption",
+                    type: "COPYWRITING",
+                    estimatedMinutes: 30,
+                    priority: "HIGH",
+                  },
+                  {
+                    parentId: taskIds[0],
+                    title: "Design carousel",
+                    type: "DESIGN",
+                    estimatedMinutes: 60,
+                    priority: "HIGH",
+                  },
+                  {
+                    parentId: taskIds[0],
+                    title: "Review",
+                    type: "APPROVAL",
+                    estimatedMinutes: 20,
+                    priority: "MEDIUM",
+                  },
+                  {
+                    parentId: taskIds[0],
+                    title: "Approve",
+                    type: "APPROVAL",
+                    estimatedMinutes: 15,
+                    priority: "MEDIUM",
+                  },
+                  {
+                    parentId: taskIds[0],
+                    title: "Schedule",
+                    type: "PUBLISHING",
+                    estimatedMinutes: 15,
+                    priority: "MEDIUM",
+                  },
+                  {
+                    parentId: taskIds[0],
+                    title: "Publish",
+                    type: "PUBLISHING",
+                    estimatedMinutes: 10,
+                    priority: "HIGH",
+                  },
+                ],
+                dependencies: [
+                  { fromTitle: "Write caption", toTitle: "Design carousel" },
+                  { fromTitle: "Design carousel", toTitle: "Review" },
+                  { fromTitle: "Review", toTitle: "Approve" },
+                  { fromTitle: "Approve", toTitle: "Schedule" },
+                  { fromTitle: "Schedule", toTitle: "Publish" },
+                ],
+              }
+            : mode === "workload"
+              ? {
+                  ok: true,
+                  workload: {
+                    dailyMinutes: 240,
+                    weeklyMinutes: 1200,
+                    overloaded: ["Owner with 3 urgent tasks"],
+                    free: ["Afternoon window open"],
+                    redistribution: [
+                      "Move one design task to tomorrow morning",
+                    ],
+                  },
+                }
+              : mode === "order"
+                ? { ok: true, order: taskIds }
+                : mode === "blockers"
+                  ? {
+                      ok: true,
+                      blockers: taskIds.map((id) => ({
+                        taskId: id,
+                        reason: "Waiting on upstream approval",
+                      })),
+                    }
+                  : mode === "estimate"
+                    ? {
+                        ok: true,
+                        estimates: taskIds.map((id, i) => ({
+                          taskId: id,
+                          estimatedMinutes: 45 + i * 15,
+                          dueInDays: 1 + i,
+                        })),
+                      }
+                    : {
+                        ok: true,
+                        nextActions: taskIds.map((id) => ({
+                          taskId: id,
+                          action: "Start the first unfinished subtask today",
+                        })),
+                      };
+        const content = JSON.stringify(payload, null, 2);
+        return {
+          content,
+          finishReason: "stop",
+          promptTokens: Math.ceil(JSON.stringify(req.messages).length / 4),
+          completionTokens: Math.ceil(content.length / 4),
+          raw: { mock: true, task: "task.assist" },
+        };
+      }
+
       const payload = {
         ok: true,
         provider: "mock",

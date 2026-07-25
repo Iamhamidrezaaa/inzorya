@@ -618,14 +618,11 @@ export async function runDecisionAction(input: {
     href = `/w/${input.workspaceSlug}/b/${input.brandSlug}/campaigns/${campaign.id}`;
   }
 
-  if (action === "GENERATE_BRIEF" || action === "CREATE_TASK") {
+  if (action === "GENERATE_BRIEF") {
     const item = await prisma.contentItem.create({
       data: {
         brandId: input.brandId,
-        title: `${action === "CREATE_TASK" ? "Task" : "Brief"} · ${rec.title}`.slice(
-          0,
-          200,
-        ),
+        title: `Brief · ${rec.title}`.slice(0, 200),
         body: "",
         description: rec.summary,
         objective: rec.recommendedAction,
@@ -640,23 +637,67 @@ export async function runDecisionAction(input: {
         platform: "INSTAGRAM",
         format: "INSTAGRAM_POST",
         assigneeId: input.userId,
-        brief:
-          action === "GENERATE_BRIEF"
-            ? {
-                create: {
-                  goal: rec.reason,
-                  hook: rec.title,
-                  problem: rec.whatHappened,
-                  solution: rec.recommendedAction,
-                  cta: rec.recommendedAction,
-                },
-              }
-            : undefined,
+        brief: {
+          create: {
+            goal: rec.reason,
+            hook: rec.title,
+            problem: rec.whatHappened,
+            solution: rec.recommendedAction,
+            cta: rec.recommendedAction,
+          },
+        },
       },
     });
-    status = action === "CREATE_TASK" ? "ASSIGNED" : "APPROVED";
+    status = "APPROVED";
     meta.contentItemId = item.id;
     href = `/w/${input.workspaceSlug}/b/${input.brandSlug}/studio`;
+  }
+
+  if (action === "CREATE_TASK") {
+    const { createTaskFromSource } = await import("@/server/services/work");
+    const typeHint =
+      rec.type === "ANSWER_VIP"
+        ? "CUSTOMER_RESPONSE"
+        : rec.type === "CREATE_REEL" || rec.type === "PUBLISH_STORY"
+          ? "CONTENT_CREATION"
+          : rec.type === "CREATE_PROMOTION" || rec.type === "LAUNCH_GIVEAWAY"
+            ? "CAMPAIGN_SETUP"
+            : "CUSTOM";
+    const result = await createTaskFromSource({
+      workspaceId: input.workspaceId,
+      brandId: input.brandId,
+      userId: input.userId,
+      workspaceSlug: input.workspaceSlug,
+      brandSlug: input.brandSlug,
+      title: rec.title,
+      description: [
+        rec.recommendedAction,
+        rec.reason,
+        rec.whatHappened,
+        rec.whyItMatters,
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+      type: typeHint,
+      priority: rec.urgency >= 85 ? "URGENT" : rec.priority >= 70 ? "HIGH" : "MEDIUM",
+      source: "DECISION_CENTER",
+      sourceKey: `decision:${rec.id}`,
+      sourceContext: {
+        recommendationId: rec.id,
+        decisionType: rec.type,
+        evidence: rec.evidence.map((e) => ({
+          source: e.source,
+          label: e.label,
+          detail: e.detail,
+          metricValue: e.metricValue,
+        })),
+      },
+      createProject: false,
+    });
+    status = "ASSIGNED";
+    meta.taskId = result.task.id;
+    meta.duplicate = result.duplicate;
+    href = `/w/${input.workspaceSlug}/b/${input.brandSlug}/work?task=${result.task.id}`;
   }
 
   if (action === "GENERATE_CONTENT") {

@@ -144,6 +144,17 @@ const PLATFORM_PROMPTS = [
       "Use signals + learningSignals + priorities. Skip weak advice. Every recommendation needs evidence[]. Focus Mode means only attention/wait/blocked/next.",
     variables: ["signals", "learningSignals", "priorities", "focusMode", "context"],
   },
+  {
+    key: "task.assist",
+    name: "Task Engine",
+    category: "execution",
+    description: "Turns marketing work into executable steps — not a PM lecture.",
+    systemPrompt:
+      "You are Inzorya's execution layer. Keep output actionable and short. Modes: breakdown|estimate|order|blockers|next_action|workload|pipeline. Return JSON ok plus relevant keys: subtasks[{parentId?,title,type,estimatedMinutes,priority}], estimates[{taskId,estimatedMinutes,dueInDays}], order[taskId], blockers[{taskId,reason}], nextActions[{taskId,action}], dependencies[{fromTitle,toTitle}], workload{dailyMinutes,weeklyMinutes,overloaded[],free[],redistribution[]}. Task types: CONTENT_CREATION|DESIGN|VIDEO_EDITING|COPYWRITING|APPROVAL|PUBLISHING|CAMPAIGN_SETUP|FOLLOW_UP|MEETING|RESEARCH|CUSTOMER_RESPONSE|CUSTOM. Prefer classic pipelines: Write → Design → Review → Approve → Schedule → Publish.",
+    developerPrompt:
+      "Never invent duplicate work. Preserve AI context from sourceContext. Prefer fewer clear steps over PM sprawl.",
+    variables: ["mode", "tasks", "capacity", "context"],
+  },
 ];
 
 export async function ensurePrompts(workspaceId?: string | null) {

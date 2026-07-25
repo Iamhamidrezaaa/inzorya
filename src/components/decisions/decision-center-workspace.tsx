@@ -212,7 +212,13 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
         recommendationId: activeId,
         action,
       });
-      if (data.href && (action === "GENERATE_CONTENT" || action === "SCHEDULE" || action === "CONVERT_CAMPAIGN")) {
+      if (
+        data.href &&
+        (action === "GENERATE_CONTENT" ||
+          action === "SCHEDULE" ||
+          action === "CONVERT_CAMPAIGN" ||
+          action === "CREATE_TASK")
+      ) {
         toast.success("Action applied");
         router.push(data.href);
         return;

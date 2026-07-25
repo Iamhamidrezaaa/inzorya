@@ -13,6 +13,7 @@ import {
   Inbox,
   Library,
   LineChart,
+  ListTodo,
   PenLine,
   Plus,
   Radar,
@@ -211,6 +212,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/decisions`)}>
               <BriefcaseBusiness />
               Open Decision Center
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/work`)}>
+              <ListTodo />
+              Open Task Engine
             </CommandItem>
             <CommandItem onSelect={() => go(`${b}/business`)}>
               <Briefcase />

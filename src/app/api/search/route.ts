@@ -31,6 +31,7 @@ export async function GET(request: Request) {
       { id: "opportunities", title: "Opportunities", href: `${b}/opportunities`, group: "Pages" },
       { id: "community", title: "Community Manager", href: `${b}/community`, group: "Pages" },
       { id: "decisions", title: "Decision Center", href: `${b}/decisions`, group: "Pages" },
+      { id: "work", title: "Task Engine", href: `${b}/work`, group: "Pages" },
       { id: "inbox", title: "Inbox", href: `${b}/inbox`, group: "Pages" },
       { id: "contacts", title: "Contacts", href: `${b}/contacts`, group: "Pages" },
       { id: "channels", title: "Channels", href: `${b}/channels`, group: "Pages" },
