@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         brandId: access.brand.id,
         title: parsed.data.title.trim(),
         body: parsed.data.body ?? "",
-        status: parsed.data.status ?? ContentStatus.DRAFT,
+        status: parsed.data.status ?? ContentStatus.IDEAS,
         platform: parsed.data.platform ?? ContentPlatform.OTHER,
       },
     });

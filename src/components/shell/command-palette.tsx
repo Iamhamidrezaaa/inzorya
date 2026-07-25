@@ -168,7 +168,7 @@ export function CommandPalette({
               <Library />
               New Knowledge Document
             </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/content`)}>
+            <CommandItem onSelect={() => go(`${b}/studio`)}>
               <FileText />
               New Content Draft
             </CommandItem>

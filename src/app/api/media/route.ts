@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     }
 
     const assets = await prisma.mediaAsset.findMany({
-      where: { brandId: access.brand.id },
+      where: { brandId: access.brand.id, deletedAt: null },
       orderBy: { createdAt: "desc" },
     });
 
@@ -70,6 +70,14 @@ export async function POST(request: Request) {
     await writeFile(path.join(dir, filename), Buffer.from(await file.arrayBuffer()));
 
     const url = `/uploads/media/${access.brand.id}/${filename}`;
+    const kind = file.type.startsWith("video/")
+      ? "video"
+      : file.type.startsWith("audio/")
+        ? "audio"
+        : file.type.includes("pdf") || file.type.includes("document")
+          ? "document"
+          : "image";
+
     const asset = await prisma.mediaAsset.create({
       data: {
         brandId: access.brand.id,
@@ -78,6 +86,7 @@ export async function POST(request: Request) {
         mimeType: file.type,
         size: file.size,
         url,
+        kind,
       },
     });
 

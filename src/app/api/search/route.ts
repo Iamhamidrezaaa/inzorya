@@ -30,7 +30,8 @@ export async function GET(request: Request) {
       { id: "channels", title: "Channels", href: `${b}/channels`, group: "Pages" },
       { id: "business", title: "Business Profile", href: `${b}/business`, group: "Pages" },
       { id: "knowledge", title: "Knowledge", href: `${b}/knowledge`, group: "Pages" },
-      { id: "content", title: "Content", href: `${b}/content`, group: "Pages" },
+      { id: "studio", title: "Content Studio", href: `${b}/studio`, group: "Pages" },
+      { id: "content", title: "Content", href: `${b}/studio`, group: "Pages" },
       { id: "campaigns", title: "Campaigns", href: `${b}/campaigns`, group: "Pages" },
       { id: "media", title: "Media", href: `${b}/media`, group: "Pages" },
       { id: "activity", title: "Activity", href: `${base}/activity`, group: "Pages" },
@@ -121,7 +122,7 @@ export async function GET(request: Request) {
       content: content.map((c) => ({
         id: c.id,
         title: c.title,
-        href: `${b}/content/${c.id}`,
+        href: `${b}/studio`,
         subtitle: c.status,
       })),
       channels: channels.map((c) => ({

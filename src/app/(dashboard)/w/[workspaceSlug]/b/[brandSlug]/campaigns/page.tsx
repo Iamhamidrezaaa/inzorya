@@ -1,14 +1,10 @@
-import { DashboardPage } from "@/components/shared/page";
-import { pageCopy } from "@/lib/navigation";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  const copy = pageCopy["campaigns"];
-  return (
-    <DashboardPage
-      title={copy.title}
-      description={copy.description}
-      emptyTitle={copy.emptyTitle}
-      emptyDescription={copy.emptyDescription}
-    />
-  );
+type PageProps = {
+  params: Promise<{ workspaceSlug: string; brandSlug: string }>;
+};
+
+export default async function CampaignsPage({ params }: PageProps) {
+  const { workspaceSlug, brandSlug } = await params;
+  redirect(`/w/${workspaceSlug}/b/${brandSlug}/studio?tab=campaigns`);
 }

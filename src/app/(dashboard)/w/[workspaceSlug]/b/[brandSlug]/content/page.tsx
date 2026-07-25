@@ -1,19 +1,10 @@
-import { ContentLibrary } from "@/components/content/content-library";
+import { redirect } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ workspaceSlug: string; brandSlug: string }>;
-  searchParams: Promise<{ status?: string }>;
 };
 
-export default async function ContentPage({ params, searchParams }: PageProps) {
+export default async function ContentPage({ params }: PageProps) {
   const { workspaceSlug, brandSlug } = await params;
-  const { status } = await searchParams;
-
-  return (
-    <ContentLibrary
-      workspaceSlug={workspaceSlug}
-      brandSlug={brandSlug}
-      initialStatus={status}
-    />
-  );
+  redirect(`/w/${workspaceSlug}/b/${brandSlug}/studio`);
 }

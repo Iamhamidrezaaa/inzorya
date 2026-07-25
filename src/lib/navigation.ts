@@ -2,8 +2,8 @@ import type { LucideIcon } from "lucide-react";
 import {
   Briefcase,
   Brain,
+  Clapperboard,
   Compass,
-  FileText,
   FolderKanban,
   History,
   Home,
@@ -70,9 +70,9 @@ export function getNavGroups(
           badge: badges.knowledge,
         },
         {
-          title: "Content",
-          href: `${b}/content`,
-          icon: FileText,
+          title: "Content Studio",
+          href: `${b}/studio`,
+          icon: Clapperboard,
           badge: badges.content,
         },
         { title: "Campaigns", href: `${b}/campaigns`, icon: FolderKanban },
@@ -162,9 +162,16 @@ export const pageCopy = {
   },
   content: {
     title: "Content",
-    description: "Supporting content library — secondary to conversations.",
-    emptyTitle: "No content yet",
-    emptyDescription: "Create drafts when you need them. Inbox comes first.",
+    description: "Redirects to Content Studio.",
+    emptyTitle: "Open Content Studio",
+    emptyDescription: "Manage the full content pipeline in Studio.",
+  },
+  studio: {
+    title: "Content Studio",
+    description: "Ideas to published — production workflow for content.",
+    emptyTitle: "Capture your first idea",
+    emptyDescription:
+      "Move content through research, brief, draft, review, and publish.",
   },
   "content-approvals": {
     title: "Approvals",
