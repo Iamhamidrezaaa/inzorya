@@ -229,6 +229,7 @@ model User {
   generationSessions    GenerationSession[]    @relation("GenerationSessionOwner")
   generatedContents     GeneratedContent[]     @relation("GeneratedContentAuthor")
   opportunityFeedback   OpportunityFeedback[]  @relation("OpportunityFeedbackAuthor")
+  suggestedRepliesReviewed SuggestedReply[] @relation("SuggestedReplyReviewer")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -299,6 +300,7 @@ model Workspace {
   generationSessions GenerationSession[]
   generatedContents GeneratedContent[]
   businessOpportunities BusinessOpportunity[]
+  communityRules CommunityRule[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -378,6 +380,10 @@ model Brand {
   generatedContents     GeneratedContent[]
   businessOpportunities BusinessOpportunity[]
   opportunityFeedback   OpportunityFeedback[]
+  communityRules        CommunityRule[]
+  autoReplyRules        AutoReplyRule[]
+  customerProfiles      CustomerProfile[]
+  suggestedReplies      SuggestedReply[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -766,6 +772,8 @@ model Contact {
   conversations     Conversation[]
   participants      ConversationParticipant[]
   internalNotes     InternalNote[]
+  customerProfile   CustomerProfile?
+  conversationMemories ConversationMemory[]
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 
@@ -795,6 +803,11 @@ model Conversation {
   internalNotes InternalNote[]
   assignments   Assignment[]
   tagLinks      ConversationTag[]
+  intent        ConversationIntent?
+  priority      ConversationPriority?
+  sentiment     SentimentAnalysis?
+  suggestedReplies SuggestedReply[]
+  memories      ConversationMemory[]
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
@@ -2660,5 +2673,203 @@ model OpportunityFeedback {
 
   @@index([brandId, action, createdAt])
   @@index([opportunityId])
+}
+
+/// EPIC-018 — AI Community Manager
+
+enum CommunityResponseMode {
+  MANUAL
+  APPROVAL_REQUIRED
+  SEMI_AUTOMATIC
+  AUTOMATIC
+}
+
+enum CommunityTone {
+  PROFESSIONAL
+  FRIENDLY
+  LUXURY
+  MINIMAL
+  CORPORATE
+  FUNNY
+  YOUTH
+  PREMIUM
+  EDUCATIONAL
+}
+
+enum ConversationIntentType {
+  QUESTION
+  COMPLAINT
+  SALES_LEAD
+  SUPPORT
+  COMPLIMENT
+  SPAM
+  VIP
+  RETURNING
+  INFLUENCER
+  OTHER
+}
+
+enum SuggestedReplyKind {
+  REPLY
+  FOLLOW_UP
+  OFFER
+  DISCOUNT
+  CTA
+  KNOWLEDGE
+  ESCALATE
+}
+
+enum SuggestedReplyStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  EDITED
+  REJECTED
+  SENT
+  AUTO_QUEUED
+}
+
+model CommunityRule {
+  id             String                @id @default(cuid())
+  workspaceId    String
+  brandId        String
+  responseMode   CommunityResponseMode @default(APPROVAL_REQUIRED)
+  tone           CommunityTone         @default(FRIENDLY)
+  enabled        Boolean               @default(true)
+  autoCategories String[]              @default([])
+  settings       Json?
+  workspace      Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand          Brand                 @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@unique([brandId])
+  @@index([workspaceId])
+}
+
+model AutoReplyRule {
+  id          String                @id @default(cuid())
+  brandId     String
+  name        String
+  intentType  ConversationIntentType
+  enabled     Boolean               @default(false)
+  /// Never auto-send unless CommunityRule.responseMode allows and this is true
+  autoSend    Boolean               @default(false)
+  template    String?               @db.Text
+  conditions  Json?
+  brand       Brand                 @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([brandId, enabled])
+  @@unique([brandId, intentType, name])
+}
+
+model ConversationIntent {
+  id             String                 @id @default(cuid())
+  conversationId String                 @unique
+  type           ConversationIntentType @default(OTHER)
+  confidence     Float                  @default(0.5)
+  labels         String[]               @default([])
+  explanation    String?                @db.Text
+  conversation   Conversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+}
+
+model ConversationPriority {
+  id             String       @id @default(cuid())
+  conversationId String       @unique
+  score          Float        @default(50)
+  rankReason     String       @db.Text
+  vip            Boolean      @default(false)
+  urgent         Boolean      @default(false)
+  revenuePotential Float      @default(0)
+  unanswered     Boolean      @default(false)
+  negativeSentiment Boolean   @default(false)
+  agingHours     Float        @default(0)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([score])
+}
+
+model SentimentAnalysis {
+  id             String       @id @default(cuid())
+  conversationId String       @unique
+  label          String
+  score          Float
+  buyingIntent   Float        @default(0)
+  urgency        Float        @default(0)
+  satisfaction   Float        @default(50)
+  spamProbability Float       @default(0)
+  salesOpportunity Float      @default(0)
+  retentionRisk  Float        @default(0)
+  explanation    String?      @db.Text
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model SuggestedReply {
+  id               String               @id @default(cuid())
+  brandId          String
+  conversationId   String
+  kind             SuggestedReplyKind   @default(REPLY)
+  status           SuggestedReplyStatus @default(DRAFT)
+  body             String               @db.Text
+  tone             CommunityTone        @default(FRIENDLY)
+  confidence       Float                @default(0.7)
+  qualityScore     Float?
+  qualityBreakdown Json?
+  explanation      String?              @db.Text
+  editedBody       String?              @db.Text
+  reviewedById     String?
+  reviewedAt       DateTime?
+  brand            Brand                @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  conversation     Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  reviewedBy       User?                @relation("SuggestedReplyReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([brandId, status, createdAt])
+  @@index([conversationId, createdAt])
+}
+
+model CustomerProfile {
+  id               String   @id @default(cuid())
+  brandId          String
+  contactId        String   @unique
+  isVip            Boolean  @default(false)
+  isInfluencer     Boolean  @default(false)
+  isReturning      Boolean  @default(false)
+  lifetimeValue    Float?
+  favoriteProducts String[] @default([])
+  tags             String[] @default([])
+  summary          String?  @db.Text
+  meta             Json?
+  brand            Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  contact          Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([brandId, isVip])
+}
+
+model ConversationMemory {
+  id             String        @id @default(cuid())
+  conversationId String?
+  contactId      String
+  key            String
+  content        String        @db.Text
+  meta           Json?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  contact        Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([contactId, key])
+  @@index([conversationId])
 }
 

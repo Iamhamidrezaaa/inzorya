@@ -421,6 +421,142 @@ export class MockAIProvider implements AIProviderAdapter {
         };
       }
 
+      if (joined.includes("community.assist")) {
+        let ids: string[] = [];
+        try {
+          const matches = joined.match(/"id"\s*:\s*"([^"]+)"/g) || [];
+          ids = matches
+            .map((m) => m.match(/"([^"]+)"$/)?.[1] || "")
+            .filter(Boolean)
+            .slice(0, 12);
+        } catch {
+          /* ignore */
+        }
+        if (!ids.length) ids = ["demo-1", "demo-2", "demo-3"];
+        const intents = [
+          "QUESTION",
+          "SALES_LEAD",
+          "COMPLAINT",
+          "COMPLIMENT",
+          "SUPPORT",
+          "VIP",
+        ];
+        const results = ids.map((conversationId, i) => {
+          const intent = intents[i % intents.length];
+          const overall = 74 + ((i * 4) % 18);
+          return {
+            conversationId,
+            intent: {
+              type: intent,
+              confidence: 0.72 + (i % 20) / 100,
+              labels: [intent.toLowerCase()],
+              explanation: `Classified as ${intent} from recent inbound message intent signals.`,
+            },
+            priority: {
+              score: intent === "COMPLAINT" || intent === "VIP" ? 90 - i : 70 - i * 2,
+              rankReason:
+                intent === "VIP"
+                  ? "VIP customer — answer first."
+                  : intent === "COMPLAINT"
+                    ? "Negative sentiment and urgency elevate priority."
+                    : intent === "SALES_LEAD"
+                      ? "High revenue potential lead."
+                      : "Unanswered inbound needs a timely reply.",
+              vip: intent === "VIP",
+              urgent: intent === "COMPLAINT",
+              revenuePotential: intent === "SALES_LEAD" ? 82 : 40,
+              unanswered: true,
+              negativeSentiment: intent === "COMPLAINT",
+              agingHours: 2 + i,
+            },
+            sentiment: {
+              label:
+                intent === "COMPLAINT"
+                  ? "negative"
+                  : intent === "COMPLIMENT"
+                    ? "positive"
+                    : "neutral",
+              score:
+                intent === "COMPLAINT" ? 28 : intent === "COMPLIMENT" ? 86 : 55,
+              buyingIntent: intent === "SALES_LEAD" ? 78 : 25,
+              urgency: intent === "COMPLAINT" ? 80 : 35,
+              satisfaction: intent === "COMPLIMENT" ? 90 : 50,
+              spamProbability: intent === "SPAM" ? 85 : 8,
+              salesOpportunity: intent === "SALES_LEAD" ? 80 : 20,
+              retentionRisk: intent === "COMPLAINT" ? 70 : 15,
+              explanation: "Sentiment inferred from tone and request type.",
+            },
+            profile: {
+              isVip: intent === "VIP",
+              isInfluencer: intent === "INFLUENCER",
+              isReturning: intent === "RETURNING" || i % 3 === 0,
+              summary: "Customer context from inbox history and tags.",
+              tags: intent === "VIP" ? ["vip"] : ["inbox"],
+            },
+            suggestions: [
+              {
+                kind: "REPLY",
+                body:
+                  intent === "COMPLAINT"
+                    ? "Thanks for flagging this — I'm sorry for the friction. I've noted the details and a teammate will follow up shortly with a clear next step. Could you share your order/reference if you have one?"
+                    : intent === "SALES_LEAD"
+                      ? "Thanks for reaching out! Happy to help you choose the right option. What's the main outcome you're aiming for, and which product/service are you considering?"
+                      : "Thanks for your message — happy to help. Based on what you asked, here's the clearest next step. If I missed anything, tell me and I'll clarify.",
+                confidence: 0.78,
+                quality: {
+                  brandConsistency: overall,
+                  clarity: overall + 2,
+                  professionalism: overall,
+                  empathy: overall - 2,
+                  actionability: overall - 1,
+                  confidence: overall,
+                  overall,
+                },
+                explanation:
+                  "Draft respects Brand DNA; no invented offers or product claims.",
+              },
+              {
+                kind: intent === "COMPLAINT" ? "ESCALATE" : "FOLLOW_UP",
+                body:
+                  intent === "COMPLAINT"
+                    ? "Escalate to human support — do not auto-promise a refund or timeline."
+                    : "Quick follow-up: Is there anything else you need before we close this out?",
+                confidence: 0.7,
+                quality: {
+                  brandConsistency: overall - 2,
+                  clarity: overall,
+                  professionalism: overall,
+                  empathy: overall,
+                  actionability: overall,
+                  confidence: overall - 3,
+                  overall: overall - 1,
+                },
+                explanation: "Secondary action based on intent class.",
+              },
+            ],
+            automationHints:
+              intent === "SALES_LEAD"
+                ? [{ rule: "Lead", action: "Create CRM Contact" }]
+                : intent === "COMPLAINT"
+                  ? [{ rule: "Complaint", action: "Escalate" }]
+                  : intent === "VIP"
+                    ? [{ rule: "VIP", action: "Notify Team" }]
+                    : intent === "QUESTION"
+                      ? [{ rule: "FAQ", action: "Suggest AI Reply" }]
+                      : [],
+          };
+        });
+        const payload = { ok: true, results };
+        const content = JSON.stringify(payload, null, 2);
+        return {
+          content,
+          finishReason: "stop",
+          promptTokens: Math.ceil(JSON.stringify(req.messages).length / 4),
+          completionTokens: Math.ceil(content.length / 4),
+          raw: { mock: true, task: "community.assist" },
+        };
+      }
+
       const payload = {
         ok: true,
         provider: "mock",

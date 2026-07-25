@@ -8,6 +8,7 @@ import {
   Clock3,
   Compass,
   FileText,
+  Headphones,
   Inbox,
   Library,
   LineChart,
@@ -201,6 +202,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/opportunities`)}>
               <Radar />
               Open Opportunities
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/community`)}>
+              <Headphones />
+              Open Community Manager
             </CommandItem>
             <CommandItem onSelect={() => go(`${b}/business`)}>
               <Briefcase />

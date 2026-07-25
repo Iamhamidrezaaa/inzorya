@@ -6,6 +6,7 @@ import {
   Clapperboard,
   Compass,
   FolderKanban,
+  Headphones,
   History,
   Home,
   ImageIcon,
@@ -59,6 +60,7 @@ export function getNavGroups(
         { title: "AI Content Planner", href: `${b}/planner`, icon: CalendarDays },
         { title: "AI Content Creator", href: `${b}/creator`, icon: PenLine },
         { title: "Opportunities", href: `${b}/opportunities`, icon: Radar },
+        { title: "Community Manager", href: `${b}/community`, icon: Headphones },
         {
           title: "Inbox",
           href: `${b}/inbox`,
@@ -174,6 +176,13 @@ export const pageCopy = {
     emptyTitle: "Scan for opportunities",
     emptyDescription:
       "Discover high-signal moments before they arrive — never a raw holiday dump.",
+  },
+  community: {
+    title: "AI Community Manager",
+    description: "Prioritized conversations with brand-safe reply assistance.",
+    emptyTitle: "Scan your inbox",
+    emptyDescription:
+      "Classify intent, rank urgency, and draft replies — never blind auto-send.",
   },
   brain: {
     title: "Business Brain",

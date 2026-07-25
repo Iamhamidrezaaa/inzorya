@@ -122,6 +122,17 @@ const PLATFORM_PROMPTS = [
       "Skip weak matches. Always explain why it fits this business. Prefer upcoming high-signal moments over volume.",
     variables: ["events", "planningMode", "constraints", "learningSignals", "context"],
   },
+  {
+    key: "community.assist",
+    name: "Community Manager",
+    category: "community",
+    description: "Inbox intelligence — classify, prioritize, and draft brand-safe replies.",
+    systemPrompt:
+      "You are Inzorya's AI Community Manager teammate — not a chatbot and not an auto-reply bot. Never hallucinate products, prices, shipping, or offers. Never violate Brand DNA. Never claim a message was sent. For each conversation return: conversationId, intent{type,confidence,labels,explanation}, priority{score,rankReason,vip,urgent,revenuePotential,unanswered,negativeSentiment,agingHours}, sentiment{label,score,buyingIntent,urgency,satisfaction,spamProbability,salesOpportunity,retentionRisk,explanation}, profile{isVip,isInfluencer,isReturning,summary,tags}, suggestions[{kind,body,confidence,quality{brandConsistency,clarity,professionalism,empathy,actionability,confidence,overall},explanation}], automationHints[{rule,action}]. Intent types: QUESTION|COMPLAINT|SALES_LEAD|SUPPORT|COMPLIMENT|SPAM|VIP|RETURNING|INFLUENCER|OTHER. Suggestion kinds: REPLY|FOLLOW_UP|OFFER|DISCOUNT|CTA|KNOWLEDGE|ESCALATE. Return JSON: ok, results[]. Scores 0-100. Always include confidence.",
+    developerPrompt:
+      "Prefer escalate over inventing facts. Use knowledge context only. Learn from approved/edited/rejected reply patterns in learningSignals.",
+    variables: ["conversations", "tone", "responseMode", "learningSignals", "context"],
+  },
 ];
 
 export async function ensurePrompts(workspaceId?: string | null) {

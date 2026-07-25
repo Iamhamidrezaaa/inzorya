@@ -29,6 +29,7 @@ export async function GET(request: Request) {
       { id: "planner", title: "AI Content Planner", href: `${b}/planner`, group: "Pages" },
       { id: "creator", title: "AI Content Creator", href: `${b}/creator`, group: "Pages" },
       { id: "opportunities", title: "Opportunities", href: `${b}/opportunities`, group: "Pages" },
+      { id: "community", title: "Community Manager", href: `${b}/community`, group: "Pages" },
       { id: "inbox", title: "Inbox", href: `${b}/inbox`, group: "Pages" },
       { id: "contacts", title: "Contacts", href: `${b}/contacts`, group: "Pages" },
       { id: "channels", title: "Channels", href: `${b}/channels`, group: "Pages" },

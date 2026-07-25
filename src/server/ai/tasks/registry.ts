@@ -322,6 +322,44 @@ export const PLATFORM_TASKS: TaskDefinition[] = [
     priority: 88,
     timeoutMs: 60_000,
   },
+  {
+    key: "community.assist",
+    name: "Community Manager Assist",
+    description: "Classify conversations and draft brand-safe reply suggestions.",
+    category: "community",
+    inputSchema: {
+      type: "object",
+      required: ["conversations", "tone", "responseMode"],
+      properties: {
+        conversations: { type: "array" },
+        tone: { type: "string" },
+        responseMode: { type: "string" },
+        learningSignals: { type: "object" },
+      },
+    },
+    outputSchema: {
+      type: "object",
+      required: ["ok", "results"],
+      properties: {
+        ok: { type: "boolean" },
+        results: { type: "array" },
+      },
+    },
+    outputFormat: "json",
+    promptKey: "community.assist",
+    contextProviders: [
+      "business_brain",
+      "brand_voice",
+      "knowledge_base",
+      "marketing_strategy",
+      "customer",
+      "conversation",
+      "content_history",
+    ],
+    requiredOutputKeys: ["ok", "results"],
+    priority: 92,
+    timeoutMs: 60_000,
+  },
 ];
 
 export async function ensureAITasks() {
