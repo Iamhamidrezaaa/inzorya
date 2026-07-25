@@ -41,21 +41,21 @@ export function SettingsHub({
           </p>
         </Link>
         <Link
+          href={`/w/${workspaceSlug}/settings/integrations`}
+          className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/40"
+        >
+          <h2 className="text-sm font-semibold">Integrations</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Meta OAuth, webhooks, and diagnostics.
+          </p>
+        </Link>
+        <Link
           href={`/w/${workspaceSlug}/b/${brandSlug}/brain`}
           className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/40"
         >
           <h2 className="text-sm font-semibold">Business Brain</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Interview, voice, assets, and completion.
-          </p>
-        </Link>
-        <Link
-          href={`/w/${workspaceSlug}/b/${brandSlug}/brand`}
-          className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/40"
-        >
-          <h2 className="text-sm font-semibold">Brand</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Identity, voice, and colors.
           </p>
         </Link>
       </div>

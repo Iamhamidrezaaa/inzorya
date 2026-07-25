@@ -88,6 +88,63 @@ enum ChannelStatus {
   ERROR
 }
 
+enum ConnectionHealth {
+  HEALTHY
+  PERMISSION_EXPIRED
+  RECONNECT_REQUIRED
+  SYNC_FAILED
+  PENDING
+}
+
+enum OAuthSessionStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+  FAILED
+  CONSUMED
+}
+
+enum TokenCredentialStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  ROTATING
+}
+
+enum SyncJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum WebhookSubscriptionStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ERROR
+}
+
+enum IntegrationAuditKind {
+  OAUTH_START
+  OAUTH_CALLBACK
+  OAUTH_SUCCESS
+  OAUTH_FAILURE
+  TOKEN_STORED
+  TOKEN_ROTATED
+  TOKEN_REVOKED
+  PERMISSION_CHANGE
+  SYNC_QUEUED
+  SYNC_COMPLETED
+  SYNC_FAILED
+  WEBHOOK_VALIDATED
+  WEBHOOK_REJECTED
+  SECURITY
+  DISCONNECT
+  RECONNECT
+}
+
 enum ConversationStatus {
   OPEN
   WAITING
@@ -162,6 +219,8 @@ model User {
   activities    Activity[]        @relation("ActivityActor")
   automationsCreated Automation[] @relation("AutomationCreator")
   automationVersions AutomationVersion[] @relation("AutomationVersionAuthor")
+  oauthSessions      OAuthSession[]
+  integrationAudits  IntegrationAuditLog[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -266,6 +325,11 @@ model Brand {
   channelConnections ChannelConnection[]
   conversations  Conversation[]
   automations    Automation[]
+  connectedAccounts ConnectedAccount[]
+  oauthSessions  OAuthSession[]
+  webhookSubscriptions WebhookSubscription[]
+  syncJobs       SyncJob[]
+  integrationAudits IntegrationAuditLog[]
   marketingStrategy MarketingStrategy?
   businessBrain     BusinessBrain?
   createdAt      DateTime            @default(now())
@@ -408,23 +472,30 @@ model ChannelConnection {
   brandId           String
   socialChannelId   String
   status            ChannelStatus       @default(DISCONNECTED)
+  health            ConnectionHealth    @default(PENDING)
   accountName       String?
   accountHandle     String?
+  profilePictureUrl String?
   /// Reserved for real OAuth account id
   externalAccountId String?
-  /// Reserved for encrypted tokens / provider metadata (never store plaintext tokens in UI mocks)
+  /// Non-sensitive provider metadata only (never plaintext tokens)
   providerMeta      Json?
+  connectedAt       DateTime?
   lastSyncAt        DateTime?
+  nextSyncAt        DateTime?
+  lastError         String?
   brand             Brand               @relation(fields: [brandId], references: [id], onDelete: Cascade)
   socialChannel     SocialChannel       @relation(fields: [socialChannelId], references: [id], onDelete: Cascade)
   permissions       ChannelPermission[]
   conversations     Conversation[]
+  connectedAccounts ConnectedAccount[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
   @@unique([brandId, socialChannelId])
   @@index([brandId])
   @@index([status])
+  @@index([health])
 }
 
 model ChannelPermission {
@@ -1146,5 +1217,198 @@ model AutomationTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+/// Meta / social connected account — production integration layer.
+model ConnectedAccount {
+  id                String           @id @default(cuid())
+  brandId           String
+  connectionId      String?
+  platform          ChannelPlatform
+  /// instagram | facebook_pages | messenger
+  product           String
+  businessName      String?
+  username          String?
+  profilePictureUrl String?
+  externalAccountId String?
+  health            ConnectionHealth @default(PENDING)
+  scopes            String[]         @default([])
+  connectedAt       DateTime?
+  lastSyncAt        DateTime?
+  nextSyncAt        DateTime?
+  lastError         String?
+  providerMeta      Json?
+  brand             Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  connection        ChannelConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  accessTokens      AccessToken[]
+  refreshTokens     RefreshToken[]
+  permissions       IntegrationPermission[]
+  syncJobs          SyncJob[]
+  syncHistory       SyncHistory[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  disconnectedAt    DateTime?
+
+  @@index([brandId, platform])
+  @@index([brandId, health])
+  @@index([externalAccountId])
+  @@index([connectionId])
+}
+
+model OAuthSession {
+  id            String            @id @default(cuid())
+  brandId       String
+  userId        String
+  platform      ChannelPlatform
+  product       String
+  /// CSRF state token (hashed at rest)
+  stateHash     String
+  /// Optional PKCE verifier (encrypted)
+  codeVerifierCipher String?      @db.Text
+  redirectUri   String
+  status        OAuthSessionStatus @default(PENDING)
+  scopes        String[]          @default([])
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  error         String?
+  brand         Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([stateHash])
+  @@index([brandId, status])
+  @@index([expiresAt])
+}
+
+model AccessToken {
+  id                 String                @id @default(cuid())
+  connectedAccountId String
+  /// AES-GCM ciphertext (base64)
+  ciphertext         String                @db.Text
+  iv                 String
+  authTag            String
+  keyVersion         Int                   @default(1)
+  expiresAt          DateTime?
+  scopes             String[]              @default([])
+  status             TokenCredentialStatus @default(ACTIVE)
+  rotatedFromId      String?
+  connectedAccount   ConnectedAccount      @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  revokedAt          DateTime?
+
+  @@index([connectedAccountId, status])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id                 String                @id @default(cuid())
+  connectedAccountId String
+  ciphertext         String                @db.Text
+  iv                 String
+  authTag            String
+  keyVersion         Int                   @default(1)
+  expiresAt          DateTime?
+  status             TokenCredentialStatus @default(ACTIVE)
+  connectedAccount   ConnectedAccount      @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  revokedAt          DateTime?
+
+  @@index([connectedAccountId, status])
+}
+
+model IntegrationPermission {
+  id                 String           @id @default(cuid())
+  connectedAccountId String
+  scope              String
+  label              String
+  description        String?
+  granted            Boolean          @default(false)
+  required           Boolean          @default(true)
+  connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@unique([connectedAccountId, scope])
+  @@index([connectedAccountId])
+}
+
+model WebhookSubscription {
+  id              String                    @id @default(cuid())
+  brandId         String?
+  platform        ChannelPlatform
+  objectType      String
+  fields          String[]                  @default([])
+  callbackPath    String                    @default("/api/webhooks/meta")
+  /// Hashed verify token — never store plaintext after creation response
+  verifyTokenHash String?
+  status          WebhookSubscriptionStatus @default(DRAFT)
+  lastValidatedAt DateTime?
+  meta            Json?
+  brand           Brand?                    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@index([platform, status])
+  @@index([brandId])
+}
+
+model SyncJob {
+  id                 String           @id @default(cuid())
+  brandId            String
+  connectedAccountId String?
+  jobType            String           @default("manual")
+  status             SyncJobStatus    @default(QUEUED)
+  progress           Int              @default(0)
+  scheduledAt        DateTime         @default(now())
+  startedAt          DateTime?
+  finishedAt         DateTime?
+  error              String?
+  meta               Json?
+  brand              Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  connectedAccount   ConnectedAccount? @relation(fields: [connectedAccountId], references: [id], onDelete: SetNull)
+  history            SyncHistory[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([brandId, status])
+  @@index([connectedAccountId, status])
+  @@index([scheduledAt])
+}
+
+model SyncHistory {
+  id                 String           @id @default(cuid())
+  connectedAccountId String?
+  syncJobId          String?
+  status             SyncJobStatus
+  message            String?
+  error              String?
+  meta               Json?
+  connectedAccount   ConnectedAccount? @relation(fields: [connectedAccountId], references: [id], onDelete: SetNull)
+  syncJob            SyncJob?         @relation(fields: [syncJobId], references: [id], onDelete: SetNull)
+  createdAt          DateTime         @default(now())
+
+  @@index([connectedAccountId, createdAt])
+  @@index([syncJobId])
+}
+
+model IntegrationAuditLog {
+  id        String               @id @default(cuid())
+  brandId   String?
+  userId    String?
+  kind      IntegrationAuditKind
+  message   String
+  meta      Json?
+  ip        String?
+  userAgent String?
+  brand     Brand?               @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  user      User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime             @default(now())
+
+  @@index([brandId, createdAt])
+  @@index([kind, createdAt])
+}
+
 
 

@@ -126,9 +126,9 @@ export const pageCopy = {
   },
   channels: {
     title: "Channels",
-    description: "Connect the places customers reach you.",
+    description: "Connect Instagram Business, Facebook Pages, and Messenger.",
     emptyTitle: "No channels connected",
-    emptyDescription: "Mark a channel as connected to prepare for inbox routing.",
+    emptyDescription: "Start OAuth or sandbox connect to link a Meta account.",
   },
   strategy: {
     title: "Strategy",
