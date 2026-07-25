@@ -7,6 +7,7 @@ import {
   SOCIAL_CHANNEL_CATALOG,
   ensureSocialChannelCatalog,
 } from "@/lib/business";
+import { recordActivity } from "@/server/services/workspace-experience";
 
 export async function GET(request: Request) {
   try {
@@ -174,6 +175,20 @@ export async function PATCH(request: Request) {
     const refreshed = await prisma.channelConnection.findUnique({
       where: { id: connection.id },
       include: { permissions: true, socialChannel: true },
+    });
+
+    await recordActivity({
+      workspaceId: access.workspace.id,
+      brandId: access.brand.id,
+      userId: user.id!,
+      kind: connecting ? "CHANNEL_CONNECTED" : "CHANNEL_DISCONNECTED",
+      title: connecting
+        ? `${catalog.name} connected`
+        : `${catalog.name} disconnected`,
+      description: connecting
+        ? "Channel marked connected (mock)."
+        : "Channel disconnected.",
+      href: `/w/${parsed.data.workspaceSlug}/b/${parsed.data.brandSlug}/channels`,
     });
 
     return NextResponse.json({ ok: true, connection: refreshed });

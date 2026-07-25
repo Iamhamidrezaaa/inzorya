@@ -1,8 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Briefcase,
+  Compass,
   FileText,
   FolderKanban,
+  History,
   Home,
   ImageIcon,
   Inbox,
@@ -44,6 +46,7 @@ export function getNavGroups(
       label: "Operate",
       items: [
         { title: "Home", href: `${base}/home`, icon: Home },
+        { title: "Strategy", href: `${b}/strategy`, icon: Compass },
         {
           title: "Inbox",
           href: `${b}/inbox`,
@@ -52,6 +55,11 @@ export function getNavGroups(
         },
         { title: "Contacts", href: `${b}/contacts`, icon: Users },
         { title: "Channels", href: `${b}/channels`, icon: Radio },
+      ],
+    },
+    {
+      label: "Brand",
+      items: [
         { title: "Business", href: `${b}/business`, icon: Briefcase },
         {
           title: "Knowledge",
@@ -72,6 +80,12 @@ export function getNavGroups(
           icon: ImageIcon,
           badge: badges.media,
         },
+      ],
+    },
+    {
+      label: "System",
+      items: [
+        { title: "Activity", href: `${base}/activity`, icon: History },
         { title: "Settings", href: `${base}/settings`, icon: Settings },
       ],
     },
@@ -111,6 +125,13 @@ export const pageCopy = {
     description: "Connect the places customers reach you.",
     emptyTitle: "No channels connected",
     emptyDescription: "Mark a channel as connected to prepare for inbox routing.",
+  },
+  strategy: {
+    title: "Strategy",
+    description: "Business understanding and marketing strategy workspace.",
+    emptyTitle: "Start your strategy",
+    emptyDescription:
+      "Capture goals, audience, competitors, and pillars before any content is generated.",
   },
   knowledge: {
     title: "Knowledge",
@@ -237,6 +258,12 @@ export const pageCopy = {
     description: "Profile, workspace, and brand.",
     emptyTitle: "Settings",
     emptyDescription: "Manage how Inzorya is configured for your team.",
+  },
+  activity: {
+    title: "Activity",
+    description: "Workspace timeline of meaningful changes.",
+    emptyTitle: "No activity yet",
+    emptyDescription: "Updates across business, channels, and strategy appear here.",
   },
   "settings-workspace": {
     title: "Workspace settings",

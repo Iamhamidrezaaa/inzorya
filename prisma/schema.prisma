@@ -73,6 +73,10 @@ model User {
   sessions      Session[]
   memberships   WorkspaceMember[]
   assigned      Conversation[]    @relation("ConversationAssignee")
+  notifications Notification[]
+  favorites     Favorite[]
+  recentItems   RecentItem[]
+  activities    Activity[]        @relation("ActivityActor")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -122,13 +126,17 @@ model PasswordResetToken {
 }
 
 model Workspace {
-  id        String            @id @default(cuid())
-  name      String
-  slug      String            @unique
-  members   WorkspaceMember[]
-  brands    Brand[]
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id            String            @id @default(cuid())
+  name          String
+  slug          String            @unique
+  members       WorkspaceMember[]
+  brands        Brand[]
+  notifications Notification[]
+  activities    Activity[]
+  favorites     Favorite[]
+  recentItems   RecentItem[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 }
 
 model WorkspaceMember {
@@ -168,6 +176,7 @@ model Brand {
   channelConnections ChannelConnection[]
   conversations  Conversation[]
   marketingStrategy MarketingStrategy?
+  businessBrain     BusinessBrain?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -443,3 +452,210 @@ model Message {
 
   @@index([conversationId, createdAt])
 }
+
+enum NotificationType {
+  SYSTEM
+  WORKSPACE
+  CHANNEL
+  CONVERSATION
+  CONTENT
+  STRATEGY
+}
+
+enum ActivityKind {
+  BUSINESS_UPDATED
+  CHANNEL_CONNECTED
+  CHANNEL_DISCONNECTED
+  KNOWLEDGE_CREATED
+  KNOWLEDGE_UPDATED
+  CONTENT_CREATED
+  CONTENT_UPDATED
+  CONTACT_CREATED
+  PERSONA_UPDATED
+  STRATEGY_UPDATED
+  FAVORITE_ADDED
+  SYSTEM
+}
+
+enum EntityTargetType {
+  PAGE
+  KNOWLEDGE
+  CONTACT
+  CONTENT
+  CHANNEL
+  SETTINGS
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  workspaceId String
+  userId      String
+  type        NotificationType
+  title       String
+  body        String?
+  href        String?
+  readAt      DateTime?
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, workspaceId, createdAt])
+  @@index([userId, readAt])
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  workspaceId String
+  brandId     String?
+  userId      String?
+  kind        ActivityKind
+  title       String
+  description String?
+  href        String?
+  meta        Json?
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User?        @relation("ActivityActor", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime     @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([brandId, createdAt])
+}
+
+model Favorite {
+  id          String           @id @default(cuid())
+  userId      String
+  workspaceId String
+  targetType  EntityTargetType
+  targetId    String
+  title       String
+  href        String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+
+  @@unique([userId, workspaceId, targetType, targetId])
+  @@index([userId, workspaceId])
+}
+
+model RecentItem {
+  id          String           @id @default(cuid())
+  userId      String
+  workspaceId String
+  targetType  EntityTargetType
+  targetId    String
+  title       String
+  href        String
+  visitedAt   DateTime         @default(now())
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId, targetType, targetId])
+  @@index([userId, workspaceId, visitedAt])
+}
+
+/// First-class Business Brain — structured knowledge for future AI (no LLM in this sprint).
+model BusinessBrain {
+  id                   String                 @id @default(cuid())
+  brandId              String                 @unique
+  currentQuestionKey   String?
+  interviewStartedAt   DateTime?
+  interviewCompletedAt DateTime?
+  score                Int                    @default(0)
+  completionPercent    Int                    @default(0)
+  version              Int                    @default(1)
+  deletedAt            DateTime?
+  brand                Brand                  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  answers              BusinessAnswer[]
+  voice                BrandVoice?
+  assets               BrandAsset[]
+  versions             BusinessBrainVersion[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  @@index([deletedAt])
+}
+
+model BusinessQuestion {
+  id                String           @id @default(cuid())
+  key               String           @unique
+  groupKey          String
+  sortOrder         Int              @default(0)
+  prompt            String
+  helpText          String?
+  inputType         String
+  options           String[]         @default([])
+  estimatedSeconds  Int              @default(45)
+  required          Boolean          @default(false)
+  answers           BusinessAnswer[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([groupKey, sortOrder])
+}
+
+model BusinessAnswer {
+  id         String           @id @default(cuid())
+  brainId    String
+  questionId String
+  /// Plain text or JSON-serialized value (arrays, objects)
+  value      String           @db.Text
+  valueJson  Json?
+  deletedAt  DateTime?
+  brain      BusinessBrain    @relation(fields: [brainId], references: [id], onDelete: Cascade)
+  question   BusinessQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([brainId, questionId])
+  @@index([brainId, deletedAt])
+}
+
+model BrandVoice {
+  id               String        @id @default(cuid())
+  brainId          String        @unique
+  traits           String[]      @default([])
+  toneOfVoice      String?
+  emojiUsage       String?
+  writingStyle     String?
+  ctaStyle         String?
+  forbiddenWords   String[]      @default([])
+  preferredWords   String[]      @default([])
+  deletedAt        DateTime?
+  brain            BusinessBrain @relation(fields: [brainId], references: [id], onDelete: Cascade)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model BrandAsset {
+  id           String        @id @default(cuid())
+  brainId      String
+  kind         String
+  label        String?
+  url          String
+  filename     String?
+  originalName String?
+  mimeType     String?
+  size         Int?
+  meta         Json?
+  deletedAt    DateTime?
+  brain        BusinessBrain @relation(fields: [brainId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([brainId, kind, deletedAt])
+}
+
+model BusinessBrainVersion {
+  id          String        @id @default(cuid())
+  brainId     String
+  version     Int
+  snapshot    Json
+  note        String?
+  createdAt   DateTime      @default(now())
+  brain       BusinessBrain @relation(fields: [brainId], references: [id], onDelete: Cascade)
+
+  @@unique([brainId, version])
+  @@index([brainId, createdAt])
+}
+
+

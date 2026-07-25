@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Star } from "lucide-react";
 import { getNavGroups, type NavBadges } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { useShellStore } from "@/hooks/use-shell-store";
@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { FavoritesNav, useFavorites } from "@/components/shell/favorites";
 
 type SidebarProps = {
   workspaceSlug: string;
@@ -34,13 +35,19 @@ export function Sidebar({
   const brandFromPath = pathname.match(/\/b\/([^/]+)/)?.[1] ?? null;
   const activeBrandSlug = brandFromPath ?? brandSlug;
   const groups = getNavGroups(workspaceSlug, activeBrandSlug, badges);
+  const { items: favorites, togglePageFavorite } = useFavorites(workspaceSlug);
+
+  const pageKey = pathname;
+  const isFavorited = favorites.some(
+    (f) => f.targetType === "PAGE" && f.targetId === pageKey,
+  );
 
   const content = (
     <div className="flex h-full flex-col">
       <div className="flex h-14 items-center gap-2.5 border-b border-border/60 px-3">
         <Link
           href={`/w/${workspaceSlug}/home`}
-          className="flex min-w-0 items-center gap-2.5"
+          className="flex min-w-0 flex-1 items-center gap-2.5"
           onClick={() => setMobileNavOpen(false)}
         >
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-[11px] font-semibold tracking-tight text-primary-foreground">
@@ -57,10 +64,49 @@ export function Sidebar({
             </div>
           ) : null}
         </Link>
+        {!sidebarCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 shrink-0"
+                onClick={() =>
+                  void togglePageFavorite({
+                    targetId: pageKey,
+                    title:
+                      pathname.split("/").filter(Boolean).pop()?.replace(
+                        /-/g,
+                        " ",
+                      ) || "Page",
+                    href: pathname,
+                  })
+                }
+              >
+                <Star
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    isFavorited && "fill-primary text-primary",
+                  )}
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isFavorited ? "Remove favorite" : "Favorite this page"}
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
       </div>
 
       <ScrollArea className="flex-1 px-2 py-4">
         <div className="space-y-6">
+          <FavoritesNav
+            items={favorites}
+            collapsed={sidebarCollapsed}
+            onNavigate={() => setMobileNavOpen(false)}
+          />
+
           {groups.map((group) => (
             <div key={group.label}>
               {!sidebarCollapsed ? (

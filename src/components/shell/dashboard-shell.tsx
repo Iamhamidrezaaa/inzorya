@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/shell/sidebar";
 import { TopBar } from "@/components/shell/top-bar";
 import { CommandPalette } from "@/components/shell/command-palette";
+import { RecentTracker } from "@/components/shell/recent-tracker";
 import { FadeIn } from "@/components/shared/fade-in";
 import { cn } from "@/lib/utils";
 import { useShellStore } from "@/hooks/use-shell-store";
@@ -59,6 +60,7 @@ export function DashboardShell({
         </main>
       </div>
       <CommandPalette workspaceSlug={workspace.slug} brandSlug={brandSlug} />
+      <RecentTracker workspaceSlug={workspace.slug} />
     </div>
   );
 }

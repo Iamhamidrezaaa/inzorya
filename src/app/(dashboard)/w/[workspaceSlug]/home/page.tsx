@@ -122,6 +122,9 @@ export default async function HomePage({ params }: PageProps) {
                 </Link>
               </Button>
             ) : null}
+            <Button asChild variant="outline">
+              <Link href={`${brandBase}/strategy`}>Strategy</Link>
+            </Button>
             <Button asChild>
               <Link href={`${brandBase}/inbox`}>Open inbox</Link>
             </Button>

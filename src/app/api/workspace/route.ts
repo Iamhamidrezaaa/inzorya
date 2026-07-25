@@ -39,3 +39,33 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Update failed." }, { status: 500 });
   }
 }
+
+const createSchema = z.object({
+  name: z.string().min(2).max(80),
+});
+
+/** Create an additional workspace for the current user (multi-workspace support). */
+export async function POST(request: Request) {
+  try {
+    const user = await requireUser();
+    const parsed = createSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid name." }, { status: 400 });
+    }
+
+    const { createWorkspaceForUser } = await import(
+      "@/server/services/workspace"
+    );
+    const workspace = await createWorkspaceForUser({
+      userId: user.id!,
+      name: parsed.data.name.trim(),
+    });
+
+    return NextResponse.json({ ok: true, workspace });
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Create failed." }, { status: 500 });
+  }
+}

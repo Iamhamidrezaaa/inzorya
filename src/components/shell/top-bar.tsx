@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
@@ -36,6 +37,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useShellStore } from "@/hooks/use-shell-store";
 import { NotificationsPanel } from "@/components/shell/notifications-panel";
+import { cn } from "@/lib/utils";
 
 type BrandOption = { id: string; name: string; slug: string };
 type WorkspaceOption = {
@@ -69,12 +71,26 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
     notificationsOpen,
     setNotificationsOpen,
   } = useShellStore();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const brandFromPath = pathname.match(/\/b\/([^/]+)/)?.[1] ?? null;
   const resolvedBrandSlug = brandFromPath ?? brandSlug;
   const activeBrand =
     workspace.brands.find((b) => b.slug === resolvedBrandSlug) ??
     workspace.brands[0];
+
+  const refreshUnread = useCallback(async () => {
+    const params = new URLSearchParams({ workspaceSlug: workspace.slug });
+    if (resolvedBrandSlug) params.set("brandSlug", resolvedBrandSlug);
+    const res = await fetch(`/api/notifications?${params}`);
+    if (!res.ok) return;
+    const data = (await res.json()) as { unreadCount: number };
+    setUnreadCount(data.unreadCount ?? 0);
+  }, [workspace.slug, resolvedBrandSlug]);
+
+  useEffect(() => {
+    void refreshUnread();
+  }, [refreshUnread]);
 
   const crumbs = pathname
     .split("/")
@@ -232,9 +248,19 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
           <Button
             variant="ghost"
             size="icon"
+            className="relative"
             onClick={() => setNotificationsOpen(true)}
           >
             <Bell className="h-4 w-4" />
+            {unreadCount > 0 ? (
+              <span
+                className={cn(
+                  "absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground",
+                )}
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            ) : null}
             <span className="sr-only">Notifications</span>
           </Button>
 
@@ -295,6 +321,9 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
       <NotificationsPanel
         open={notificationsOpen}
         onOpenChange={setNotificationsOpen}
+        workspaceSlug={workspace.slug}
+        brandSlug={resolvedBrandSlug}
+        onUnreadChange={setUnreadCount}
       />
     </>
   );

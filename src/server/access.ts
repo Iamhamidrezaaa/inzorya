@@ -9,17 +9,24 @@ export async function requireUser() {
   return session.user;
 }
 
-export async function requireBrandAccess(
+export async function requireWorkspaceAccess(
   workspaceSlug: string,
-  brandSlug: string,
   userId: string,
 ) {
-  const workspace = await prisma.workspace.findFirst({
+  return prisma.workspace.findFirst({
     where: {
       slug: workspaceSlug,
       members: { some: { userId } },
     },
   });
+}
+
+export async function requireBrandAccess(
+  workspaceSlug: string,
+  brandSlug: string,
+  userId: string,
+) {
+  const workspace = await requireWorkspaceAccess(workspaceSlug, userId);
   if (!workspace) return null;
 
   const brand = await prisma.brand.findFirst({

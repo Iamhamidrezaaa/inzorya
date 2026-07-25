@@ -6,6 +6,8 @@ type PageHeaderProps = {
   title: string;
   description: string;
   actions?: ReactNode;
+  secondaryActions?: ReactNode;
+  breadcrumb?: ReactNode;
   className?: string;
 };
 
@@ -13,26 +15,29 @@ export function PageHeader({
   title,
   description,
   actions,
+  secondaryActions,
+  breadcrumb,
   className,
 }: PageHeaderProps) {
   return (
-    <div
-      className={cn(
-        "mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between",
-        className,
-      )}
-    >
-      <div className="space-y-2">
-        <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground md:text-[1.75rem]">
-          {title}
-        </h1>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          {description}
-        </p>
+    <div className={cn("mb-8 space-y-4", className)}>
+      {breadcrumb ? <div className="text-sm text-muted-foreground">{breadcrumb}</div> : null}
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground md:text-[1.75rem]">
+            {title}
+          </h1>
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        </div>
+        {(actions || secondaryActions) ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {secondaryActions}
+            {actions}
+          </div>
+        ) : null}
       </div>
-      {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
-      ) : null}
     </div>
   );
 }
@@ -44,6 +49,7 @@ type EmptyStateProps = {
   onAction?: () => void;
   actionHref?: string;
   icon?: ReactNode;
+  className?: string;
 };
 
 export function EmptyState({
@@ -53,9 +59,15 @@ export function EmptyState({
   onAction,
   actionHref,
   icon,
+  className,
 }: EmptyStateProps) {
   return (
-    <div className="flex min-h-[360px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-card/30 px-8 py-20 text-center">
+    <div
+      className={cn(
+        "flex min-h-[360px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-card/30 px-8 py-20 text-center",
+        className,
+      )}
+    >
       {icon ? (
         <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
           {icon}
