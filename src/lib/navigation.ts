@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Briefcase,
   Brain,
+  CalendarDays,
   Clapperboard,
   Compass,
   FolderKanban,
@@ -53,6 +54,7 @@ export function getNavGroups(
         { title: "Business Brain", href: `${b}/brain`, icon: Brain },
         { title: "Strategy", href: `${b}/strategy`, icon: Compass },
         { title: "AI Strategist", href: `${b}/strategist`, icon: Sparkles },
+        { title: "AI Content Planner", href: `${b}/planner`, icon: CalendarDays },
         {
           title: "Inbox",
           href: `${b}/inbox`,
@@ -147,6 +149,13 @@ export const pageCopy = {
     emptyTitle: "Ask your strategist",
     emptyDescription:
       "Skip prompt engineering — ask in plain language and decide with structured advice.",
+  },
+  planner: {
+    title: "AI Content Planner",
+    description: "Strategic publishing plans from business intelligence.",
+    emptyTitle: "Generate a plan",
+    emptyDescription:
+      "Build calendar-ready content plans — titles and slots only, never captions.",
   },
   brain: {
     title: "Business Brain",

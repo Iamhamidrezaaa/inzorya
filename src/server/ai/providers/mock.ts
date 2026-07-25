@@ -107,6 +107,96 @@ export class MockAIProvider implements AIProviderAdapter {
         };
       }
 
+      if (joined.includes("planner.generate")) {
+        let startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+        try {
+          const m = joined.match(/"startDate"\s*:\s*"([^"]+)"/);
+          if (m?.[1]) startDate = new Date(m[1]);
+        } catch {
+          /* ignore */
+        }
+        const mix = [
+          "EDUCATIONAL",
+          "PROMOTIONAL",
+          "COMMUNITY",
+          "SOCIAL_PROOF",
+          "BEHIND_THE_SCENES",
+          "ENTERTAINMENT",
+          "OFFERS",
+        ];
+        const titles = [
+          "Pillar deep-dive for primary audience",
+          "Campaign-aligned proof point",
+          "Community question prompt",
+          "Behind-the-scenes process share",
+          "Educational carousel outline",
+          "Offer window announcement slot",
+          "Social proof highlight",
+          "Product value explainer",
+          "Seasonal relevance angle",
+          "Audience gap filler",
+        ];
+        const platforms = ["INSTAGRAM", "LINKEDIN", "INSTAGRAM"];
+        const formats = ["INSTAGRAM_CAROUSEL", "LINKEDIN", "INSTAGRAM_REEL", "INSTAGRAM_POST"];
+        const count = 10;
+        const items = Array.from({ length: count }, (_, i) => {
+          const d = new Date(startDate);
+          d.setDate(d.getDate() + (i % 7) + Math.floor(i / 7));
+          const mixCategory = mix[i % mix.length];
+          const title = titles[i % titles.length];
+          return {
+            title: `${title} #${i + 1}`,
+            goal: "Advance the active business goal with channel-fit content",
+            platform: platforms[i % platforms.length],
+            contentType: formats[i % formats.length],
+            suggestedDate: d.toISOString().slice(0, 10),
+            targetAudience: "Primary persona from strategy",
+            contentPillar: i % 3 === 0 ? "Education" : i % 3 === 1 ? "Trust" : "Offer",
+            campaignName: i % 4 === 0 ? "Active campaign" : null,
+            priority: i % 5 === 0 ? "HIGH" : "MEDIUM",
+            expectedOutcome: "Improve engagement quality and schedule coverage",
+            mixCategory,
+            insight:
+              i % 3 === 0
+                ? "This fills a gap in your weekly schedule."
+                : i % 3 === 1
+                  ? "This audience is currently under-served."
+                  : "This topic performed well in previous campaigns.",
+          };
+        });
+        const distribution = Object.fromEntries(
+          mix.map((k) => [k, items.filter((it) => it.mixCategory === k).length]),
+        );
+        const payload = {
+          ok: true,
+          summary:
+            "Strategic publishing plan balanced across educational, promotional, and community slots. Titles are planning labels only — no captions or scripts.",
+          items,
+          insights: items.map((it) => ({
+            kind: "why",
+            message: it.insight,
+            itemTitle: it.title,
+            severity: "info",
+          })),
+          distribution,
+          conflicts: [
+            {
+              kind: "coverage",
+              message: "Weekend density is lower — intentional for steady weekday presence.",
+            },
+          ],
+        };
+        const content = JSON.stringify(payload, null, 2);
+        return {
+          content,
+          finishReason: "stop",
+          promptTokens: Math.ceil(JSON.stringify(req.messages).length / 4),
+          completionTokens: Math.ceil(content.length / 4),
+          raw: { mock: true, task: "planner.generate" },
+        };
+      }
+
       const payload = {
         ok: true,
         provider: "mock",

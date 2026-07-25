@@ -225,6 +225,7 @@ model User {
   strategyConversations StrategyConversation[] @relation("StrategyConversationOwner")
   strategyDocuments     StrategyDocument[]     @relation("StrategyDocumentAuthor")
   businessDecisions     BusinessDecision[]     @relation("BusinessDecisionActor")
+  contentPlansCreated   ContentPlan[]          @relation("ContentPlanCreator")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -290,6 +291,8 @@ model Workspace {
   aiErrors      AIError[]
   memoryRecords MemoryRecord[]
   strategyConversations StrategyConversation[]
+  contentPlans ContentPlan[]
+  planningSessions PlanningSession[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -361,6 +364,10 @@ model Brand {
   businessMemories      BusinessMemory[]
   recommendations       Recommendation[]
   strategyTemplates     StrategyTemplate[]
+  contentPlans          ContentPlan[]
+  planningSessions      PlanningSession[]
+  planningConstraints   PlanningConstraint[]
+  planningTemplates     PlanningTemplate[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -2084,5 +2091,175 @@ model StrategyTemplate {
 
   @@unique([brandId, key])
   @@index([conversationType, sortOrder])
+}
+
+/// EPIC-015 — AI Content Planner
+
+enum ContentPlanType {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  CAMPAIGN
+  LAUNCH
+  HOLIDAY
+  SEASONAL
+  PRODUCT_PROMOTION
+}
+
+enum ContentPlanStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  PUSHED
+  ARCHIVED
+}
+
+enum ContentPlanItemStatus {
+  SUGGESTED
+  APPROVED
+  REJECTED
+  EDITED
+  PUSHED
+}
+
+enum ContentMixCategory {
+  EDUCATIONAL
+  PROMOTIONAL
+  COMMUNITY
+  ENTERTAINMENT
+  SOCIAL_PROOF
+  BEHIND_THE_SCENES
+  NEWS
+  OFFERS
+  UGC
+}
+
+enum PlanningSessionStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model ContentPlan {
+  id           String            @id @default(cuid())
+  workspaceId  String
+  brandId      String
+  createdById  String?
+  sessionId    String?
+  title        String
+  type         ContentPlanType   @default(WEEKLY)
+  status       ContentPlanStatus @default(DRAFT)
+  startDate    DateTime          @db.Date
+  endDate      DateTime          @db.Date
+  settings     Json
+  summary      String?           @db.Text
+  distribution Json?
+  conflicts    Json?
+  workspace    Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand        Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdBy    User?             @relation("ContentPlanCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  session      PlanningSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  items        ContentPlanItem[]
+  insights     PlanningInsight[]
+  constraints  PlanningConstraint[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([brandId, status, updatedAt])
+  @@index([workspaceId, updatedAt])
+}
+
+model ContentPlanItem {
+  id               String                @id @default(cuid())
+  planId           String
+  title            String
+  goal             String?
+  platform         String                @default("INSTAGRAM")
+  contentType      String                @default("INSTAGRAM_POST")
+  mixCategory      ContentMixCategory    @default(EDUCATIONAL)
+  suggestedDate    DateTime              @db.Date
+  targetAudience   String?
+  contentPillar    String?
+  pillarId         String?
+  campaignName     String?
+  campaignId       String?
+  priority         ContentPriority       @default(MEDIUM)
+  expectedOutcome  String?
+  status           ContentPlanItemStatus @default(SUGGESTED)
+  sortOrder        Int                   @default(0)
+  studioContentId  String?
+  plan             ContentPlan           @relation(fields: [planId], references: [id], onDelete: Cascade)
+  insights         PlanningInsight[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([planId, suggestedDate])
+  @@index([planId, status])
+}
+
+model PlanningSession {
+  id          String                 @id @default(cuid())
+  workspaceId String
+  brandId     String
+  planType    ContentPlanType        @default(WEEKLY)
+  settings    Json
+  status      PlanningSessionStatus  @default(QUEUED)
+  executionId String?
+  errorMessage String?
+  workspace   Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand       Brand                  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  plans       ContentPlan[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@index([brandId, createdAt])
+}
+
+model PlanningInsight {
+  id        String           @id @default(cuid())
+  planId    String
+  itemId    String?
+  kind      String
+  message   String           @db.Text
+  severity  String           @default("info")
+  plan      ContentPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  item      ContentPlanItem? @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([planId])
+  @@index([itemId])
+}
+
+model PlanningConstraint {
+  id        String       @id @default(cuid())
+  brandId   String
+  planId    String?
+  key       String
+  value     String
+  brand     Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  plan      ContentPlan? @relation(fields: [planId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([brandId, key])
+  @@index([planId])
+}
+
+model PlanningTemplate {
+  id              String          @id @default(cuid())
+  brandId         String?
+  key             String
+  name            String
+  description     String?
+  planType        ContentPlanType @default(WEEKLY)
+  defaultSettings Json
+  sortOrder       Int             @default(0)
+  brand           Brand?          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([brandId, key])
+  @@index([planType, sortOrder])
 }
 

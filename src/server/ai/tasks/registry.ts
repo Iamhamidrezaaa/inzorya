@@ -192,6 +192,51 @@ export const PLATFORM_TASKS: TaskDefinition[] = [
     priority: 80,
     timeoutMs: 45_000,
   },
+  {
+    key: "planner.generate",
+    name: "Content Plan Generate",
+    description: "Strategic publishing plan — titles and slots only, never captions or scripts.",
+    category: "planner",
+    inputSchema: {
+      type: "object",
+      required: ["planType", "settings", "startDate", "endDate"],
+      properties: {
+        planType: { type: "string" },
+        settings: { type: "object" },
+        startDate: { type: "string" },
+        endDate: { type: "string" },
+        regenerateItemIds: { type: "array" },
+      },
+    },
+    outputSchema: {
+      type: "object",
+      required: ["ok", "summary", "items", "insights", "distribution"],
+      properties: {
+        ok: { type: "boolean" },
+        summary: { type: "string" },
+        items: { type: "array" },
+        insights: { type: "array" },
+        distribution: { type: "object" },
+        conflicts: { type: "array" },
+      },
+    },
+    outputFormat: "json",
+    promptKey: "planner.generate",
+    contextProviders: [
+      "business_brain",
+      "brand_voice",
+      "marketing_strategy",
+      "campaign",
+      "analytics_summary",
+      "knowledge_base",
+      "connected_channels",
+      "content_history",
+      "customer",
+    ],
+    requiredOutputKeys: ["ok", "summary", "items", "insights", "distribution"],
+    priority: 85,
+    timeoutMs: 60_000,
+  },
 ];
 
 export async function ensureAITasks() {

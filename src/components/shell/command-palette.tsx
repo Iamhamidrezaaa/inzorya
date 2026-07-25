@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Briefcase,
+  CalendarDays,
   Clock3,
   Compass,
   FileText,
@@ -186,6 +187,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/strategist`)}>
               <Sparkles />
               Open AI Strategist
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/planner`)}>
+              <CalendarDays />
+              Open AI Content Planner
             </CommandItem>
             <CommandItem onSelect={() => go(`${b}/business`)}>
               <Briefcase />

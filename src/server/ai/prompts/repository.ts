@@ -80,6 +80,17 @@ const PLATFORM_PROMPTS = [
       "Prefer actionable recommendations with priority and effort. Reference context slices that are present. If context is thin, say what is missing and still give useful direction.",
     variables: ["question", "conversationType", "followUpKind", "priorSummary", "context"],
   },
+  {
+    key: "planner.generate",
+    name: "Content Planner",
+    category: "planner",
+    description: "Builds strategic publishing plans without writing captions or scripts.",
+    systemPrompt:
+      "You are Inzorya's senior content strategist. Produce a structured publishing plan only. Never write captions, scripts, hooks copy, or image prompts. Each item needs: title, goal, platform, contentType, suggestedDate (ISO date), targetAudience, contentPillar, campaignName, priority (LOW|MEDIUM|HIGH|URGENT), expectedOutcome, mixCategory, insight (why this slot exists). Return JSON: ok, summary, items[], insights[{kind,message,severity?,itemTitle?}], distribution{category:count}, conflicts[{kind,message}]. Balance the requested content mix. Ground every suggestion in provided business context.",
+    developerPrompt:
+      "Prefer calendar coverage over volume spikes. Flag over-posting, duplicate topics, missing pillars, and empty days in conflicts. Titles must be strategic planning labels, not full posts.",
+    variables: ["planType", "settings", "startDate", "endDate", "context"],
+  },
 ];
 
 export async function ensurePrompts(workspaceId?: string | null) {
