@@ -228,6 +228,7 @@ model User {
   contentPlansCreated   ContentPlan[]          @relation("ContentPlanCreator")
   generationSessions    GenerationSession[]    @relation("GenerationSessionOwner")
   generatedContents     GeneratedContent[]     @relation("GeneratedContentAuthor")
+  opportunityFeedback   OpportunityFeedback[]  @relation("OpportunityFeedbackAuthor")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -297,6 +298,7 @@ model Workspace {
   planningSessions PlanningSession[]
   generationSessions GenerationSession[]
   generatedContents GeneratedContent[]
+  businessOpportunities BusinessOpportunity[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -374,6 +376,8 @@ model Brand {
   planningTemplates     PlanningTemplate[]
   generationSessions    GenerationSession[]
   generatedContents     GeneratedContent[]
+  businessOpportunities BusinessOpportunity[]
+  opportunityFeedback   OpportunityFeedback[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -2479,5 +2483,182 @@ model VisualSuggestion {
   createdAt   DateTime           @default(now())
 
   @@index([variationId, sortOrder])
+}
+
+/// EPIC-017 — Opportunity Intelligence Engine
+
+enum MarketingEventSource {
+  INTERNATIONAL_DAY
+  COUNTRY_HOLIDAY
+  FOOD_CALENDAR
+  RETAIL_CALENDAR
+  SEASONAL
+  RELIGIOUS
+  SPORTS
+  ENTERTAINMENT
+  TECHNOLOGY
+  INDUSTRY_CONFERENCE
+  LOCAL
+  WEATHER_SEASON
+  SCHOOL_CALENDAR
+  SHOPPING
+}
+
+enum OpportunityStatus {
+  NEW
+  SAVED
+  DISMISSED
+  ACTED
+  MISSED
+}
+
+enum OpportunityPlanningMode {
+  AUTO
+  GUIDED
+  MANUAL
+}
+
+enum OpportunityAlertOffset {
+  DAYS_30
+  DAYS_14
+  DAYS_7
+  DAYS_3
+  DAYS_1
+  DAY_OF
+}
+
+enum OpportunityFeedbackAction {
+  ACCEPTED
+  REJECTED
+  SAVED
+  DISMISSED
+  ACTED
+}
+
+model OpportunityCategory {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  name        String
+  description String?
+  sortOrder   Int              @default(0)
+  events      MarketingEvent[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model MarketingEvent {
+  id           String               @id @default(cuid())
+  key          String               @unique
+  name         String
+  description  String?              @db.Text
+  source       MarketingEventSource
+  categoryId   String?
+  /// Annual recurrence (1-12). Null for fixed-date one-offs.
+  month        Int?
+  day          Int?
+  startDate    DateTime?            @db.Date
+  endDate      DateTime?            @db.Date
+  countries    String[]             @default([])
+  industries   String[]             @default([])
+  tags         String[]             @default([])
+  audienceHints String[]            @default([])
+  active       Boolean              @default(true)
+  category     OpportunityCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  opportunities BusinessOpportunity[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([source, active])
+  @@index([month, day])
+  @@index([categoryId])
+}
+
+model BusinessOpportunity {
+  id            String                   @id @default(cuid())
+  workspaceId   String
+  brandId       String
+  eventId       String
+  title         String
+  summary       String                   @db.Text
+  matchReason   String                   @db.Text
+  eventDate     DateTime                 @db.Date
+  status        OpportunityStatus        @default(NEW)
+  planningMode  OpportunityPlanningMode  @default(AUTO)
+  constraints   Json?
+  impactTier    String                   @default("medium")
+  workspace     Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand         Brand                    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  event         MarketingEvent           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  score         OpportunityScore?
+  recommendations OpportunityRecommendation[]
+  alerts        OpportunityAlert[]
+  feedback      OpportunityFeedback[]
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  @@unique([brandId, eventId, eventDate])
+  @@index([brandId, status, eventDate])
+  @@index([workspaceId, eventDate])
+}
+
+model OpportunityScore {
+  id                  String              @id @default(cuid())
+  opportunityId       String              @unique
+  relevance           Float
+  urgency             Float
+  expectedReach       Float
+  salesPotential      Float
+  engagementPotential Float
+  difficulty          Float
+  confidence          Float
+  overall             Float
+  explanation         String              @db.Text
+  opportunity         BusinessOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+}
+
+model OpportunityRecommendation {
+  id            String              @id @default(cuid())
+  opportunityId String
+  kind          String
+  title         String
+  detail        String              @db.Text
+  sortOrder     Int                 @default(0)
+  opportunity   BusinessOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  createdAt     DateTime            @default(now())
+
+  @@index([opportunityId, sortOrder])
+}
+
+model OpportunityAlert {
+  id            String                 @id @default(cuid())
+  opportunityId String
+  offset        OpportunityAlertOffset
+  notifyAt      DateTime
+  sentAt        DateTime?
+  dismissedAt   DateTime?
+  opportunity   BusinessOpportunity    @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  createdAt     DateTime               @default(now())
+
+  @@unique([opportunityId, offset])
+  @@index([notifyAt, sentAt])
+}
+
+model OpportunityFeedback {
+  id            String                     @id @default(cuid())
+  brandId       String
+  opportunityId String?
+  userId        String?
+  action        OpportunityFeedbackAction
+  note          String?
+  meta          Json?
+  brand         Brand                      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  opportunity   BusinessOpportunity?       @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  user          User?                      @relation("OpportunityFeedbackAuthor", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt     DateTime                   @default(now())
+
+  @@index([brandId, action, createdAt])
+  @@index([opportunityId])
 }
 

@@ -111,6 +111,17 @@ const PLATFORM_PROMPTS = [
       "context",
     ],
   },
+  {
+    key: "opportunity.match",
+    name: "Opportunity Intelligence",
+    category: "opportunity",
+    description: "Matches events to business context and produces scored opportunities.",
+    systemPrompt:
+      "You are Inzorya's opportunity intelligence engine. Never dump a holiday calendar. Only return events that meaningfully match the business. For each match return: eventKey, title, summary, matchReason, impactTier (high|medium|low), score{relevance,urgency,expectedReach,salesPotential,engagementPotential,difficulty,confidence,overall,explanation}, recommendations[{kind,title,detail}] covering campaign, promotion, content_series, reel, carousel, story, email, landing_page, cta, offer, hashtags. Respect planningMode AUTO|GUIDED|MANUAL and constraints. Use learningSignals to avoid previously rejected patterns. Return JSON: ok, matches[]. Scores 0-100.",
+    developerPrompt:
+      "Skip weak matches. Always explain why it fits this business. Prefer upcoming high-signal moments over volume.",
+    variables: ["events", "planningMode", "constraints", "learningSignals", "context"],
+  },
 ];
 
 export async function ensurePrompts(workspaceId?: string | null) {

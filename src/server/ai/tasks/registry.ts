@@ -282,6 +282,46 @@ export const PLATFORM_TASKS: TaskDefinition[] = [
     priority: 90,
     timeoutMs: 60_000,
   },
+  {
+    key: "opportunity.match",
+    name: "Opportunity Match",
+    description: "Match marketing events to business context and score opportunities.",
+    category: "opportunity",
+    inputSchema: {
+      type: "object",
+      required: ["events", "planningMode"],
+      properties: {
+        events: { type: "array" },
+        planningMode: { type: "string" },
+        constraints: { type: "object" },
+        learningSignals: { type: "object" },
+      },
+    },
+    outputSchema: {
+      type: "object",
+      required: ["ok", "matches"],
+      properties: {
+        ok: { type: "boolean" },
+        matches: { type: "array" },
+      },
+    },
+    outputFormat: "json",
+    promptKey: "opportunity.match",
+    contextProviders: [
+      "business_brain",
+      "brand_voice",
+      "marketing_strategy",
+      "campaign",
+      "analytics_summary",
+      "content_history",
+      "connected_channels",
+      "customer",
+      "knowledge_base",
+    ],
+    requiredOutputKeys: ["ok", "matches"],
+    priority: 88,
+    timeoutMs: 60_000,
+  },
 ];
 
 export async function ensureAITasks() {

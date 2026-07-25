@@ -13,6 +13,7 @@ import {
   LineChart,
   PenLine,
   Plus,
+  Radar,
   Radio,
   Settings,
   Sparkles,
@@ -196,6 +197,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/creator`)}>
               <PenLine />
               Open AI Content Creator
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/opportunities`)}>
+              <Radar />
+              Open Opportunities
             </CommandItem>
             <CommandItem onSelect={() => go(`${b}/business`)}>
               <Briefcase />

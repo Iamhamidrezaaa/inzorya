@@ -13,6 +13,7 @@ import {
   Library,
   LineChart,
   PenLine,
+  Radar,
   Radio,
   Settings,
   Sparkles,
@@ -57,6 +58,7 @@ export function getNavGroups(
         { title: "AI Strategist", href: `${b}/strategist`, icon: Sparkles },
         { title: "AI Content Planner", href: `${b}/planner`, icon: CalendarDays },
         { title: "AI Content Creator", href: `${b}/creator`, icon: PenLine },
+        { title: "Opportunities", href: `${b}/opportunities`, icon: Radar },
         {
           title: "Inbox",
           href: `${b}/inbox`,
@@ -165,6 +167,13 @@ export const pageCopy = {
     emptyTitle: "Generate content",
     emptyDescription:
       "Choose platform, objective, campaign and type — business context does the rest.",
+  },
+  opportunities: {
+    title: "Opportunity Intelligence",
+    description: "Proactive marketing opportunities matched to your business.",
+    emptyTitle: "Scan for opportunities",
+    emptyDescription:
+      "Discover high-signal moments before they arrive — never a raw holiday dump.",
   },
   brain: {
     title: "Business Brain",

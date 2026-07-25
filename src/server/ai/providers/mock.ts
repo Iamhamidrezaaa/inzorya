@@ -313,6 +313,114 @@ export class MockAIProvider implements AIProviderAdapter {
         };
       }
 
+      if (joined.includes("opportunity.match")) {
+        let eventKeys: string[] = [];
+        try {
+          const m = joined.match(/"key"\s*:\s*"([^"]+)"/g);
+          if (m) {
+            eventKeys = m
+              .map((x) => x.match(/"([^"]+)"$/)?.[1] || "")
+              .filter(Boolean)
+              .slice(0, 8);
+          }
+        } catch {
+          /* ignore */
+        }
+        if (!eventKeys.length) {
+          eventKeys = ["black_friday", "earth_day", "back_to_school"];
+        }
+        const matches = eventKeys.map((eventKey, i) => {
+          const overall = 72 + ((i * 5) % 20);
+          return {
+            eventKey,
+            title: `Opportunity · ${eventKey.replaceAll("_", " ")}`,
+            summary:
+              "A high-signal marketing moment matched to your audience, goals, and brand voice — not a generic calendar entry.",
+            matchReason:
+              "Aligns with active marketing goals, audience interests, and past campaign themes in Business Brain context.",
+            impactTier: overall >= 85 ? "high" : overall >= 75 ? "medium" : "low",
+            score: {
+              relevance: overall + 2,
+              urgency: overall - 4,
+              expectedReach: overall - 1,
+              salesPotential: overall - 6,
+              engagementPotential: overall + 1,
+              difficulty: 40 + (i % 30),
+              confidence: overall - 3,
+              overall,
+              explanation:
+                "Overall reflects business relevance first, then urgency and expected engagement for this brand.",
+            },
+            recommendations: [
+              {
+                kind: "campaign",
+                title: "Campaign angle",
+                detail: "Lead with audience value tied to the moment; keep offer secondary.",
+              },
+              {
+                kind: "promotion",
+                title: "Promotion idea",
+                detail: "Limited-time bundle or early-access perk for engaged segments.",
+              },
+              {
+                kind: "content_series",
+                title: "Content series",
+                detail: "3-part educational → social proof → offer sequence.",
+              },
+              {
+                kind: "reel",
+                title: "Reel idea",
+                detail: "Hook on the cultural moment, then show your product as the practical fix.",
+              },
+              {
+                kind: "carousel",
+                title: "Carousel idea",
+                detail: "Problem → insight → proof → CTA slides.",
+              },
+              {
+                kind: "story",
+                title: "Stories",
+                detail: "Poll + behind-the-scenes + swipe-up/CTA sequence.",
+              },
+              {
+                kind: "email",
+                title: "Email campaign",
+                detail: "Subject line around the moment; body focused on one clear action.",
+              },
+              {
+                kind: "landing_page",
+                title: "Landing page",
+                detail: "Moment-specific hero, one offer, one CTA.",
+              },
+              {
+                kind: "cta",
+                title: "CTA",
+                detail: "Claim your early access / Shop the moment / Join the challenge.",
+              },
+              {
+                kind: "offer",
+                title: "Offer suggestion",
+                detail: "Time-boxed incentive that fits brand positioning.",
+              },
+              {
+                kind: "hashtags",
+                title: "Hashtag direction",
+                detail: "Blend moment tags with 2–3 brand-owned tags.",
+              },
+            ],
+          };
+        });
+        const payload = { ok: true, matches };
+        const content = JSON.stringify(payload, null, 2);
+        return {
+          content,
+          finishReason: "stop",
+          promptTokens: Math.ceil(JSON.stringify(req.messages).length / 4),
+          completionTokens: Math.ceil(content.length / 4),
+          raw: { mock: true, task: "opportunity.match" },
+        };
+      }
+
       const payload = {
         ok: true,
         provider: "mock",
