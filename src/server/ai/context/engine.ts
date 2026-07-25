@@ -23,7 +23,18 @@ async function loadProvider(brandId: string, key: ContextProviderKey) {
     case "business_brain": {
       const brain = await prisma.businessBrain.findUnique({
         where: { brandId },
-        include: { voice: true },
+        include: {
+          voice: true,
+          answers: {
+            take: 12,
+            orderBy: { updatedAt: "desc" },
+            where: { deletedAt: null },
+            select: {
+              value: true,
+              question: { select: { key: true } },
+            },
+          },
+        },
       });
       return {
         key,
@@ -33,6 +44,10 @@ async function loadProvider(brandId: string, key: ContextProviderKey) {
               score: brain.score,
               version: brain.version,
               voiceTone: brain.voice?.toneOfVoice || null,
+              recentAnswers: brain.answers.map((a) => ({
+                questionKey: a.question.key,
+                value: a.value.slice(0, 280),
+              })),
             }
           : null,
       };
@@ -40,11 +55,26 @@ async function loadProvider(brandId: string, key: ContextProviderKey) {
     case "marketing_strategy": {
       const strategy = await prisma.marketingStrategy.findUnique({
         where: { brandId },
+        include: {
+          _count: { select: { personas: true, competitors: true, pillars: true } },
+        },
       });
       return {
         key,
         data: strategy
-          ? { id: strategy.id, updatedAt: strategy.updatedAt }
+          ? {
+              id: strategy.id,
+              goals: strategy.goals,
+              tone: strategy.tone,
+              preferredPlatforms: strategy.preferredPlatforms,
+              contentTypes: strategy.contentTypes,
+              currentStage: strategy.currentStage,
+              nextStep: strategy.nextStep,
+              personaCount: strategy._count.personas,
+              competitorCount: strategy._count.competitors,
+              pillarCount: strategy._count.pillars,
+              updatedAt: strategy.updatedAt,
+            }
           : null,
       };
     }

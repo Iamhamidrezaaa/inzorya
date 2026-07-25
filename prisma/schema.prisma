@@ -222,6 +222,9 @@ model User {
   oauthSessions      OAuthSession[]
   integrationAudits  IntegrationAuditLog[]
   promptsCreated     Prompt[] @relation("PromptCreator")
+  strategyConversations StrategyConversation[] @relation("StrategyConversationOwner")
+  strategyDocuments     StrategyDocument[]     @relation("StrategyDocumentAuthor")
+  businessDecisions     BusinessDecision[]     @relation("BusinessDecisionActor")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -286,6 +289,7 @@ model Workspace {
   costRecords   CostRecord[]
   aiErrors      AIError[]
   memoryRecords MemoryRecord[]
+  strategyConversations StrategyConversation[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -351,6 +355,12 @@ model Brand {
   aiTaskExecutions   AITaskExecution[]
   marketingStrategy MarketingStrategy?
   businessBrain     BusinessBrain?
+  strategyConversations StrategyConversation[]
+  strategyDocuments     StrategyDocument[]
+  businessDecisions     BusinessDecision[]
+  businessMemories      BusinessMemory[]
+  recommendations       Recommendation[]
+  strategyTemplates     StrategyTemplate[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -1866,7 +1876,213 @@ model AIError {
   @@index([code, createdAt])
 }
 
+/// EPIC-014 — AI Marketing Strategist
 
+enum StrategyConversationType {
+  MARKETING_STRATEGY
+  GROWTH_STRATEGY
+  CAMPAIGN_PLANNING
+  COMPETITOR_ANALYSIS
+  AUDIENCE_ANALYSIS
+  BRAND_POSITIONING
+  CONTENT_DIRECTION
+  SWOT
+  GO_TO_MARKET
+  LAUNCH_PLAN
+  RETENTION
+  COMMUNITY_GROWTH
+}
 
+enum StrategyMessageRole {
+  USER
+  ASSISTANT
+}
 
+enum StrategyDocumentStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum BusinessDecisionStatus {
+  CREATED
+  UPDATED
+  APPLIED
+  REJECTED
+  ARCHIVED
+}
+
+enum RecommendationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum RecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecommendationDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model StrategyConversation {
+  id             String                   @id @default(cuid())
+  workspaceId    String
+  brandId        String
+  userId         String?
+  title          String
+  type           StrategyConversationType @default(MARKETING_STRATEGY)
+  pinned         Boolean                  @default(false)
+  archivedAt     DateTime?
+  contextSources String[]                 @default([])
+  confidence     Float?
+  lastMessageAt  DateTime?
+  workspace      Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand          Brand                    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  user           User?                    @relation("StrategyConversationOwner", fields: [userId], references: [id], onDelete: SetNull)
+  messages       StrategyMessage[]
+  documents      StrategyDocument[]
+  recommendations Recommendation[]
+  decisions      BusinessDecision[]
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@index([brandId, updatedAt])
+  @@index([brandId, pinned])
+  @@index([workspaceId, updatedAt])
+}
+
+model StrategyMessage {
+  id                String             @id @default(cuid())
+  conversationId    String
+  role              StrategyMessageRole
+  content           String             @db.Text
+  structured        Json?
+  contextUsed       String[]           @default([])
+  confidence        Float?
+  executionId       String?
+  contextSnapshotId String?
+  followUpKind      String?
+  conversation      StrategyConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  recommendations   Recommendation[]
+  createdAt         DateTime           @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model StrategyDocument {
+  id             String                 @id @default(cuid())
+  brandId        String
+  conversationId String?
+  createdById    String?
+  title          String
+  type           StrategyConversationType @default(MARKETING_STRATEGY)
+  contentMd      String                 @db.Text
+  structured     Json?
+  status         StrategyDocumentStatus @default(ACTIVE)
+  favorited      Boolean                @default(false)
+  sharedInternally Boolean              @default(false)
+  brand          Brand                  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  conversation   StrategyConversation?  @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  createdBy      User?                  @relation("StrategyDocumentAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([brandId, status, updatedAt])
+  @@index([brandId, favorited])
+}
+
+model BusinessDecision {
+  id               String                 @id @default(cuid())
+  brandId          String
+  conversationId   String?
+  recommendationId String?
+  decidedById      String?
+  title            String
+  summary          String                 @db.Text
+  status           BusinessDecisionStatus @default(CREATED)
+  brand            Brand                  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  conversation     StrategyConversation?  @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  recommendation   Recommendation?        @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+  decidedBy        User?                  @relation("BusinessDecisionActor", fields: [decidedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([brandId, status, updatedAt])
+}
+
+model BusinessMemory {
+  id        String   @id @default(cuid())
+  brandId   String
+  category  String
+  key       String
+  content   String   @db.Text
+  meta      Json?
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId, category])
+  @@index([brandId, key])
+}
+
+model Recommendation {
+  id              String                   @id @default(cuid())
+  brandId         String
+  conversationId  String?
+  messageId       String?
+  title           String
+  body            String                   @db.Text
+  priority        RecommendationPriority   @default(MEDIUM)
+  difficulty      RecommendationDifficulty @default(MEDIUM)
+  expectedImpact  String?
+  estimatedTime   String?
+  dependencies    String[]                 @default([])
+  status          RecommendationStatus     @default(PENDING)
+  brand           Brand                    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  conversation    StrategyConversation?    @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  message         StrategyMessage?         @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  actions         RecommendationAction[]
+  decisions       BusinessDecision[]
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  @@index([brandId, status])
+  @@index([conversationId])
+}
+
+model RecommendationAction {
+  id               String         @id @default(cuid())
+  recommendationId String
+  title            String
+  done             Boolean        @default(false)
+  sortOrder        Int            @default(0)
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([recommendationId, sortOrder])
+}
+
+model StrategyTemplate {
+  id               String                   @id @default(cuid())
+  brandId          String?
+  key              String
+  name             String
+  description      String?
+  conversationType StrategyConversationType @default(MARKETING_STRATEGY)
+  starterPrompt    String                   @db.Text
+  sortOrder        Int                      @default(0)
+  brand            Brand?                   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@unique([brandId, key])
+  @@index([conversationType, sortOrder])
+}
 

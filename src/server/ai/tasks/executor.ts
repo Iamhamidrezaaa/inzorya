@@ -32,6 +32,8 @@ export type RunTaskInput = {
   userId?: string | null;
   preference?: "cost" | "latency" | "quality" | "balanced";
   stream?: boolean;
+  /** Override task-default context providers (e.g. user toggles). */
+  contextProviders?: ContextProviderKey[];
 };
 
 function asJson(value: unknown): Prisma.InputJsonValue {
@@ -68,7 +70,12 @@ export async function runAITask(input: RunTaskInput) {
     });
   }
 
-  const textInput = String(input.input.text || input.input.brief || JSON.stringify(input.input));
+  const textInput = String(
+    input.input.text ||
+      input.input.question ||
+      input.input.brief ||
+      JSON.stringify(input.input),
+  );
   const guard = sanitizeInput(textInput);
   if (!guard.ok && guard.reasons.includes("Empty input") === false) {
     // Soft-block only hard violations; empty handled by schema later
@@ -79,7 +86,11 @@ export async function runAITask(input: RunTaskInput) {
     }
   }
 
-  const contextProviders = (def.contextProviders || []) as ContextProviderKey[];
+  const contextProviders = (
+    input.contextProviders?.length
+      ? input.contextProviders
+      : def.contextProviders || []
+  ) as ContextProviderKey[];
   let contextSnapshotId: string | null = null;
   let contextPayload: Record<string, unknown> = {};
   if (input.brandId && contextProviders.length) {

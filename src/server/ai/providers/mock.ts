@@ -35,6 +35,78 @@ export class MockAIProvider implements AIProviderAdapter {
     const inputPreview = (lastUser?.content || "").slice(0, 180);
 
     if (req.outputFormat === "json") {
+      const joined = req.messages.map((m) => m.content).join("\n");
+      if (joined.includes("strategist.advise")) {
+        let question = "your current marketing priorities";
+        try {
+          const inputMatch = joined.match(/"question"\s*:\s*"([^"]+)"/);
+          if (inputMatch?.[1]) question = inputMatch[1];
+        } catch {
+          /* ignore */
+        }
+        const payload = {
+          ok: true,
+          executiveSummary: `Based on your current business context, the highest-leverage move is to tighten positioning around ${question.slice(0, 80)} and concentrate distribution on the channels you already operate.`,
+          findings: [
+            "Business context is available and should lead every recommendation.",
+            "Goals and brand voice should constrain creative and messaging choices.",
+            "Channel and campaign history suggest focusing before expanding.",
+          ],
+          reasoning:
+            "A senior strategist prioritizes clarity, focus, and measurable next steps over broad ideation. Recommendations below balance impact with execution difficulty using the supplied context slices.",
+          recommendations: [
+            {
+              title: "Clarify one primary growth thesis",
+              body: "Pick a single near-term outcome (engagement, acquisition, or retention) and align content, offers, and channel effort to it for the next 30 days.",
+              priority: "HIGH",
+              difficulty: "MEDIUM",
+              expectedImpact: "Higher signal in creative and clearer KPI ownership",
+              estimatedTime: "3–5 days",
+              dependencies: ["Business Brain", "Marketing Strategy"],
+            },
+            {
+              title: "Ship one focused campaign test",
+              body: "Design a small campaign around that thesis with one audience segment, one offer, and two creative variants.",
+              priority: "HIGH",
+              difficulty: "MEDIUM",
+              expectedImpact: "Faster learning loop with limited spend/effort",
+              estimatedTime: "1–2 weeks",
+              dependencies: ["Campaigns", "Connected Channels"],
+            },
+            {
+              title: "Close context gaps",
+              body: "Fill thin areas in Business Brain / Strategy so future advice stays sharper and less generic.",
+              priority: "MEDIUM",
+              difficulty: "EASY",
+              expectedImpact: "Better strategist confidence and fewer assumptions",
+              estimatedTime: "1–2 hours",
+              dependencies: ["Business Brain"],
+            },
+          ],
+          risks: [
+            "Spreading effort across too many goals will dilute results.",
+            "Advice quality drops when critical context sources are disabled.",
+          ],
+          expectedImpact:
+            "A tighter thesis plus one campaign test should produce clearer engagement or conversion signal within two weeks.",
+          actionItems: [
+            "Confirm the primary 30-day marketing goal",
+            "Select one audience segment to prioritize",
+            "Draft a one-page campaign brief",
+            "Define 2–3 success metrics before launch",
+          ],
+          confidence: 0.72,
+        };
+        const content = JSON.stringify(payload, null, 2);
+        return {
+          content,
+          finishReason: "stop",
+          promptTokens: Math.ceil(JSON.stringify(req.messages).length / 4),
+          completionTokens: Math.ceil(content.length / 4),
+          raw: { mock: true, task: "strategist.advise" },
+        };
+      }
+
       const payload = {
         ok: true,
         provider: "mock",

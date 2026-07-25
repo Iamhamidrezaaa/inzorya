@@ -13,6 +13,7 @@ import {
   LineChart,
   Radio,
   Settings,
+  Sparkles,
   Users,
   Workflow,
 } from "lucide-react";
@@ -51,6 +52,7 @@ export function getNavGroups(
         { title: "Home", href: `${base}/home`, icon: Home },
         { title: "Business Brain", href: `${b}/brain`, icon: Brain },
         { title: "Strategy", href: `${b}/strategy`, icon: Compass },
+        { title: "AI Strategist", href: `${b}/strategist`, icon: Sparkles },
         {
           title: "Inbox",
           href: `${b}/inbox`,
@@ -138,6 +140,13 @@ export const pageCopy = {
     emptyTitle: "Start your strategy",
     emptyDescription:
       "Capture goals, audience, competitors, and pillars before any content is generated.",
+  },
+  strategist: {
+    title: "AI Strategist",
+    description: "Senior marketing strategist grounded in your business context.",
+    emptyTitle: "Ask your strategist",
+    emptyDescription:
+      "Skip prompt engineering — ask in plain language and decide with structured advice.",
   },
   brain: {
     title: "Business Brain",

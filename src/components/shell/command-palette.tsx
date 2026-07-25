@@ -13,6 +13,7 @@ import {
   Plus,
   Radio,
   Settings,
+  Sparkles,
   Users,
   Workflow,
   Zap,
@@ -181,6 +182,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/strategy`)}>
               <Compass />
               Go to Strategy
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/strategist`)}>
+              <Sparkles />
+              Open AI Strategist
             </CommandItem>
             <CommandItem onSelect={() => go(`${b}/business`)}>
               <Briefcase />
