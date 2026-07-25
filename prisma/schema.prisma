@@ -230,6 +230,7 @@ model User {
   generatedContents     GeneratedContent[]     @relation("GeneratedContentAuthor")
   opportunityFeedback   OpportunityFeedback[]  @relation("OpportunityFeedbackAuthor")
   suggestedRepliesReviewed SuggestedReply[] @relation("SuggestedReplyReviewer")
+  decisionActions DecisionAction[] @relation("DecisionActionActor")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -301,6 +302,7 @@ model Workspace {
   generatedContents GeneratedContent[]
   businessOpportunities BusinessOpportunity[]
   communityRules CommunityRule[]
+  executiveBriefs ExecutiveBrief[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -384,6 +386,11 @@ model Brand {
   autoReplyRules        AutoReplyRule[]
   customerProfiles      CustomerProfile[]
   suggestedReplies      SuggestedReply[]
+  executiveBriefs       ExecutiveBrief[]
+  decisionRecommendations DecisionRecommendation[]
+  businessPriorities    BusinessPriority[]
+  executiveMemories     ExecutiveMemory[]
+  marketingInsights     MarketingInsight[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -2871,5 +2878,192 @@ model ConversationMemory {
 
   @@index([contactId, key])
   @@index([conversationId])
+}
+
+/// EPIC-019 — AI Marketing Decision Center
+
+enum ExecutiveBriefKind {
+  DAILY
+  MORNING
+}
+
+enum DecisionType {
+  INCREASE_BUDGET
+  PAUSE_CAMPAIGN
+  PUBLISH_EARLIER
+  DELAY_CAMPAIGN
+  CREATE_PROMOTION
+  LAUNCH_GIVEAWAY
+  ANSWER_VIP
+  BOOST_CONTENT
+  ARCHIVE_CONTENT
+  UPDATE_LANDING_PAGE
+  RUN_AB_TEST
+  CREATE_REEL
+  PUBLISH_STORY
+  OTHER
+}
+
+enum DecisionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  POSTPONED
+  ASSIGNED
+  COMPLETED
+}
+
+enum DecisionActionType {
+  APPROVE
+  REJECT
+  POSTPONE
+  ASSIGN
+  CONVERT_CAMPAIGN
+  GENERATE_CONTENT
+  GENERATE_BRIEF
+  SCHEDULE
+  CREATE_TASK
+}
+
+model ExecutiveBrief {
+  id                 String             @id @default(cuid())
+  workspaceId        String
+  brandId            String
+  kind               ExecutiveBriefKind @default(DAILY)
+  briefDate          DateTime           @db.Date
+  greeting           String?
+  todaysSummary      String             @db.Text
+  todaysFocus        String?
+  motivationalInsight String?
+  motivationalQuote  String?
+  estimatedWorkload  String?
+  suggestedSchedule  String?            @db.Text
+  topPriorities      Json?
+  biggestOpportunities Json?
+  biggestRisks       Json?
+  campaignHealth     String?            @db.Text
+  contentHealth      String?            @db.Text
+  communityHealth    String?            @db.Text
+  salesSignals       String?            @db.Text
+  topTasks           Json?
+  criticalNotifications Json?
+  focusModeSnapshot  Json?
+  workspace          Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand              Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  recommendations    DecisionRecommendation[]
+  insights           MarketingInsight[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@unique([brandId, kind, briefDate])
+  @@index([workspaceId, briefDate])
+}
+
+model DecisionRecommendation {
+  id              String         @id @default(cuid())
+  brandId         String
+  briefId         String?
+  type            DecisionType   @default(OTHER)
+  title           String
+  summary         String         @db.Text
+  status          DecisionStatus @default(PENDING)
+  priority        Float          @default(50)
+  confidence      Float          @default(0.7)
+  businessImpact  Float          @default(50)
+  expectedRoi     Float          @default(50)
+  effort          Float          @default(50)
+  urgency         Float          @default(50)
+  reason          String         @db.Text
+  whatHappened    String         @db.Text
+  whyItMatters    String         @db.Text
+  consequences    String         @db.Text
+  recommendedAction String       @db.Text
+  alternatives    Json?
+  risks           String?        @db.Text
+  sortOrder       Int            @default(0)
+  assigneeId      String?
+  postponedUntil  DateTime?
+  brand           Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brief           ExecutiveBrief? @relation(fields: [briefId], references: [id], onDelete: SetNull)
+  evidence        DecisionEvidence[]
+  actions         DecisionAction[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([brandId, status, priority])
+  @@index([briefId, sortOrder])
+}
+
+model DecisionEvidence {
+  id               String                 @id @default(cuid())
+  recommendationId String
+  source           String
+  label            String
+  detail           String                 @db.Text
+  metricValue      String?
+  sortOrder        Int                    @default(0)
+  recommendation   DecisionRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime               @default(now())
+
+  @@index([recommendationId, sortOrder])
+}
+
+model DecisionAction {
+  id               String                 @id @default(cuid())
+  recommendationId String
+  actorId          String?
+  type             DecisionActionType
+  note             String?
+  meta             Json?
+  recommendation   DecisionRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  actor            User?                  @relation("DecisionActionActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt        DateTime               @default(now())
+
+  @@index([recommendationId, createdAt])
+}
+
+model BusinessPriority {
+  id        String   @id @default(cuid())
+  brandId   String
+  title     String
+  detail    String?  @db.Text
+  weight    Float    @default(50)
+  active    Boolean  @default(true)
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId, active])
+}
+
+model ExecutiveMemory {
+  id        String   @id @default(cuid())
+  brandId   String
+  category  String
+  key       String
+  content   String   @db.Text
+  meta      Json?
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId, category])
+  @@index([brandId, key])
+}
+
+model MarketingInsight {
+  id        String          @id @default(cuid())
+  brandId   String
+  briefId   String?
+  kind      String
+  title     String
+  detail    String          @db.Text
+  severity  String          @default("info")
+  brand     Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brief     ExecutiveBrief? @relation(fields: [briefId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now())
+
+  @@index([brandId, createdAt])
+  @@index([briefId])
 }
 

@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Briefcase,
+  BriefcaseBusiness,
   Brain,
   CalendarDays,
   Clapperboard,
@@ -61,6 +62,11 @@ export function getNavGroups(
         { title: "AI Content Creator", href: `${b}/creator`, icon: PenLine },
         { title: "Opportunities", href: `${b}/opportunities`, icon: Radar },
         { title: "Community Manager", href: `${b}/community`, icon: Headphones },
+        {
+          title: "Decision Center",
+          href: `${b}/decisions`,
+          icon: BriefcaseBusiness,
+        },
         {
           title: "Inbox",
           href: `${b}/inbox`,
@@ -183,6 +189,13 @@ export const pageCopy = {
     emptyTitle: "Scan your inbox",
     emptyDescription:
       "Classify intent, rank urgency, and draft replies — never blind auto-send.",
+  },
+  decisions: {
+    title: "AI Marketing Decision Center",
+    description: "Morning executive brain — only the decisions that matter today.",
+    emptyTitle: "Generate today's brief",
+    emptyDescription:
+      "Surface priorities, risks, and recommended actions — not another metrics dump.",
   },
   brain: {
     title: "Business Brain",

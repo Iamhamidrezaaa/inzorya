@@ -557,6 +557,195 @@ export class MockAIProvider implements AIProviderAdapter {
         };
       }
 
+      if (joined.includes("decision.brief")) {
+        const payload = {
+          ok: true,
+          daily: {
+            todaysSummary:
+              "Three decisions need attention: VIP replies, a high-performing carousel pattern, and a near-term calendar opportunity.",
+            topPriorities: [
+              "Respond to VIP customers within two hours",
+              "Publish one educational Reel to recover engagement",
+              "Prepare limited combo for the upcoming food calendar day",
+            ],
+            biggestOpportunities: [
+              "Carousel posts are outperforming Reels — lean the mix",
+              "World food calendar moment in five days fits brand",
+            ],
+            biggestRisks: [
+              "VIP threads aging unanswered hurt retention",
+              "Underperforming campaign may waste remaining budget",
+            ],
+            campaignHealth:
+              "Most campaigns are stable; one underperformer needs a pause-or-test decision.",
+            contentHealth:
+              "Educational carousels lead engagement; Reels need a stronger hook today.",
+            communityHealth:
+              "Inbox has unanswered VIP and sales-lead threads requiring human attention.",
+            salesSignals:
+              "Two warm inbound leads asked about offers — convert or assign quickly.",
+            recommendedActions: [
+              "Answer VIP customers",
+              "Publish educational Reel",
+              "Draft limited-time combo campaign",
+            ],
+            motivationalInsight:
+              "Clarity beats volume — one decisive move today outperforms ten reports.",
+          },
+          morning: {
+            greeting: "Good morning.",
+            todaysFocus: "Protect relationships and ship one high-signal content move.",
+            topTasks: [
+              { title: "Reply to VIP threads", urgency: 95 },
+              { title: "Publish educational Reel", urgency: 85 },
+              { title: "Review underperforming campaign", urgency: 78 },
+              { title: "Outline food-day combo offer", urgency: 70 },
+              { title: "Adjust next week's content mix", urgency: 62 },
+            ],
+            criticalNotifications: [
+              "Three VIP customers are waiting",
+              "Engagement dipped on Reels vs last week",
+            ],
+            aiRecommendation:
+              "Start with VIP replies, then ship one educational Reel before noon.",
+            motivationalQuote:
+              "Do the important work first — momentum follows decisive action.",
+            estimatedWorkload: "About 2.5 focused hours",
+            suggestedSchedule:
+              "09:00 VIP replies · 10:00 Reel publish · 11:30 campaign review · afternoon food-day brief",
+          },
+          recommendations: [
+            {
+              type: "ANSWER_VIP",
+              title: "Three VIP customers are waiting",
+              summary: "Unanswered VIP threads are aging and risk retention.",
+              priority: 96,
+              confidence: 0.9,
+              businessImpact: 88,
+              expectedRoi: 75,
+              effort: 25,
+              urgency: 95,
+              reason: "VIP response SLA is the highest-leverage relationship action today.",
+              whatHappened: "Three VIP conversations remain unanswered beyond expected response window.",
+              whyItMatters: "VIP customers disproportionately affect retention and referral.",
+              consequences: "Fast replies protect loyalty; delay increases churn risk.",
+              recommendedAction: "Respond within two hours.",
+              alternatives: ["Assign to community lead", "Send holding reply then escalate"],
+              risks: "Generic auto-replies may feel off-brand for VIP.",
+              evidence: [
+                {
+                  source: "Community Inbox",
+                  label: "VIP unanswered",
+                  detail: "Three VIP threads waiting for human reply",
+                  metricValue: "3",
+                },
+              ],
+            },
+            {
+              type: "CREATE_REEL",
+              title: "Instagram engagement soft on Reels",
+              summary: "Engagement dropped versus last week; educational Reel can recover attention.",
+              priority: 84,
+              confidence: 0.78,
+              businessImpact: 72,
+              expectedRoi: 68,
+              effort: 45,
+              urgency: 80,
+              reason: "Content health needs one corrective publish today, not a full audit.",
+              whatHappened: "Reel engagement lagged while carousels stayed stronger.",
+              whyItMatters: "Reach and brand presence depend on timely high-signal posts.",
+              consequences: "One strong educational Reel can stabilize the week’s content health.",
+              recommendedAction: "Publish one educational Reel today.",
+              alternatives: ["Boost best carousel", "Publish Story teaser first"],
+              risks: "Rushing a weak hook may waste the slot.",
+              evidence: [
+                {
+                  source: "Content Performance",
+                  label: "Engagement change",
+                  detail: "Reels underperformed relative to carousel posts this period",
+                  metricValue: "-18%",
+                },
+              ],
+            },
+            {
+              type: "CREATE_PROMOTION",
+              title: "Calendar moment in five days",
+              summary: "A food calendar opportunity aligns with brand — prep a limited combo.",
+              priority: 76,
+              confidence: 0.74,
+              businessImpact: 80,
+              expectedRoi: 82,
+              effort: 55,
+              urgency: 70,
+              reason: "Near-term calendar fit with clear commercial upside.",
+              whatHappened: "Opportunity Engine flagged a relevant food calendar day in five days.",
+              whyItMatters: "Limited-time offers convert best when prepared before the day.",
+              consequences: "Early launch captures attention; late launch feels reactive.",
+              recommendedAction: "Launch a limited-time combo campaign.",
+              alternatives: ["Story-only teaser", "Postpone to next similar day"],
+              risks: "Offer too aggressive may dilute brand positioning.",
+              evidence: [
+                {
+                  source: "Opportunity Engine",
+                  label: "Days until event",
+                  detail: "Relevant calendar opportunity approaching",
+                  metricValue: "5 days",
+                },
+              ],
+            },
+            {
+              type: "BOOST_CONTENT",
+              title: "Carousels outperform Reels this month",
+              summary: "Shift next week's mix toward educational carousels.",
+              priority: 68,
+              confidence: 0.8,
+              businessImpact: 65,
+              expectedRoi: 70,
+              effort: 30,
+              urgency: 55,
+              reason: "Performance pattern should change planning, not just reporting.",
+              whatHappened: "Carousel posts outperformed Reels across recent publishes.",
+              whyItMatters: "Content mix should follow evidence tied to goals.",
+              consequences: "Adjusting mix improves efficiency; ignoring it wastes slots.",
+              recommendedAction: "Adjust next week's content mix.",
+              alternatives: ["A/B test Reel hooks", "Archive weakest Reels"],
+              risks: "Over-correcting may reduce video reach experiments.",
+              evidence: [
+                {
+                  source: "Content Performance",
+                  label: "Format winner",
+                  detail: "Carousels led engagement versus Reels this month",
+                  metricValue: "Carousel > Reel",
+                },
+              ],
+            },
+          ],
+          insights: [
+            {
+              kind: "focus",
+              title: "Protect VIP + ship one Reel",
+              detail: "Relationship risk outranks optimization busywork today.",
+              severity: "high",
+            },
+          ],
+          memories: [
+            {
+              category: "preference",
+              key: "vip_first",
+              content: "Manager consistently prioritizes VIP replies before content experiments.",
+            },
+          ],
+        };
+        const content = JSON.stringify(payload, null, 2);
+        return {
+          content,
+          finishReason: "stop",
+          promptTokens: Math.ceil(JSON.stringify(req.messages).length / 4),
+          completionTokens: Math.ceil(content.length / 4),
+          raw: { mock: true, task: "decision.brief" },
+        };
+      }
+
       const payload = {
         ok: true,
         provider: "mock",

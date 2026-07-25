@@ -360,6 +360,51 @@ export const PLATFORM_TASKS: TaskDefinition[] = [
     priority: 92,
     timeoutMs: 60_000,
   },
+  {
+    key: "decision.brief",
+    name: "Marketing Decision Brief",
+    description: "Daily executive marketing decisions with evidence and action scores.",
+    category: "decision",
+    inputSchema: {
+      type: "object",
+      required: ["signals"],
+      properties: {
+        signals: { type: "object" },
+        learningSignals: { type: "object" },
+        priorities: { type: "array" },
+        focusMode: { type: "boolean" },
+      },
+    },
+    outputSchema: {
+      type: "object",
+      required: ["ok", "daily", "morning", "recommendations"],
+      properties: {
+        ok: { type: "boolean" },
+        daily: { type: "object" },
+        morning: { type: "object" },
+        recommendations: { type: "array" },
+        insights: { type: "array" },
+        memories: { type: "array" },
+      },
+    },
+    outputFormat: "json",
+    promptKey: "decision.brief",
+    contextProviders: [
+      "business_brain",
+      "brand_voice",
+      "marketing_strategy",
+      "campaign",
+      "analytics_summary",
+      "content_history",
+      "connected_channels",
+      "customer",
+      "conversation",
+      "knowledge_base",
+    ],
+    requiredOutputKeys: ["ok", "daily", "morning", "recommendations"],
+    priority: 95,
+    timeoutMs: 60_000,
+  },
 ];
 
 export async function ensureAITasks() {

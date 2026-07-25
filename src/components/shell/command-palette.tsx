@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Briefcase,
+  BriefcaseBusiness,
   CalendarDays,
   Clock3,
   Compass,
@@ -206,6 +207,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/community`)}>
               <Headphones />
               Open Community Manager
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/decisions`)}>
+              <BriefcaseBusiness />
+              Open Decision Center
             </CommandItem>
             <CommandItem onSelect={() => go(`${b}/business`)}>
               <Briefcase />
