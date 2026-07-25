@@ -90,6 +90,8 @@ enum ChannelStatus {
 
 enum ConversationStatus {
   OPEN
+  WAITING
+  RESOLVED
   CLOSED
   ARCHIVED
 }
@@ -97,6 +99,42 @@ enum ConversationStatus {
 enum MessageDirection {
   INBOUND
   OUTBOUND
+  SYSTEM
+}
+
+enum MessageKind {
+  TEXT
+  IMAGE
+  VIDEO
+  VOICE
+  FILE
+  EMOJI
+  LINK
+  SYSTEM
+}
+
+enum MessageDeliveryStatus {
+  SENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum ConversationEventType {
+  STARTED
+  CHANNEL_CONNECTED
+  ASSIGNED
+  UNASSIGNED
+  STATUS_CHANGED
+  TAGGED
+  UNTAGGED
+  NOTE_ADDED
+  STARRED
+  UNSTARRED
+  CLOSED
+  REOPENED
+  MESSAGE_SENT
 }
 
 model User {
@@ -112,6 +150,12 @@ model User {
   assigned      Conversation[]    @relation("ConversationAssignee")
   contentAssigned ContentItem[]   @relation("ContentAssignee")
   contentComments ContentComment[]
+  inboxNotes    InternalNote[]
+  inboxAssignments Assignment[]   @relation("AssignmentAssignee")
+  inboxAssigner Assignment[]      @relation("AssignmentAssigner")
+  conversationEvents ConversationEvent[]
+  authoredMessages Message[]      @relation("MessageAuthor")
+  conversationParts ConversationParticipant[]
   notifications Notification[]
   favorites     Favorite[]
   recentItems   RecentItem[]
@@ -214,6 +258,9 @@ model Brand {
   templates      ContentTemplate[]
   editorialSlots EditorialCalendar[]
   contacts       Contact[]
+  inboxTags      InboxTag[]
+  savedReplies   SavedReply[]
+  internalNotes  InternalNote[]
   channelConnections ChannelConnection[]
   conversations  Conversation[]
   marketingStrategy MarketingStrategy?
@@ -587,10 +634,18 @@ model Contact {
   instagramUsername String?
   phone             String?
   email             String?
+  country           String?
+  language          String?
+  leadStatus        String?
+  lifetimeValue     String?
+  avatarUrl         String?
+  joinedAt          DateTime?
   tags              String[]       @default([])
   notes             String?        @db.Text
   brand             Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   conversations     Conversation[]
+  participants      ConversationParticipant[]
+  internalNotes     InternalNote[]
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 
@@ -605,6 +660,8 @@ model Conversation {
   channelId     String?
   status        ConversationStatus @default(OPEN)
   isUnread      Boolean            @default(true)
+  unreadCount   Int                @default(0)
+  isStarred     Boolean            @default(false)
   assigneeId    String?
   subject       String?
   lastMessageAt DateTime           @default(now())
@@ -613,22 +670,149 @@ model Conversation {
   channel       ChannelConnection? @relation(fields: [channelId], references: [id], onDelete: SetNull)
   assignee      User?              @relation("ConversationAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   messages      Message[]
+  participants  ConversationParticipant[]
+  events        ConversationEvent[]
+  internalNotes InternalNote[]
+  assignments   Assignment[]
+  tagLinks      ConversationTag[]
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
   @@index([brandId, status])
   @@index([brandId, isUnread])
+  @@index([brandId, isStarred])
   @@index([brandId, lastMessageAt])
   @@index([contactId])
 }
 
-model Message {
-  id             String           @id @default(cuid())
+model ConversationParticipant {
+  id             String       @id @default(cuid())
   conversationId String
-  body           String           @db.Text
+  contactId      String?
+  userId         String?
+  role           String       @default("customer")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+model Message {
+  id             String                @id @default(cuid())
+  conversationId String
+  body           String                @db.Text
   direction      MessageDirection
-  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime         @default(now())
+  kind           MessageKind           @default(TEXT)
+  deliveryStatus MessageDeliveryStatus @default(SENT)
+  isInternal     Boolean               @default(false)
+  authorId       String?
+  meta           Json?
+  conversation   Conversation          @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author         User?                 @relation("MessageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  attachments    MessageAttachment[]
+  createdAt      DateTime              @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model MessageAttachment {
+  id        String  @id @default(cuid())
+  messageId String
+  url       String
+  filename  String?
+  mimeType  String?
+  kind      String  @default("file")
+  size      Int?
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([messageId])
+}
+
+model InboxTag {
+  id        String           @id @default(cuid())
+  brandId   String
+  name      String
+  color     String?          @default("#14b8a6")
+  brand     Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  links     ConversationTag[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([brandId, name])
+  @@index([brandId])
+}
+
+model ConversationTag {
+  id             String       @id @default(cuid())
+  conversationId String
+  tagId          String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  tag            InboxTag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([conversationId, tagId])
+  @@index([tagId])
+}
+
+model SavedReply {
+  id        String   @id @default(cuid())
+  brandId   String
+  title     String
+  body      String   @db.Text
+  category  String?
+  shortcut  String?
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brandId, category])
+  @@unique([brandId, shortcut])
+}
+
+model Assignment {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  assignedById   String?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation("AssignmentAssignee", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy     User?        @relation("AssignmentAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model InternalNote {
+  id             String        @id @default(cuid())
+  brandId        String
+  conversationId String?
+  contactId      String?
+  userId         String
+  body           String        @db.Text
+  brand          Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  contact        Contact?      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([conversationId, createdAt])
+  @@index([contactId, createdAt])
+}
+
+model ConversationEvent {
+  id             String                @id @default(cuid())
+  conversationId String
+  type           ConversationEventType
+  title          String
+  meta           Json?
+  userId         String?
+  conversation   Conversation          @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime              @default(now())
 
   @@index([conversationId, createdAt])
 }
