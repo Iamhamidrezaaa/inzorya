@@ -124,7 +124,7 @@ export function ChannelsView({
             return (
               <div
                 key={channel.platform}
-                className="flex flex-col rounded-xl border border-border bg-card p-5"
+                className="interactive-card flex flex-col rounded-xl border border-border/80 bg-card p-5 shadow-xs"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">

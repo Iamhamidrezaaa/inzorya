@@ -50,11 +50,11 @@ export default function ForgotPasswordPage() {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Reset password</CardTitle>
+    <Card className="border-border/80 shadow-md">
+      <CardHeader className="space-y-2 pb-2">
+        <CardTitle className="text-xl tracking-tight">Reset password</CardTitle>
         <CardDescription>
-          Enter your email and we will prepare a reset path if the account
+          Enter your email. We&apos;ll prepare a reset path if the account
           exists.
         </CardDescription>
       </CardHeader>

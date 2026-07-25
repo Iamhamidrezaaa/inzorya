@@ -79,14 +79,14 @@ export default function RegisterPage() {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create account</CardTitle>
+    <Card className="border-border/80 shadow-md">
+      <CardHeader className="space-y-2 pb-2">
+        <CardTitle className="text-xl tracking-tight">Create account</CardTitle>
         <CardDescription>
-          Start a workspace and set up your first brand.
+          Start a workspace. Set up your brand next.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-2">
             <Label htmlFor="name">Full name</Label>
@@ -98,6 +98,7 @@ export default function RegisterPage() {
               id="email"
               type="email"
               autoComplete="email"
+              placeholder="you@company.com"
               {...form.register("email")}
             />
           </div>
@@ -107,6 +108,7 @@ export default function RegisterPage() {
               id="password"
               type="password"
               autoComplete="new-password"
+              placeholder="At least 8 characters"
               {...form.register("password")}
             />
           </div>
@@ -118,13 +120,16 @@ export default function RegisterPage() {
               {...form.register("workspaceName")}
             />
           </div>
-          <Button className="w-full" type="submit" disabled={pending}>
+          <Button className="mt-1 w-full" size="lg" type="submit" disabled={pending}>
             {pending ? "Creating…" : "Create account"}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-8 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="text-foreground hover:underline">
+          <Link
+            href="/login"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
             Log in
           </Link>
         </p>

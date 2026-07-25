@@ -18,17 +18,21 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between",
+        "mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between",
         className,
       )}
     >
-      <div className="space-y-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+      <div className="space-y-2">
+        <h1 className="text-[1.65rem] font-semibold tracking-tight text-foreground md:text-[1.75rem]">
           {title}
         </h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
+        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+      ) : null}
     </div>
   );
 }
@@ -51,12 +55,20 @@ export function EmptyState({
   icon,
 }: EmptyStateProps) {
   return (
-    <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/40 px-6 py-16 text-center">
-      {icon ? <div className="mb-4 text-muted-foreground">{icon}</div> : null}
-      <h2 className="text-base font-medium text-foreground">{title}</h2>
-      <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>
+    <div className="flex min-h-[360px] flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-card/30 px-8 py-20 text-center">
+      {icon ? (
+        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
+          {icon}
+        </div>
+      ) : null}
+      <h2 className="text-[15px] font-medium tracking-tight text-foreground">
+        {title}
+      </h2>
+      <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+        {description}
+      </p>
       {actionLabel && (onAction || actionHref) ? (
-        <div className="mt-6">
+        <div className="mt-7">
           {actionHref ? (
             <Button asChild>
               <a href={actionHref}>{actionLabel}</a>
@@ -72,16 +84,16 @@ export function EmptyState({
 
 export function PageSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="h-7 w-48 animate-pulse rounded-md bg-muted" />
-        <div className="h-4 w-96 max-w-full animate-pulse rounded-md bg-muted" />
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <div className="skeleton-shimmer h-8 w-52 rounded-md bg-muted" />
+        <div className="skeleton-shimmer h-4 w-80 max-w-full rounded-md bg-muted" />
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="h-36 animate-pulse rounded-xl border border-border bg-muted/40"
+            className="skeleton-shimmer h-40 rounded-xl border border-border/60 bg-muted/30"
           />
         ))}
       </div>
@@ -101,11 +113,15 @@ export function ErrorState({
   reset,
 }: ErrorStateProps) {
   return (
-    <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-border bg-card px-6 py-16 text-center">
-      <h2 className="text-base font-medium text-foreground">{title}</h2>
-      <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>
+    <div className="flex min-h-[360px] flex-col items-center justify-center rounded-xl border border-border/80 bg-card px-8 py-20 text-center shadow-xs">
+      <h2 className="text-[15px] font-medium tracking-tight text-foreground">
+        {title}
+      </h2>
+      <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+        {description}
+      </p>
       {reset ? (
-        <Button className="mt-6" onClick={reset} variant="outline">
+        <Button className="mt-7" onClick={reset} variant="outline">
           Try again
         </Button>
       ) : null}

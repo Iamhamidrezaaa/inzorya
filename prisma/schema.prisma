@@ -167,12 +167,98 @@ model Brand {
   contacts       Contact[]
   channelConnections ChannelConnection[]
   conversations  Conversation[]
+  marketingStrategy MarketingStrategy?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
+}
+
+/// Structured marketing strategy workspace — no AI generation; data for future planning.
+model MarketingStrategy {
+  id                 String            @id @default(cuid())
+  brandId            String            @unique
+  /// Selected marketing goal keys (e.g. increase_sales)
+  goals              String[]          @default([])
+  postingFrequency   String?
+  preferredPlatforms String[]          @default([])
+  /// REELS | CAROUSEL | STORY | SHORTS | POST
+  contentTypes       String[]          @default([])
+  tone               String?
+  contentLength      String?
+  ctaStyle           String?
+  currentStage       String?
+  nextStep           String?
+  brand              Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  personas           AudiencePersona[]
+  competitors        Competitor[]
+  pillars            ContentPillar[]
+  roadmapTasks       RoadmapTask[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model AudiencePersona {
+  id                String            @id @default(cuid())
+  strategyId        String
+  name              String
+  age               String?
+  gender            String?
+  location          String?
+  interests         String?           @db.Text
+  painPoints        String?           @db.Text
+  buyingMotivation  String?           @db.Text
+  objections        String?           @db.Text
+  goals             String?           @db.Text
+  sortOrder         Int               @default(0)
+  strategy          MarketingStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([strategyId, sortOrder])
+}
+
+model Competitor {
+  id         String            @id @default(cuid())
+  strategyId String
+  name       String
+  website    String?
+  instagram  String?
+  notes      String?           @db.Text
+  sortOrder  Int               @default(0)
+  strategy   MarketingStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@index([strategyId, sortOrder])
+}
+
+model ContentPillar {
+  id          String            @id @default(cuid())
+  strategyId  String
+  name        String
+  description String?
+  sortOrder   Int               @default(0)
+  strategy    MarketingStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([strategyId, sortOrder])
+}
+
+model RoadmapTask {
+  id         String            @id @default(cuid())
+  strategyId String
+  title      String
+  done       Boolean           @default(false)
+  sortOrder  Int               @default(0)
+  strategy   MarketingStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@index([strategyId, sortOrder])
 }
 
 model BusinessProfile {

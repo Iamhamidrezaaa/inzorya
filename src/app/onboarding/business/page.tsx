@@ -35,21 +35,17 @@ export default async function BusinessOnboardingPage({
   }
 
   return (
-    <div className="relative min-h-svh bg-background px-4 py-10">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.28_0.05_195_/_0.28),transparent_55%)]"
-      />
-      <div className="relative z-10 mx-auto mb-8 max-w-2xl text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">
+    <div className="surface-ambient relative min-h-svh px-4 py-12 md:py-16">
+      <div className="relative z-10 mx-auto mb-10 max-w-2xl text-center">
+        <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Business brain
         </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight">
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-[2rem]">
           Teach Inzorya who you are
         </h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Answer once. Resume anytime. This profile powers future AI planning —
-          no AI runs in this sprint.
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+          Answer once. Resume anytime. This profile powers future planning —
+          nothing automated runs here yet.
         </p>
       </div>
       <div className="relative z-10">

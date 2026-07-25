@@ -106,7 +106,7 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur md:px-4">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/85 px-3 backdrop-blur-md md:px-5">
         <Button
           variant="ghost"
           size="icon"

@@ -54,7 +54,7 @@ export function DashboardShell({
           workspaces={workspaces}
           brandSlug={brandSlug}
         />
-        <main className="flex-1 px-4 py-6 md:px-8">
+        <main className="flex-1 px-5 py-7 md:px-10 md:py-8">
           <FadeIn>{children}</FadeIn>
         </main>
       </div>

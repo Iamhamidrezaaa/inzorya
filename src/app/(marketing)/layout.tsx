@@ -10,16 +10,15 @@ export default async function MarketingLayout({
   const session = await auth();
 
   return (
-    <div className="relative min-h-svh overflow-hidden bg-background">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.28_0.05_195_/_0.35),transparent_55%)]"
-      />
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
+    <div className="surface-ambient relative min-h-svh overflow-hidden">
+      <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
+        <Link
+          href="/"
+          className="text-[15px] font-semibold tracking-tight text-foreground transition-opacity hover:opacity-80"
+        >
           Inzorya
         </Link>
-        <div className="flex items-center gap-2">
+        <nav className="flex items-center gap-1.5">
           {session?.user ? (
             <Button asChild size="sm">
               <Link href="/dashboard">Dashboard</Link>
@@ -34,7 +33,7 @@ export default async function MarketingLayout({
               </Button>
             </>
           )}
-        </div>
+        </nav>
       </header>
       <main className="relative z-10">{children}</main>
     </div>

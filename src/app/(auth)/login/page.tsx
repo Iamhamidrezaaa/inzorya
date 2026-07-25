@@ -53,19 +53,20 @@ export default function LoginPage() {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Log in</CardTitle>
-        <CardDescription>Access your Inzorya workspace.</CardDescription>
+    <Card className="border-border/80 shadow-md">
+      <CardHeader className="space-y-2 pb-2">
+        <CardTitle className="text-xl tracking-tight">Welcome back</CardTitle>
+        <CardDescription>Sign in to your workspace.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <form className="space-y-4" onSubmit={onSubmit}>
+      <CardContent className="pt-4">
+        <form className="space-y-5" onSubmit={onSubmit}>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               autoComplete="email"
+              placeholder="you@company.com"
               {...form.register("email")}
             />
             {form.formState.errors.email ? (
@@ -79,7 +80,7 @@ export default function LoginPage() {
               <Label htmlFor="password">Password</Label>
               <Link
                 href="/forgot-password"
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 Forgot password?
               </Link>
@@ -96,13 +97,16 @@ export default function LoginPage() {
               </p>
             ) : null}
           </div>
-          <Button className="w-full" type="submit" disabled={pending}>
+          <Button className="w-full" size="lg" type="submit" disabled={pending}>
             {pending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-8 text-center text-sm text-muted-foreground">
           No account?{" "}
-          <Link href="/register" className="text-foreground hover:underline">
+          <Link
+            href="/register"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
             Create one
           </Link>
         </p>

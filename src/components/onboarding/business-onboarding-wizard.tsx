@@ -183,26 +183,28 @@ export function BusinessOnboardingWizard({
 
   return (
     <div className="mx-auto w-full max-w-2xl">
-      <div className="mb-8">
+      <div className="mb-10">
         <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
           <span>
             Step {step + 1} of {total}
           </span>
-          <span>{progress}%</span>
+          <span className="tabular-nums">{progress}%</span>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-1 overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-primary transition-all duration-300"
+            className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
+      <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-md md:p-9">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+        <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-8 space-y-5">
           {step === 0 ? (
             <>
               <Field
@@ -326,7 +328,7 @@ export function BusinessOnboardingWizard({
           ) : null}
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center gap-2">
+        <div className="mt-10 flex flex-wrap items-center gap-2">
           {step > 0 ? (
             <Button
               type="button"
@@ -367,12 +369,12 @@ export function BusinessOnboardingWizard({
         </div>
       </div>
 
-      <div className="mt-4 flex justify-center gap-1.5">
+      <div className="mt-6 flex justify-center gap-1.5">
         {Array.from({ length: total }).map((_, i) => (
           <span
             key={i}
             className={cn(
-              "h-1.5 w-6 rounded-full",
+              "h-1 w-7 rounded-full transition-colors duration-200",
               i <= step ? "bg-primary" : "bg-muted",
             )}
           />

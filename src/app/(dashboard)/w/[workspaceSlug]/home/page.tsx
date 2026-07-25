@@ -112,7 +112,7 @@ export default async function HomePage({ params }: PageProps) {
     <div className="space-y-8">
       <PageHeader
         title={`Welcome back, ${firstName}`}
-        description="Business brain + channels first. Conversations and AI build on this."
+        description="Your business brain, channels, and conversations — in one calm place."
         actions={
           <div className="flex gap-2">
             {completion < 100 ? (
@@ -129,11 +129,13 @@ export default async function HomePage({ params }: PageProps) {
         }
       />
 
-      <section className="rounded-xl border border-border bg-card p-5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <section className="rounded-xl border border-border/80 bg-card p-6 shadow-xs">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-sm font-semibold">Marketing health</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <h2 className="text-[15px] font-medium tracking-tight">
+              Marketing health
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
               {health}. Completion {completion}% · {connectedChannels} channel
               {connectedChannels === 1 ? "" : "s"} connected.
             </p>
@@ -142,9 +144,9 @@ export default async function HomePage({ params }: PageProps) {
             <Link href={`${brandBase}/business`}>Edit business</Link>
           </Button>
         </div>
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+        <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-muted">
           <div
-            className="h-full rounded-full bg-primary transition-all"
+            className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
             style={{ width: `${completion}%` }}
           />
         </div>
@@ -155,15 +157,15 @@ export default async function HomePage({ params }: PageProps) {
           <Link
             key={stat.label}
             href={stat.href}
-            className="rounded-xl border border-border bg-card/60 p-4 transition-colors hover:bg-accent/40"
+            className="interactive-card rounded-xl border border-border/80 bg-card/70 p-5"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 {stat.label}
               </span>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
+              <stat.icon className="h-4 w-4 text-muted-foreground/80" />
             </div>
-            <div className="mt-3 text-3xl font-semibold tracking-tight">
+            <div className="mt-4 text-3xl font-semibold tracking-tight tabular-nums">
               {stat.value}
             </div>
           </Link>
@@ -171,20 +173,22 @@ export default async function HomePage({ params }: PageProps) {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-border bg-card p-5">
+        <section className="rounded-xl border border-border/80 bg-card p-6 shadow-xs">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Recent conversations</h3>
+            <h3 className="text-[15px] font-medium tracking-tight">
+              Recent conversations
+            </h3>
             <Button asChild size="sm" variant="ghost">
               <Link href={`${brandBase}/inbox`}>Inbox</Link>
             </Button>
           </div>
           {recentConversations.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
               No conversations yet. Connect channels and customers will land in
               Inbox.
             </p>
           ) : (
-            <ul className="mt-4 space-y-3">
+            <ul className="mt-5 space-y-3.5">
               {recentConversations.map((c) => (
                 <li key={c.id} className="flex justify-between gap-3 text-sm">
                   <span className="truncate font-medium">
@@ -192,7 +196,7 @@ export default async function HomePage({ params }: PageProps) {
                       c.contact.instagramUsername ||
                       "Contact"}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="shrink-0 text-xs text-muted-foreground">
                     {formatDistanceToNow(c.lastMessageAt, { addSuffix: true })}
                   </span>
                 </li>
@@ -201,14 +205,16 @@ export default async function HomePage({ params }: PageProps) {
           )}
         </section>
 
-        <section className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-sm font-semibold">Pending replies</h3>
+        <section className="rounded-xl border border-border/80 bg-card p-6 shadow-xs">
+          <h3 className="text-[15px] font-medium tracking-tight">
+            Pending replies
+          </h3>
           {pendingReplies === 0 && unread === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
               Nothing waiting. Unread and open threads will appear here.
             </p>
           ) : (
-            <div className="mt-4 flex items-center gap-3 text-sm">
+            <div className="mt-5 flex items-center gap-3 text-sm">
               <MessageSquareWarning className="h-4 w-4 text-muted-foreground" />
               <span>
                 {pendingReplies} pending · {unread} unread
