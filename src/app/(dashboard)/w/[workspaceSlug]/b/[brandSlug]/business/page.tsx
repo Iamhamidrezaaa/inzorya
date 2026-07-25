@@ -25,12 +25,24 @@ export default async function BusinessPage({ params }: PageProps) {
   });
 
   return (
-    <BusinessProfileEditor
-      workspaceSlug={workspaceSlug}
-      brandSlug={brandSlug}
-      brandName={brand.name}
-      completion={computeBusinessCompletion(profile)}
-      profile={profile}
-    />
+    <div className="space-y-6">
+      <BusinessProfileEditor
+        workspaceSlug={workspaceSlug}
+        brandSlug={brandSlug}
+        brandName={brand.name}
+        completion={computeBusinessCompletion(profile)}
+        profile={profile}
+      />
+      <div className="rounded-xl border border-dashed border-border/80 bg-card/40 px-5 py-4 text-sm text-muted-foreground">
+        Prefer a conversational interview?{" "}
+        <a
+          href={`/w/${workspaceSlug}/b/${brandSlug}/brain`}
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          Open Business Brain
+        </a>
+        .
+      </div>
+    </div>
   );
 }

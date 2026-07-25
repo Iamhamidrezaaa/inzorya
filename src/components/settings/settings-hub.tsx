@@ -24,7 +24,7 @@ export function SettingsHub({
         description="Profile, workspace, and brand."
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="text-sm font-semibold">Profile</h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -38,6 +38,15 @@ export function SettingsHub({
           <h2 className="text-sm font-semibold">Workspace</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Workspace name and preferences.
+          </p>
+        </Link>
+        <Link
+          href={`/w/${workspaceSlug}/b/${brandSlug}/brain`}
+          className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/40"
+        >
+          <h2 className="text-sm font-semibold">Business Brain</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Interview, voice, assets, and completion.
           </p>
         </Link>
         <Link

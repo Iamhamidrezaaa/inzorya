@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Briefcase,
+  Brain,
   Compass,
   FileText,
   FolderKanban,
@@ -46,6 +47,7 @@ export function getNavGroups(
       label: "Operate",
       items: [
         { title: "Home", href: `${base}/home`, icon: Home },
+        { title: "Business Brain", href: `${b}/brain`, icon: Brain },
         { title: "Strategy", href: `${b}/strategy`, icon: Compass },
         {
           title: "Inbox",
@@ -132,6 +134,13 @@ export const pageCopy = {
     emptyTitle: "Start your strategy",
     emptyDescription:
       "Capture goals, audience, competitors, and pillars before any content is generated.",
+  },
+  brain: {
+    title: "Business Brain",
+    description: "Structured business knowledge captured through interview.",
+    emptyTitle: "Start the interview",
+    emptyDescription:
+      "Teach Inzorya who you are — one question at a time.",
   },
   knowledge: {
     title: "Knowledge",
