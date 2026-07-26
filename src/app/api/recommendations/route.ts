@@ -105,6 +105,7 @@ export async function POST(request: Request) {
         workspaceSlug: scope.workspaceSlug,
         brandSlug: scope.brandSlug,
         eligibility: body.eligibility,
+        language: String(body.language || "en"),
       });
       return NextResponse.json({ dashboard });
     }

@@ -230,6 +230,7 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
         intent: "assist",
         mode,
         taskIds: active ? [active.id] : undefined,
+        language: t.locale,
       });
       if (data.bootstrap) apply(data.bootstrap);
       toast.success("AI assist applied");

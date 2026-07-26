@@ -475,6 +475,7 @@ export async function generateCampaignRecommendations(input: {
   workspaceSlug: string;
   brandSlug: string;
   eligibility?: EligibilityInput;
+  language?: string;
 }) {
   const eligibility = { ...DEFAULT_ELIGIBILITY, ...input.eligibility };
   const eligible = await listEligibleOpportunities(
@@ -532,6 +533,7 @@ export async function generateCampaignRecommendations(input: {
       opportunities: payloadOpps,
       eligibility,
       learningSignals: learning,
+      language: input.language || "en",
     },
   });
 

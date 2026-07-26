@@ -82,6 +82,7 @@ export async function POST(request: Request) {
         brandId: access.brand.id,
         userId: user.id!,
         conversationIds: body.conversationIds,
+        language: String(body.language || "en"),
       });
       return NextResponse.json({ dashboard });
     }

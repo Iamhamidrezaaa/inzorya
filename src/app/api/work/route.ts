@@ -211,6 +211,7 @@ export async function POST(request: Request) {
         userId: user.id!,
         mode: body.mode || "next_action",
         taskIds: body.taskIds,
+        language: String(body.language || "en"),
       });
       return NextResponse.json(result);
     }

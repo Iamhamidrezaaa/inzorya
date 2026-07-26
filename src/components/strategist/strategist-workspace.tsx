@@ -368,6 +368,7 @@ function AdviceCard({
 
 export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("strategist");
+  const { locale } = useI18n();
   const t = useT();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -492,6 +493,7 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
           intent: "send_message",
           conversationId: data.conversation.id,
           question: opts.question,
+          language: locale,
         });
         setMessages(sent.conversation.messages || []);
         setRecommendations(sent.conversation.recommendations || []);
@@ -520,6 +522,7 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
         conversationId: activeId,
         question: q,
         followUpKind: followUpKind || null,
+        language: locale,
       });
       setMessages(data.conversation.messages || []);
       setRecommendations(data.conversation.recommendations || []);

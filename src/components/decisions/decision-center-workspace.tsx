@@ -130,6 +130,7 @@ function ScoreBars({ rec }: { rec: Recommendation }) {
 export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("decisions");
   const t = useT();
+  const locale = t.locale;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -199,7 +200,11 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
   const generate = async () => {
     setBusy(true);
     try {
-      const data = await post({ intent: "generate", focusMode });
+      const data = await post({
+        intent: "generate",
+        focusMode,
+        language: locale,
+      });
       apply(data.dashboard || {});
       toast.success("Morning brief ready");
     } catch (e) {

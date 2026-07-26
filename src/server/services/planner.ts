@@ -315,6 +315,7 @@ export async function generateContentPlan(input: {
         startDate: dateKey(start),
         endDate: dateKey(end),
         targetPosts: postsPerWeek(settings.publishingFrequency),
+        language: settings.language || "en",
       },
     });
 

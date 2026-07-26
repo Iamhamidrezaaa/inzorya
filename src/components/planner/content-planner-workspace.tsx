@@ -131,7 +131,10 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
   const [busy, setBusy] = useState(false);
   const [plans, setPlans] = useState<PlanListItem[]>([]);
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [settings, setSettings] = useState<PlanSettings>(DEFAULT_PLAN_SETTINGS);
+  const [settings, setSettings] = useState<PlanSettings>(() => ({
+    ...DEFAULT_PLAN_SETTINGS,
+    language: locale === "fa" ? "fa" : "en",
+  }));
   const [planType, setPlanType] = useState<PlanTypeKey>("WEEKLY");
   const [startDate, setStartDate] = useState(() =>
     new Date().toISOString().slice(0, 10),
@@ -152,7 +155,12 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       setPlans(data.plans || []);
-      if (data.defaultSettings) setSettings(data.defaultSettings);
+      if (data.defaultSettings) {
+        setSettings({
+          ...data.defaultSettings,
+          language: locale === "fa" ? "fa" : data.defaultSettings.language || "en",
+        });
+      }
       if (!plan && data.plans?.[0]?.id) {
         await openPlan(data.plans[0].id);
       }
@@ -164,7 +172,14 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qs]);
+  }, [qs, locale]);
+
+  useEffect(() => {
+    setSettings((s) => ({
+      ...s,
+      language: locale === "fa" ? "fa" : s.language === "fa" ? "en" : s.language,
+    }));
+  }, [locale]);
 
   const openPlan = async (planId: string) => {
     const res = await fetch(`/api/planner?${qs}&view=plan&planId=${planId}`);

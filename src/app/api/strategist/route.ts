@@ -134,6 +134,7 @@ export async function POST(request: Request) {
         question: String(body.question || ""),
         followUpKind: body.followUpKind || null,
         regenerateOfMessageId: body.regenerateOfMessageId || null,
+        language: String(body.language || "en"),
       });
       return NextResponse.json(result);
     }

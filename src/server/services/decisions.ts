@@ -283,6 +283,7 @@ export async function generateExecutiveBrief(input: {
   workspaceSlug: string;
   brandSlug: string;
   focusMode?: boolean;
+  language?: string;
 }) {
   const today = utcDateOnly();
   const signals = await collectSignals(input.brandId);
@@ -299,6 +300,7 @@ export async function generateExecutiveBrief(input: {
       learningSignals: learning,
       priorities: signals.priorities,
       focusMode: Boolean(input.focusMode),
+      language: input.language || "en",
     },
   });
 

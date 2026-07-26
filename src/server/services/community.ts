@@ -312,6 +312,7 @@ export async function scanCommunityInbox(input: {
   brandId: string;
   userId: string;
   conversationIds?: string[];
+  language?: string;
 }) {
   await ensureCommunitySetup(input);
   await ensureDemoInbox(input.brandId);
@@ -373,6 +374,7 @@ export async function scanCommunityInbox(input: {
       tone: rule.tone,
       responseMode: rule.responseMode,
       learningSignals: learning,
+      language: input.language || "en",
     },
   });
 

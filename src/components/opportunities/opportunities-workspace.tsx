@@ -231,6 +231,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
         intent: "discover",
         planningMode,
         constraints,
+        language: locale,
       });
       applyDashboard(data.dashboard);
       toast.success(

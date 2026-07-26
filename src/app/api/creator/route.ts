@@ -117,6 +117,7 @@ export async function POST(request: Request) {
         campaignId: body.campaignId || null,
         campaignName: body.campaignName || null,
         variationCount: body.variationCount,
+        language: String(body.language || "en"),
       });
       return NextResponse.json({ content });
     }
@@ -129,6 +130,7 @@ export async function POST(request: Request) {
         contentId: String(body.contentId || ""),
         variationId: String(body.variationId || ""),
         style: String(body.style || "friendlier"),
+        language: String(body.language || "en"),
       });
       if (!content) {
         return NextResponse.json({ error: "Not found." }, { status: 404 });

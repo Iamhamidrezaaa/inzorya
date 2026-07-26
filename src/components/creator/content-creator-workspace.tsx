@@ -129,6 +129,17 @@ function download(filename: string, text: string, mime: string) {
 }
 
 function ScoreBars({ score }: { score: Score }) {
+  const { locale } = useI18n();
+  const t = (en: string, fa: string) => (locale === "fa" ? fa : en);
+  const labels: Record<string, string> = {
+    brandConsistency: t("Brand Consistency", "ثبات برند"),
+    readability: t("Readability", "خوانایی"),
+    ctaStrength: t("CTA Strength", "قدرت دعوت به اقدام"),
+    emotionalImpact: t("Emotional Impact", "تأثیر احساسی"),
+    engagementPotential: t("Engagement Potential", "پتانسیل تعامل"),
+    seoQuality: t("SEO Quality", "کیفیت سئو"),
+    platformCompatibility: t("Platform Compatibility", "سازگاری پلتفرم"),
+  };
   return (
     <div className="space-y-1.5">
       {SCORE_DIMENSIONS.map((d) => {
@@ -136,7 +147,7 @@ function ScoreBars({ score }: { score: Score }) {
         return (
           <div key={d.key}>
             <div className="mb-0.5 flex justify-between text-[10px] text-muted-foreground">
-              <span>{d.label}</span>
+              <span>{labels[d.key] ?? d.label}</span>
               <span>{Math.round(value)}</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
@@ -238,6 +249,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
         contentType,
         campaignId: campaignId || null,
         variationCount,
+        language: locale,
       });
       setContent(data.content);
       setSelectedIds(data.content.variations?.[0] ? [data.content.variations[0].id] : []);
@@ -349,7 +361,18 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
               >
                 {CREATOR_OBJECTIVES.map((o) => (
                   <option key={o.key} value={o.key}>
-                    {o.label}
+                    {t(o.label, {
+                      "Brand Awareness": "آگاهی از برند",
+                      "Lead Generation": "جذب سرنخ",
+                      Engagement: "تعامل",
+                      Sales: "فروش",
+                      Education: "آموزش",
+                      Community: "جامعه",
+                      Retention: "نگهداشت",
+                      Traffic: "ترافیک",
+                      Launch: "لانچ",
+                      Support: "پشتیبانی",
+                    }[o.label] ?? o.label)}
                   </option>
                 ))}
               </select>
@@ -382,9 +405,33 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                 value={contentType}
                 onChange={(e) => setContentType(e.target.value as CreatorContentTypeKey)}
               >
-                {(typeOptions.length ? typeOptions : CREATOR_CONTENT_TYPES).map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.label}
+                {(typeOptions.length ? typeOptions : CREATOR_CONTENT_TYPES).map((ct) => (
+                  <option key={ct.key} value={ct.key}>
+                    {t(
+                      ct.label,
+                      (
+                        {
+                          "Instagram Caption": "کپشن اینستاگرام",
+                          Carousel: "کاروسل",
+                          Story: "استوری",
+                          "Reel Script": "اسکریپت ریل",
+                          "Video Hook": "قلاب ویدیو",
+                          "Video Description": "توضیح ویدیو",
+                          Threads: "تردز",
+                          "LinkedIn Post": "پست لینکدین",
+                          "Facebook Post": "پست فیسبوک",
+                          "X Post": "پست X",
+                          Newsletter: "خبرنامه",
+                          "Blog Article": "مقاله بلاگ",
+                          "Landing Page Copy": "کپی لندینگ",
+                          "Email Campaign": "کمپین ایمیل",
+                          "Product Description": "توضیح محصول",
+                          CTA: "دعوت به اقدام",
+                          Headline: "تیتر",
+                          Hashtags: "هشتگ‌ها",
+                        } as Record<string, string>
+                      )[ct.label] ?? ct.label,
+                    )}
                   </option>
                 ))}
               </select>
@@ -474,7 +521,34 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{content.title}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    {content.platform} · {content.contentType.replaceAll("_", " ")} · v
+                    {content.platform} ·{" "}
+                    {t(
+                      content.contentType.replaceAll("_", " "),
+                      (
+                        {
+                          INSTAGRAM_CAPTION: "کپشن اینستاگرام",
+                          CAROUSEL: "کاروسل",
+                          STORY: "استوری",
+                          REEL_SCRIPT: "اسکریپت ریل",
+                          VIDEO_HOOK: "قلاب ویدیو",
+                          VIDEO_DESCRIPTION: "توضیح ویدیو",
+                          THREADS: "تردز",
+                          LINKEDIN_POST: "پست لینکدین",
+                          FACEBOOK_POST: "پست فیسبوک",
+                          X_POST: "پست X",
+                          NEWSLETTER: "خبرنامه",
+                          BLOG_ARTICLE: "مقاله بلاگ",
+                          LANDING_PAGE_COPY: "کپی لندینگ",
+                          EMAIL_CAMPAIGN: "کمپین ایمیل",
+                          PRODUCT_DESCRIPTION: "توضیح محصول",
+                          CTA: "دعوت به اقدام",
+                          HEADLINE: "تیتر",
+                          HASHTAGS: "هشتگ‌ها",
+                        } as Record<string, string>
+                      )[content.contentType] ||
+                        content.contentType.replaceAll("_", " "),
+                    )}{" "}
+                    · {locale === "fa" ? "ن" : "v"}
                     {content.version}
                   </p>
                 </div>
@@ -580,7 +654,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                         {v.label}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        Overall {Math.round(v.overallScore || 0)}
+                        {t("Overall", "کل")} {Math.round(v.overallScore || 0)}
                       </span>
                       {v.estimatedReadTime ? (
                         <span className="text-xs text-muted-foreground">
@@ -862,6 +936,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                           contentId: content!.id,
                           variationId: primary.id,
                           style: s.key,
+                          language: locale,
                         }).then((d) => {
                           toast.success(
                             t(`Rewritten: ${s.label}`, `بازنویسی شد: ${s.label}`),

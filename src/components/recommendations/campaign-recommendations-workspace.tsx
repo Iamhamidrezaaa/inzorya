@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageCopy } from "@/i18n/use-page-copy";
+import { useT } from "@/i18n/use-t";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -103,6 +104,7 @@ export function CampaignRecommendationsWorkspace({
   brandSlug,
 }: Props) {
   const page = usePageCopy("recommendations");
+  const t = useT();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<Filter>("pending");
@@ -190,7 +192,7 @@ export function CampaignRecommendationsWorkspace({
   const generate = async () => {
     setBusy(true);
     try {
-      const data = await post({ intent: "generate" });
+      const data = await post({ intent: "generate", language: t.locale });
       apply(data.dashboard || {});
       toast.success(
         `Generated ${data.dashboard?.meta?.generated ?? 0} proposals from ${data.dashboard?.meta?.eligible ?? 0} eligible opportunities`,

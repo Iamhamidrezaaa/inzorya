@@ -625,6 +625,7 @@ export async function runTaskAssist(input: {
     | "workload"
     | "pipeline";
   taskIds?: string[];
+  language?: string;
 }) {
   const tasks = await prisma.marketingTask.findMany({
     where: {
@@ -665,6 +666,7 @@ export async function runTaskAssist(input: {
         owner: t.owner?.name,
       })),
       capacity: { dailyMinutes: 240, weeklyMinutes: 1200 },
+      language: input.language || "en",
     },
   });
 

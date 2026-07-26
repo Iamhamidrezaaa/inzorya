@@ -93,6 +93,7 @@ export async function POST(request: Request) {
         planningMode: body.planningMode || "AUTO",
         constraints: body.constraints,
         horizonDays: body.horizonDays,
+        language: String(body.language || "en"),
       });
       return NextResponse.json({ dashboard });
     }

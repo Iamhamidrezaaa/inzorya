@@ -245,6 +245,7 @@ export async function generateContent(input: {
   campaignId?: string | null;
   campaignName?: string | null;
   variationCount?: number;
+  language?: string;
 }) {
   const variationCount = [3, 5, 10].includes(Number(input.variationCount))
     ? Number(input.variationCount)
@@ -286,6 +287,7 @@ export async function generateContent(input: {
         contentType: input.contentType,
         variationCount,
         campaignName: campaignName || undefined,
+        language: input.language || "en",
       },
     });
 
@@ -359,6 +361,7 @@ export async function rewriteVariation(input: {
   contentId: string;
   variationId: string;
   style: string;
+  language?: string;
 }) {
   const existing = await prisma.generatedContent.findFirst({
     where: { id: input.contentId, brandId: input.brandId },
@@ -382,6 +385,7 @@ export async function rewriteVariation(input: {
       variationCount: 1,
       campaignName: existing.campaignName || undefined,
       rewriteStyle: input.style,
+      language: input.language || "en",
       sourceVariation: {
         title: source.title,
         hook: source.hook,

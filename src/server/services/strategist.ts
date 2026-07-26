@@ -335,6 +335,7 @@ export async function sendStrategistMessage(input: {
   question: string;
   followUpKind?: string | null;
   regenerateOfMessageId?: string | null;
+  language?: string;
 }) {
   const conversation = await prisma.strategyConversation.findFirst({
     where: { id: input.conversationId, brandId: input.brandId },
@@ -396,6 +397,7 @@ export async function sendStrategistMessage(input: {
       followUpKind: input.followUpKind || undefined,
       priorSummary: priorSummary || undefined,
       regenerate: Boolean(input.regenerateOfMessageId),
+      language: input.language || "en",
     },
   });
 

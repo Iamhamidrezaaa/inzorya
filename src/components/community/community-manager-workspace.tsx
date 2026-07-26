@@ -86,6 +86,7 @@ export function CommunityManagerWorkspace({
 }: Props) {
   const page = usePageCopy("community");
   const t = useT();
+  const locale = t.locale;
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -170,7 +171,7 @@ export function CommunityManagerWorkspace({
   const scan = async () => {
     setBusy(true);
     try {
-      const data = await post({ intent: "scan" });
+      const data = await post({ intent: "scan", language: locale });
       apply(data.dashboard);
       toast.success("Inbox intelligence updated");
     } catch (e) {

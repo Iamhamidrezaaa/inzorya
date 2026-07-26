@@ -148,7 +148,7 @@ export async function runAITask(input: RunTaskInput) {
         {
           role: "user" as const,
           content: renderPromptTemplate(
-            "Task: {{task}}\nInput: {{input}}\nContext: {{context}}",
+            "Task: {{task}}\nInput: {{input}}\nContext: {{context}}{{languageRule}}",
             {
               task: task.key,
               input: JSON.stringify({
@@ -156,6 +156,11 @@ export async function runAITask(input: RunTaskInput) {
                 text: guard.maskedInput || textInput,
               }),
               context: JSON.stringify(contextPayload),
+              languageRule:
+                String(input.input.language || "").toLowerCase().startsWith("fa") ||
+                String(input.input.locale || "").toLowerCase().startsWith("fa")
+                  ? "\nLanguage rule: Respond entirely in Persian (Farsi). All titles, body copy, CTAs, and explanations must be Persian."
+                  : "",
             },
           ),
         },

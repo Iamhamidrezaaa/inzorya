@@ -228,6 +228,7 @@ export async function discoverOpportunities(input: {
   planningMode?: OpportunityPlanningMode;
   constraints?: Record<string, unknown>;
   horizonDays?: number;
+  language?: string;
 }) {
   await ensureOpportunityCatalog();
   const planningMode = input.planningMode || "AUTO";
@@ -299,6 +300,7 @@ export async function discoverOpportunities(input: {
       planningMode,
       constraints: input.constraints || {},
       learningSignals: learning,
+      language: input.language || "en",
     },
   });
 
