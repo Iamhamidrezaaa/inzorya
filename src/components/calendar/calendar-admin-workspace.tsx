@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/use-t";
+
 import { usePageCopy } from "@/i18n/use-page-copy";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -86,6 +88,7 @@ const SAVED_VIEWS_KEY = "inzorya.calendar.savedViews";
 
 export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("calendar");
+  const t = useT();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
@@ -448,18 +451,20 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
           <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">
             {page.title}
           </p>
-          <h1 className="font-serif text-2xl tracking-tight">
-            Global marketing calendar
+          <h1 className="text-2xl tracking-tight">
+            {t("Global marketing calendar", "تقویم بازاریابی جهانی")}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Worldwide marketing event database — sources, localization, seasons,
-            imports. Still no AI.
+            {t(
+              "Worldwide marketing event database — sources, localization, seasons, imports. Still no AI.",
+              "پایگاه رویدادهای بازاریابی جهانی — منابع، بومی‌سازی، فصل‌ها، واردات. هنوز بدون هوش مصنوعی.",
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" disabled={busy} onClick={() => void doExport()}>
             <Download className="size-4" />
-            Export
+            {t("Export", "خروجی")}
           </Button>
           <Button
             size="sm"
@@ -467,11 +472,11 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
             onClick={() => setShowImport((v) => !v)}
           >
             <Upload className="size-4" />
-            Import
+            {t("Import", "ورود")}
           </Button>
           <Button size="sm" onClick={startCreate}>
             <Plus className="size-4" />
-            Add event
+            {t("Add event", "افزودن رویداد")}
           </Button>
         </div>
       </header>
@@ -483,7 +488,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
               <Input
                 className="pl-8"
-                placeholder="Search keyword, tag…"
+                placeholder={t("Search keyword, tag…", "جستجوی کلیدواژه، برچسب…")}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => {
@@ -507,7 +512,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
-              <option value="">All categories</option>
+              <option value="">{t("All categories", "همه دسته‌ها")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.key}>
                   {c.name}
@@ -519,7 +524,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               value={country}
               onChange={(e) => setCountry(e.target.value)}
             >
-              <option value="">All countries</option>
+              <option value="">{t("All countries", "همه کشورها")}</option>
               {countries.map((c) => (
                 <option key={c.id} value={c.code}>
                   {c.name}
@@ -531,7 +536,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               value={verification}
               onChange={(e) => setVerification(e.target.value)}
             >
-              <option value="">All verification</option>
+              <option value="">{t("All verification", "همه وضعیت‌های تأیید")}</option>
               {VERIFICATION_STATUSES.map((v) => (
                 <option key={v.key} value={v.key}>
                   {v.label}
@@ -543,7 +548,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               value={seasonKey}
               onChange={(e) => setSeasonKey(e.target.value)}
             >
-              <option value="">All seasons</option>
+              <option value="">{t("All seasons", "همه فصل‌ها")}</option>
               {seasons.map((s) => (
                 <option key={s.id} value={s.key}>
                   {s.name}
@@ -555,7 +560,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">Active + Draft</option>
+              <option value="">{t("Active + Draft", "فعال + پیش‌نویس")}</option>
               <option value="ACTIVE">Active</option>
               <option value="DRAFT">Draft</option>
               <option value="ARCHIVED">Archived</option>
@@ -568,12 +573,12 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Input
               className="max-w-[160px]"
-              placeholder="Save view name"
+              placeholder={t("Save view name", "نام نما را ذخیره کنید")}
               value={viewName}
               onChange={(e) => setViewName(e.target.value)}
             />
             <Button size="sm" variant="outline" onClick={saveView}>
-              Save view
+              {t("Save view", "ذخیره نما")}
             </Button>
             {savedViews.map((v) => (
               <Button
@@ -735,7 +740,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
             {!events.length ? (
               <li className="rounded-xl border border-dashed border-white/10 p-8 text-center">
                 <Globe2 className="mx-auto mb-2 size-8 text-emerald-300/70" />
-                <p className="font-serif text-lg">No events in this filter</p>
+                <p className="text-lg">{t("No events in this filter", "رویدادی در این فیلتر نیست")}</p>
               </li>
             ) : null}
           </ul>
@@ -743,12 +748,14 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
 
         <aside className="min-h-0 overflow-y-auto border-l border-white/5 p-4">
           <p className="mb-3 text-xs uppercase tracking-wide text-muted-foreground">
-            {editingId ? "Edit event" : "Add event"} · Preview
+            {editingId
+              ? t("Edit event · Preview", "ویرایش رویداد · پیش‌نمایش")
+              : t("Add event · Preview", "افزودن رویداد · پیش‌نمایش")}
           </p>
 
           <div className="mb-4 rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-3">
-            <p className="font-serif text-lg">
-              {form.name || active?.name || "Untitled event"}
+            <p className="text-lg">
+              {form.name || active?.name || t("Untitled event", "رویداد بدون عنوان")}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {form.month && form.day
@@ -758,13 +765,13 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               {form.importance}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              {form.description || "No description yet."}
+              {form.description || t("No description yet.", "هنوز توضیحی نیست.")}
             </p>
           </div>
 
           <div className="space-y-3">
             <div>
-              <Label>Title</Label>
+              <Label>{t("Title", "عنوان")}</Label>
               <Input
                 className="mt-1"
                 value={form.name}
@@ -772,7 +779,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               />
             </div>
             <div>
-              <Label>Description</Label>
+              <Label>{t("Description", "توضیحات")}</Label>
               <Textarea
                 className="mt-1"
                 rows={3}
@@ -784,7 +791,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label>Category</Label>
+                <Label>{t("Category", "دسته")}</Label>
                 <select
                   className="mt-1 h-9 w-full rounded-md border border-white/10 bg-transparent px-2 text-sm"
                   value={form.categoryKey}
@@ -800,7 +807,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
                 </select>
               </div>
               <div>
-                <Label>Importance</Label>
+                <Label>{t("Importance", "اهمیت")}</Label>
                 <select
                   className="mt-1 h-9 w-full rounded-md border border-white/10 bg-transparent px-2 text-sm"
                   value={form.importance}
@@ -808,7 +815,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
                     setForm((f) => ({ ...f, importance: e.target.value }))
                   }
                 >
-                  {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((k) => (
+                  {["LOW", t("MEDIUM", "متوسط"), "HIGH", "CRITICAL"].map((k) => (
                     <option key={k} value={k}>
                       {k}
                     </option>
@@ -958,7 +965,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
             <div className="flex flex-wrap gap-2">
               <Button disabled={busy} onClick={() => void save()}>
                 {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                {editingId ? "Save changes" : "Create event"}
+                {editingId ? t("Save changes", "ذخیره تغییرات") : t("Create event", "ایجاد رویداد")}
               </Button>
               {editingId ? (
                 <>

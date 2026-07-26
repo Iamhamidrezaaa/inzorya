@@ -149,9 +149,17 @@ body {
 }
 
 html[lang="fa"] body {
-  font-family: "Estedad", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: "Estedad", ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0;
   font-feature-settings: normal;
+}
+
+/* Override Outfit / serif utilities so Persian UI stays on Estedad */
+html[lang="fa"] .font-sans,
+html[lang="fa"] .font-serif,
+html[lang="fa"] [class*="font-serif"] {
+  font-family: "Estedad", ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: 0;
 }
 
 .font-fa {

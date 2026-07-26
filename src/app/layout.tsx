@@ -40,7 +40,11 @@ export default async function RootLayout({
       className="dark"
       suppressHydrationWarning
     >
-      <body className={`${sans.variable} min-h-svh font-sans antialiased`}>
+      <body
+        className={`${sans.variable} min-h-svh antialiased ${
+          locale === "fa" ? "font-fa" : "font-sans"
+        }`}
+      >
         <AppProviders locale={locale} dictionary={dictionary}>
           {children}
         </AppProviders>

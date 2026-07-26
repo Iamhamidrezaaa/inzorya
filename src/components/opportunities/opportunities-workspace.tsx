@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageCopy } from "@/i18n/use-page-copy";
+import { useI18n } from "@/i18n/client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -72,12 +73,24 @@ function dayLabel(iso: string) {
   });
 }
 
+const SCORE_KEY_LABELS_FA: Record<string, string> = {
+  relevance: "ارتباط",
+  urgency: "فوریت",
+  expectedReach: "دسترسی مورد انتظار",
+  salesPotential: "پتانسیل فروش",
+  engagementPotential: "پتانسیل تعامل",
+  difficulty: "دشواری",
+  confidence: "اطمینان",
+};
+
 function ScoreGrid({ score }: { score: Score }) {
+  const { locale } = useI18n();
+  const t = (en: string, fa: string) => (locale === "fa" ? fa : en);
   return (
     <div className="space-y-2">
       <div className="flex items-end justify-between">
-        <p className="text-sm font-medium">Opportunity score</p>
-        <p className="font-serif text-2xl tracking-tight">
+        <p className="text-sm font-medium">{t("Opportunity score", "امتیاز فرصت")}</p>
+        <p className="text-2xl tracking-tight">
           {Math.round(score.overall)}
         </p>
       </div>
@@ -86,7 +99,7 @@ function ScoreGrid({ score }: { score: Score }) {
         return (
           <div key={k.key}>
             <div className="mb-0.5 flex justify-between text-[10px] text-muted-foreground">
-              <span>{k.label}</span>
+              <span>{t(k.label, SCORE_KEY_LABELS_FA[k.key] ?? k.label)}</span>
               <span>{Math.round(value)}</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
@@ -105,8 +118,22 @@ function ScoreGrid({ score }: { score: Score }) {
   );
 }
 
+const PLANNING_MODE_LABELS_FA: Record<string, string> = {
+  AUTO: "استراتژی خودکار",
+  GUIDED: "استراتژی هدایت‌شده",
+  MANUAL: "استراتژی دستی",
+};
+
+const PLANNING_MODE_DESCRIPTIONS_FA: Record<string, string> = {
+  AUTO: "هوش مصنوعی بهترین ترکیب و برنامه زمانی را انتخاب می‌کند.",
+  GUIDED: "شما محدودیت‌ها را تعیین می‌کنید؛ هوش مصنوعی در چارچوب آن بهترین برنامه را می‌سازد.",
+  MANUAL: "شما نیازمندی‌های دقیق را تعیین می‌کنید؛ هوش مصنوعی فقط کیفیت را بهینه می‌کند.",
+};
+
 export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("opportunities");
+  const { locale } = useI18n();
+  const t = (en: string, fa: string) => (locale === "fa" ? fa : en);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -169,7 +196,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
       applyDashboard(data);
       if (!activeId && data.upcoming?.[0]?.id) setActiveId(data.upcoming[0].id);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unable to load");
+      toast.error(e instanceof Error ? e.message : t("Unable to load", "بارگذاری ممکن نشد"));
     } finally {
       setLoading(false);
     }
@@ -206,11 +233,16 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
         constraints,
       });
       applyDashboard(data.dashboard);
-      toast.success("Opportunities refreshed from business context");
+      toast.success(
+        t(
+          "Opportunities refreshed from business context",
+          "فرصت‌ها بر اساس زمینه کسب‌وکار به‌روزرسانی شدند",
+        ),
+      );
       const first = data.dashboard?.upcoming?.[0]?.id;
       if (first) setActiveId(first);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Discover failed");
+      toast.error(e instanceof Error ? e.message : t("Discover failed", "اسکن ناموفق بود"));
     } finally {
       setBusy(false);
     }
@@ -252,7 +284,10 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
           <div>
             <h1 className="text-base font-semibold tracking-tight">{page.title}</h1>
             <p className="text-xs text-muted-foreground">
-              Always-on matching of world moments to your business — not a holiday dump
+              {t(
+                "Always-on matching of world moments to your business — not a holiday dump",
+                "تطبیق همیشه‌فعال لحظات جهانی با کسب‌وکار شما — نه یک لیست خام مناسبت‌ها",
+              )}
             </p>
           </div>
         </div>
@@ -262,7 +297,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
           ) : (
             <Sparkles className="size-3.5" />
           )}
-          Scan opportunities
+          {t("Scan opportunities", "اسکن فرصت‌ها")}
         </Button>
       </div>
 
@@ -272,10 +307,10 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
             <div className="grid grid-cols-2 gap-2">
               {[
-                ["Upcoming", counts.upcoming],
-                ["High impact", counts.highImpact],
-                ["Saved", counts.saved],
-                ["Missed", counts.missed],
+                [t("Upcoming", "پیش‌رو"), counts.upcoming],
+                [t("High impact", "تأثیر بالا"), counts.highImpact],
+                [t("Saved", "ذخیره‌شده"), counts.saved],
+                [t("Missed", "ازدست‌رفته"), counts.missed],
               ].map(([label, value]) => (
                 <div
                   key={label as string}
@@ -284,14 +319,14 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                     {label}
                   </p>
-                  <p className="font-serif text-xl tracking-tight">{value as number}</p>
+                  <p className="text-xl tracking-tight">{value as number}</p>
                 </div>
               ))}
             </div>
 
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Planning mode
+                {t("Planning mode", "حالت برنامه‌ریزی")}
               </p>
               {PLANNING_MODES.map((m) => (
                 <button
@@ -307,18 +342,22 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                       : "border-white/8 hover:bg-white/4",
                   )}
                 >
-                  <p className="text-sm font-medium">{m.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{m.description}</p>
+                  <p className="text-sm font-medium">
+                    {t(m.label, PLANNING_MODE_LABELS_FA[m.key] ?? m.label)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t(m.description, PLANNING_MODE_DESCRIPTIONS_FA[m.key] ?? m.description)}
+                  </p>
                 </button>
               ))}
             </div>
 
             {planningMode !== "AUTO" ? (
               <div className="space-y-2 rounded-xl border border-white/8 p-3">
-                <Label className="text-xs">Constraints</Label>
+                <Label className="text-xs">{t("Constraints", "محدودیت‌ها")}</Label>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <label className="space-y-1">
-                    <span className="text-muted-foreground">Reels</span>
+                    <span className="text-muted-foreground">{t("Reels", "ریل‌ها")}</span>
                     <input
                       type="number"
                       min={0}
@@ -329,7 +368,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                     />
                   </label>
                   <label className="space-y-1">
-                    <span className="text-muted-foreground">Carousels</span>
+                    <span className="text-muted-foreground">{t("Carousels", "کاروسل‌ها")}</span>
                     <input
                       type="number"
                       min={0}
@@ -340,7 +379,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                     />
                   </label>
                   <label className="space-y-1">
-                    <span className="text-muted-foreground">Stories</span>
+                    <span className="text-muted-foreground">{t("Stories", "استوری‌ها")}</span>
                     <input
                       type="number"
                       min={0}
@@ -358,7 +397,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
               <div className="space-y-1.5">
                 <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                   <Bell className="size-3" />
-                  Proactive alerts
+                  {t("Proactive alerts", "هشدارهای پیش‌دستانه")}
                 </p>
                 {pendingAlerts.slice(0, 5).map((a) => (
                   <button
@@ -383,11 +422,11 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
           <div className="flex gap-1 overflow-x-auto border-b border-white/6 px-3 py-2">
             {(
               [
-                ["upcoming", "Upcoming"],
-                ["high", "High impact"],
-                ["industry", "Industry"],
-                ["seasonal", "Seasonal"],
-                ["missed", "Missed"],
+                ["upcoming", t("Upcoming", "پیش‌رو")],
+                ["high", t("High impact", "تأثیر بالا")],
+                ["industry", t("Industry", "صنعت")],
+                ["seasonal", t("Seasonal", "فصلی")],
+                ["missed", t("Missed", "ازدست‌رفته")],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -411,17 +450,19 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
               <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
                 <CalendarRange className="size-8 text-muted-foreground" />
                 <div>
-                  <h2 className="font-serif text-2xl tracking-tight">
-                    No opportunities yet
+                  <h2 className="text-2xl tracking-tight">
+                    {t("No opportunities yet", "هنوز فرصتی نیست")}
                   </h2>
                   <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                    Scan to match curated world moments against Business Brain, audience,
-                    goals and campaign history.
+                    {t(
+                      "Scan to match curated world moments against Business Brain, audience, goals and campaign history.",
+                      "برای تطبیق لحظات جهانی منتخب با مغز کسب‌وکار، مخاطب، اهداف و تاریخچه کمپین اسکن کنید.",
+                    )}
                   </p>
                 </div>
                 <Button disabled={busy} onClick={() => void discover()}>
                   <Sparkles className="size-3.5" />
-                  Run first scan
+                  {t("Run first scan", "اجرای اولین اسکن")}
                 </Button>
               </div>
             ) : (
@@ -461,7 +502,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                         {o.matchReason}
                       </p>
                     </div>
-                    <p className="font-serif text-xl tracking-tight">
+                    <p className="text-xl tracking-tight">
                       {Math.round(o.score?.overall || 0)}
                     </p>
                   </div>
@@ -475,18 +516,21 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
         <aside className="hidden min-h-0 flex-col border-l border-white/6 lg:flex">
           <div className="border-b border-white/6 px-3 py-3">
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Opportunity detail
+              {t("Opportunity detail", "جزئیات فرصت")}
             </p>
           </div>
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
             {!active ? (
               <p className="text-xs text-muted-foreground">
-                Select an opportunity to see why it matches and take action.
+                {t(
+                  "Select an opportunity to see why it matches and take action.",
+                  "یک فرصت را انتخاب کنید تا دلیل تطابق را ببینید و اقدام کنید.",
+                )}
               </p>
             ) : (
               <>
                 <div>
-                  <h2 className="font-serif text-xl tracking-tight">{active.title}</h2>
+                  <h2 className="text-xl tracking-tight">{active.title}</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {active.event.name} · {dayLabel(active.eventDate)}
                   </p>
@@ -494,7 +538,9 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                     {active.summary}
                   </p>
                   <p className="mt-3 rounded-xl border border-white/8 bg-black/20 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                    <span className="font-medium text-foreground/80">Why this fits: </span>
+                    <span className="font-medium text-foreground/80">
+                      {t("Why this fits:", "چرا این مناسب است:")}{" "}
+                    </span>
                     {active.matchReason}
                   </p>
                 </div>
@@ -503,7 +549,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
 
                 <div className="space-y-1.5">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    AI recommendations
+                    {t("AI recommendations", "پیشنهادهای هوش مصنوعی")}
                   </p>
                   {active.recommendations.map((r) => (
                     <div
@@ -523,16 +569,16 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
 
                 <div className="space-y-1.5">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    Quick actions
+                    {t("Quick actions", "اقدامات سریع")}
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">
                     {(
                       [
-                        ["create_campaign", "Create Campaign"],
-                        ["generate_content_plan", "Content Plan"],
-                        ["generate_brief", "Generate Brief"],
-                        ["create_offer", "Create Offer"],
-                        ["schedule_content", "Schedule Content"],
+                        ["create_campaign", t("Create Campaign", "ساخت کمپین")],
+                        ["generate_content_plan", t("Content Plan", "برنامه محتوا")],
+                        ["generate_brief", t("Generate Brief", "تولید بریف")],
+                        ["create_offer", t("Create Offer", "ساخت پیشنهاد")],
+                        ["schedule_content", t("Schedule Content", "زمان‌بندی محتوا")],
                       ] as const
                     ).map(([action, label]) => (
                       <Button
@@ -547,7 +593,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                             opportunityId: active.id,
                             action,
                           }).then((d) => {
-                            toast.success(`${label} ready`);
+                            toast.success(t(`${label} ready`, `${label} آماده است`));
                             if (d.result?.href) router.push(d.result.href);
                             return load();
                           })
@@ -566,13 +612,13 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                           opportunityId: active.id,
                           status: "SAVED",
                         }).then(() => {
-                          toast.success("Saved for later");
+                          toast.success(t("Saved for later", "برای بعد ذخیره شد"));
                           return load();
                         })
                       }
                     >
                       <Bookmark className="size-3.5" />
-                      Save
+                      {t("Save", "ذخیره")}
                     </Button>
                     <Button
                       size="sm"
@@ -584,13 +630,15 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                           opportunityId: active.id,
                           action: "DISMISSED",
                         }).then(() => {
-                          toast.success("Dismissed — learning updated");
+                          toast.success(
+                            t("Dismissed — learning updated", "رد شد — یادگیری به‌روزرسانی شد"),
+                          );
                           return load();
                         })
                       }
                     >
                       <X className="size-3.5" />
-                      Dismiss
+                      {t("Dismiss", "رد کردن")}
                     </Button>
                   </div>
                 </div>
@@ -598,7 +646,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                 {active.alerts?.length ? (
                   <div className="space-y-1">
                     <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      Alert schedule
+                      {t("Alert schedule", "زمان‌بندی هشدار")}
                     </p>
                     {active.alerts.map((a) => (
                       <p key={a.id} className="text-[11px] text-muted-foreground">

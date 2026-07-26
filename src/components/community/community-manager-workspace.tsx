@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/use-t";
+
 import { usePageCopy } from "@/i18n/use-page-copy";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -83,6 +85,7 @@ export function CommunityManagerWorkspace({
   brandSlug,
 }: Props) {
   const page = usePageCopy("community");
+  const t = useT();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -199,7 +202,7 @@ export function CommunityManagerWorkspace({
   }, [primaryReply?.id]);
 
   const filtered = queue.filter((q) => {
-    if (filter === "vip") return q.priority?.vip || q.intent?.type === "VIP";
+    if (filter === "vip") return q.priority?.vip || q.intent?.type === t("VIP", "VIP");
     if (filter === "negative")
       return q.sentiment?.label === "negative" || q.priority?.negativeSentiment;
     if (filter === "leads") return q.intent?.type === "SALES_LEAD";
@@ -228,13 +231,16 @@ export function CommunityManagerWorkspace({
               {page.title}
             </h1>
             <p className="text-xs text-muted-foreground">
-              Prioritize, draft, and assist — never a blind auto-reply bot
+              {t(
+                "Prioritize, draft, and assist — never a blind auto-reply bot",
+                "اولویت‌بندی، پیش‌نویس و کمک — هرگز ربات پاسخ‌گوی کور",
+              )}
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" asChild>
-            <Link href={`/w/${workspaceSlug}/b/${brandSlug}/inbox`}>Open Inbox</Link>
+            <Link href={`/w/${workspaceSlug}/b/${brandSlug}/inbox`}>{t("Open Inbox", "باز کردن اینباکس")}</Link>
           </Button>
           <Button size="sm" disabled={busy} onClick={() => void scan()}>
             {busy ? (
@@ -242,7 +248,7 @@ export function CommunityManagerWorkspace({
             ) : (
               <Sparkles className="size-3.5" />
             )}
-            Scan inbox
+            {t("Scan inbox", "اسکن اینباکس")}
           </Button>
         </div>
       </div>
@@ -253,12 +259,12 @@ export function CommunityManagerWorkspace({
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
             <div className="grid grid-cols-2 gap-2">
               {[
-                ["Inbox health", dashboard.inboxHealth],
-                ["Pending", dashboard.pendingReplies],
-                ["VIP queue", dashboard.vipQueue],
-                ["Negative", dashboard.negativeSentiment],
-                ["Leads", dashboard.leadOpportunities],
-                ["Resolved today", dashboard.resolvedToday],
+                [t("Inbox health", "سلامت اینباکس"), dashboard.inboxHealth],
+                [t("Pending", "در انتظار"), dashboard.pendingReplies],
+                [t("VIP queue", "صف VIP"), dashboard.vipQueue],
+                [t("Negative", "منفی"), dashboard.negativeSentiment],
+                [t("Leads", "سرنخ‌ها"), dashboard.leadOpportunities],
+                [t("Resolved today", "حل‌شده امروز"), dashboard.resolvedToday],
               ].map(([label, value]) => (
                 <div
                   key={label as string}
@@ -267,21 +273,21 @@ export function CommunityManagerWorkspace({
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                     {label}
                   </p>
-                  <p className="font-serif text-xl tracking-tight">{value as number}</p>
+                  <p className="text-xl tracking-tight">{value as number}</p>
                 </div>
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Avg response:{" "}
+              {t("Avg response:", "میانگین پاسخ:")}{" "}
               {dashboard.averageResponseMinutes != null
-                ? `${dashboard.averageResponseMinutes} min`
+                ? `${dashboard.averageResponseMinutes} ${t("min", "دقیقه")}`
                 : "—"}{" "}
-              · Unanswered: {dashboard.unanswered}
+              · {t("Unanswered:", "بدون پاسخ:")} {dashboard.unanswered}
             </p>
 
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Response mode
+                {t("Response mode", "حالت پاسخ")}
               </p>
               {RESPONSE_MODES.map((m) => (
                 <button
@@ -295,8 +301,36 @@ export function CommunityManagerWorkspace({
                       : "border-white/8 hover:bg-white/4",
                   )}
                 >
-                  <p className="text-sm font-medium">{m.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{m.description}</p>
+                  <p className="text-sm font-medium">
+                    {t(
+                      m.label,
+                      (
+                        {
+                          Manual: "دستی",
+                          "Approval Required": "نیاز به تأیید",
+                          "Semi-Automatic": "نیمه‌خودکار",
+                          Automatic: "خودکار",
+                        } as Record<string, string>
+                      )[m.label] ?? m.label,
+                    )}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t(
+                      m.description,
+                      (
+                        {
+                          "AI drafts only — nothing sends without you.":
+                            "فقط پیش‌نویس هوش مصنوعی — بدون شما چیزی ارسال نمی‌شود.",
+                          "AI prepares replies waiting for confirmation.":
+                            "هوش مصنوعی پاسخ‌ها را برای تأیید آماده می‌کند.",
+                          "Trusted categories can be auto-queued.":
+                            "دسته‌های مورد اعتماد می‌توانند خودکار در صف قرار گیرند.",
+                          "Pre-approved scenarios can auto-queue replies.":
+                            "سناریوهای ازپیش‌تأییدشده می‌توانند پاسخ را خودکار صف کنند.",
+                        } as Record<string, string>
+                      )[m.description] ?? m.description,
+                    )}
+                  </p>
                 </button>
               ))}
             </div>
@@ -387,10 +421,10 @@ export function CommunityManagerWorkspace({
           <div className="flex gap-1 border-b border-white/6 px-3 py-2">
             {(
               [
-                ["all", "Priority queue"],
-                ["vip", "VIP"],
-                ["negative", "Negative"],
-                ["leads", "Leads"],
+                ["all", t("Priority queue", "صف اولویت")],
+                ["vip", t("VIP", "VIP")],
+                ["negative", t("Negative", "منفی")],
+                ["leads", t("Leads", "سرنخ‌ها")],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -414,7 +448,7 @@ export function CommunityManagerWorkspace({
               <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
                 <Users className="size-8 text-muted-foreground" />
                 <div>
-                  <h2 className="font-serif text-2xl tracking-tight">
+                  <h2 className="text-2xl tracking-tight">
                     Scan to prioritize conversations
                   </h2>
                   <p className="mt-2 max-w-md text-sm text-muted-foreground">
@@ -478,7 +512,7 @@ export function CommunityManagerWorkspace({
                           "Awaiting intelligence scan"}
                       </p>
                     </div>
-                    <p className="font-serif text-xl tracking-tight">
+                    <p className="text-xl tracking-tight">
                       {Math.round(c.priority?.score || 0)}
                     </p>
                   </div>
@@ -492,7 +526,7 @@ export function CommunityManagerWorkspace({
         <aside className="hidden min-h-0 flex-col border-l border-white/6 lg:flex">
           <div className="border-b border-white/6 px-3 py-3">
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Assist panel
+              {t("Assist panel", "پنل کمک")}
             </p>
           </div>
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
@@ -503,7 +537,7 @@ export function CommunityManagerWorkspace({
             ) : (
               <>
                 <div>
-                  <h2 className="font-serif text-xl tracking-tight">
+                  <h2 className="text-xl tracking-tight">
                     {active.contact.name || "Customer"}
                   </h2>
                   <p className="text-xs text-muted-foreground">
@@ -663,7 +697,10 @@ export function CommunityManagerWorkspace({
                 ) : (
                   <div className="rounded-xl border border-dashed border-white/10 px-3 py-4 text-center text-xs text-muted-foreground">
                     <AlertTriangle className="mx-auto mb-2 size-4" />
-                    No drafts yet — run Scan inbox.
+                    {t(
+                      "No drafts yet — run Scan inbox.",
+                      "هنوز پیش‌نویسی نیست — اسکن اینباکس را اجرا کنید.",
+                    )}
                   </div>
                 )}
 
@@ -682,7 +719,7 @@ export function CommunityManagerWorkspace({
                       }).then(() => load())
                     }
                   >
-                    <option value="">Unassigned</option>
+                    <option value="">{t("Unassigned", "اختصاص‌نیافته")}</option>
                     {members.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name || m.email}
@@ -690,7 +727,7 @@ export function CommunityManagerWorkspace({
                     ))}
                   </select>
                   <div className="flex gap-1">
-                    {(["OPEN", "WAITING", "RESOLVED"] as const).map((s) => (
+                    {([t("OPEN", "باز"), t("WAITING", "در انتظار"), t("RESOLVED", "حل‌شده")] as const).map((s) => (
                       <Button
                         key={s}
                         size="sm"
@@ -709,7 +746,7 @@ export function CommunityManagerWorkspace({
                     ))}
                   </div>
                   <Textarea
-                    placeholder="Internal note / @mention…"
+                    placeholder={t("Internal note / @mention…", "یادداشت داخلی / @منشن…")}
                     className="min-h-[64px]"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}

@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/use-t";
+
 import { usePageCopy } from "@/i18n/use-page-copy";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -127,6 +129,7 @@ function ScoreBars({ rec }: { rec: Recommendation }) {
 
 export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("decisions");
+  const t = useT();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -260,11 +263,14 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-6 py-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-amber-200/70">
-            Decision Center
+            {t("Decision Center", "مرکز تصمیم")}
           </p>
-          <h1 className="font-serif text-2xl tracking-tight">{page.title}</h1>
+          <h1 className="text-2xl tracking-tight">{page.title}</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Executive brain — decisions with evidence, not another analytics page.
+            {t(
+              "Executive brain — decisions with evidence, not another analytics page.",
+              "مغز اجرایی — تصمیم با شواهد، نه یک صفحهٔ تحلیل دیگر.",
+            )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -275,7 +281,7 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
             className={cn(focusMode && "border-amber-400/40 bg-amber-400/10")}
           >
             {focusMode ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-            Focus Mode
+            {t("Focus Mode", "حالت تمرکز")}
           </Button>
           <Button size="sm" onClick={() => void generate()} disabled={busy}>
             {busy ? (
@@ -283,7 +289,7 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
             ) : (
               <Sparkles className="size-4" />
             )}
-            Generate today&apos;s brief
+            {t("Generate today's brief", "ساخت بریف امروز")}
           </Button>
         </div>
       </header>
@@ -292,15 +298,22 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
         {/* Decision cards */}
         <aside className="min-h-0 overflow-y-auto border-r border-white/5 p-3">
           <div className="mb-3 flex gap-2 text-[11px] text-muted-foreground">
-            <span>{counts.pending} pending</span>
+            <span>
+              {counts.pending} {t("pending", "در انتظار")}
+            </span>
             <span>·</span>
-            <span>{counts.assigned} assigned</span>
+            <span>
+              {counts.assigned} {t("assigned", "اختصاص‌یافته")}
+            </span>
           </div>
           {!visible.length ? (
             <div className="rounded-xl border border-dashed border-white/10 p-6 text-center">
-              <p className="font-serif text-lg">No decisions yet</p>
+              <p className="text-lg">{t("No decisions yet", "هنوز تصمیمی نیست")}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Generate this morning&apos;s brief to surface what matters.
+                {t(
+                  "Generate this morning's brief to surface what matters.",
+                  "بریف صبح را بسازید تا آنچه مهم است نمایان شود.",
+                )}
               </p>
             </div>
           ) : (
@@ -349,7 +362,7 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
           {!active ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <Sunrise className="mb-3 size-8 text-amber-300/70" />
-              <p className="font-serif text-2xl">Start the morning review</p>
+              <p className="text-2xl">{t("Start the morning review", "شروع مرور صبحگاهی")}</p>
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
                 Inzorya will analyze campaigns, content, community, and opportunities —
                 then tell you only what deserves a decision.
@@ -359,7 +372,7 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
             <div className="mx-auto max-w-2xl space-y-8">
               <div>
                 <Badge className="mb-3">{decisionTypeLabel(active.type)}</Badge>
-                <h2 className="font-serif text-3xl tracking-tight">{active.title}</h2>
+                <h2 className="text-3xl tracking-tight">{active.title}</h2>
                 <p className="mt-2 text-muted-foreground">{active.summary}</p>
               </div>
 
@@ -367,7 +380,7 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
                 <p className="text-xs uppercase tracking-wide text-amber-200/70">
                   Recommended action
                 </p>
-                <p className="mt-2 font-serif text-xl">{active.recommendedAction}</p>
+                <p className="mt-2 text-xl">{active.recommendedAction}</p>
                 <p className="mt-2 text-sm text-muted-foreground">{active.reason}</p>
               </div>
 
@@ -480,10 +493,10 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
           <div className="mb-6 space-y-3">
             <div className="flex items-center gap-2 text-amber-200/80">
               <Sunrise className="size-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Morning Brief</p>
+              <p className="text-xs uppercase tracking-[0.18em]">{t("Morning Brief", "بریف صبحگاهی")}</p>
             </div>
-            <p className="font-serif text-2xl">
-              {morning?.greeting || "Good morning."}
+            <p className="text-2xl">
+              {morning?.greeting || t("Good morning.", "صبح بخیر.")}
             </p>
             {morning?.todaysFocus ? (
               <p className="text-sm leading-relaxed text-muted-foreground">
@@ -532,7 +545,7 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
               </p>
             ) : null}
             {morning?.motivationalQuote ? (
-              <p className="border-l border-amber-400/30 pl-3 font-serif text-sm italic text-amber-50/90">
+              <p className="border-l border-amber-400/30 pl-3 text-sm italic text-amber-50/90">
                 {morning.motivationalQuote}
               </p>
             ) : null}
@@ -578,7 +591,7 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
                 ) : null,
               )}
               {daily.motivationalInsight ? (
-                <p className="font-serif text-sm italic text-amber-50/80">
+                <p className="text-sm italic text-amber-50/80">
                   {daily.motivationalInsight}
                 </p>
               ) : null}

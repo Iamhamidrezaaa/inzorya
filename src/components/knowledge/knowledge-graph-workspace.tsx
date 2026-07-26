@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/use-t";
+
 import { usePageCopy } from "@/i18n/use-page-copy";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -51,6 +53,7 @@ type Props = {
 
 export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("knowledge-graph");
+  const t = useT();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
@@ -367,11 +370,14 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/70">
             {page.title}
           </p>
-          <h1 className="font-serif text-2xl tracking-tight">
-            Business meaning behind every event
+          <h1 className="text-2xl tracking-tight">
+            {t("Business meaning behind every event", "معنای کسب‌وکار پشت هر رویداد")}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Structured relationships only — no AI, no recommendations.
+            {t(
+              "Structured relationships only — no AI, no recommendations.",
+              "فقط روابط ساخت‌یافته — بدون هوش مصنوعی، بدون پیشنهاد.",
+            )}
           </p>
         </div>
         <Button
@@ -386,7 +392,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
           }
         >
           <Network className="size-4" />
-          Ensure catalog
+          {t("Ensure catalog", "اطمینان از کاتالوگ")}
         </Button>
       </header>
 
@@ -396,7 +402,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
             <Search className="pointer-events-none absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
               className="pl-8"
-              placeholder="Find industries, CTAs…"
+              placeholder={t("Find industries, CTAs…", "جستجوی صنایع، CTA…")}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => {
@@ -409,7 +415,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
             value={kind}
             onChange={(e) => setKind(e.target.value)}
           >
-            <option value="">All kinds</option>
+            <option value="">{t("All kinds", "همه انواع")}</option>
             {NODE_KINDS.map((k) => (
               <option key={k.key} value={k.key}>
                 {k.label}
@@ -422,7 +428,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
           </Button>
 
           <div className="space-y-2 rounded-xl border border-white/5 p-2">
-            <Label>Create node</Label>
+            <Label>{t("Create node", "ایجاد گره")}</Label>
             <select
               className="h-9 w-full rounded-md border border-white/10 bg-transparent px-2 text-sm"
               value={newKind}
@@ -435,14 +441,14 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
               ))}
             </select>
             <Input
-              placeholder="Node name"
+              placeholder={t("Node name", "نام گره")}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
             />
             <div className="flex gap-1">
               <Button size="sm" disabled={busy} onClick={() => void createNode()}>
                 <Plus className="size-3.5" />
-                Create
+                {t("Create", "ایجاد")}
               </Button>
               <Button
                 size="sm"
@@ -486,13 +492,13 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
           {!active ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <Network className="mb-3 size-8 text-cyan-300/70" />
-              <p className="font-serif text-xl">Select a knowledge node</p>
+              <p className="text-xl">{t("Select a knowledge node", "یک گره دانش انتخاب کنید")}</p>
             </div>
           ) : (
             <div className="mx-auto max-w-3xl space-y-6">
               <div>
                 <Badge className="mb-2">{kindLabel(active.kind)}</Badge>
-                <h2 className="font-serif text-3xl tracking-tight">
+                <h2 className="text-3xl tracking-tight">
                   {active.name}
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">{active.key}</p>
@@ -505,7 +511,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
 
               <div className="rounded-xl border border-white/5 p-4">
                 <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-                  Connect nodes
+                  {t("Connect nodes", "اتصال گره‌ها")}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <select
@@ -513,7 +519,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
                     value={connectToId}
                     onChange={(e) => setConnectToId(e.target.value)}
                   >
-                    <option value="">Target node…</option>
+                    <option value="">{t("Target node…", "گره هدف…")}</option>
                     {nodes
                       .filter((n) => n.id !== active.id)
                       .map((n) => (
@@ -595,7 +601,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
                   ))}
                   {!active.fromRels?.length ? (
                     <li className="text-sm text-muted-foreground">
-                      No outgoing relations
+                      {t("No outgoing relations", "رابطه خروجی نیست")}
                     </li>
                   ) : null}
                 </ul>
@@ -619,7 +625,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
                   ))}
                   {!active.toRels?.length ? (
                     <li className="text-sm text-muted-foreground">
-                      No incoming relations
+                      {t("No incoming relations", "رابطه ورودی نیست")}
                     </li>
                   ) : null}
                 </ul>
@@ -652,26 +658,26 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
         <aside className="min-h-0 space-y-4 overflow-y-auto border-l border-white/5 p-4">
           <div>
             <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              Event graph preview
+              {t("Event graph preview", "پیش‌نمایش گراف رویداد")}
             </p>
             <Input
-              placeholder="MarketingEvent id"
+              placeholder={t("MarketingEvent id", "شناسه رویداد بازاریابی")}
               value={eventId}
               onChange={(e) => setEventId(e.target.value)}
             />
             <div className="mt-2 flex flex-wrap gap-1">
               <Button size="sm" variant="outline" disabled={busy} onClick={() => void loadPreview()}>
-                Preview
+                {t("Preview", "پیش‌نمایش")}
               </Button>
               <Button size="sm" disabled={busy || !activeId} onClick={() => void linkEvent()}>
-                Link active node
+                {t("Link active node", "لینک گره فعال")}
               </Button>
             </div>
           </div>
 
           {preview?.event ? (
             <div className="space-y-3 rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-3">
-              <p className="font-serif text-lg">{preview.event.name}</p>
+              <p className="text-lg">{preview.event.name}</p>
               <p className="text-xs text-muted-foreground">
                 {preview.links.length} knowledge links · {preview.relations.length}{" "}
                 node relations
@@ -750,8 +756,10 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Paste an event id to preview its knowledge neighborhood and set
-              preparation windows.
+              {t(
+                "Paste an event id to preview its knowledge neighborhood and set preparation windows.",
+                "شناسه رویداد را بچسبانید تا همسایگی دانش و پنجره‌های آماده‌سازی را ببینید.",
+              )}
             </p>
           )}
         </aside>

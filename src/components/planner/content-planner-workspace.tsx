@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageCopy } from "@/i18n/use-page-copy";
+import { useI18n } from "@/i18n/client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -124,6 +125,8 @@ function buildMonthGrid(anchor: string) {
 
 export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("planner");
+  const { locale } = useI18n();
+  const t = (en: string, fa: string) => (locale === "fa" ? fa : en);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [plans, setPlans] = useState<PlanListItem[]>([]);
@@ -154,7 +157,9 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
         await openPlan(data.plans[0].id);
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unable to load planner");
+      toast.error(
+        e instanceof Error ? e.message : t("Unable to load planner", "بارگذاری برنامه‌ریز ممکن نشد"),
+      );
     } finally {
       setLoading(false);
     }
@@ -195,10 +200,10 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
         startDate,
       });
       setPlan(data.plan);
-      toast.success("Plan ready for review");
+      toast.success(t("Plan ready for review", "برنامه آماده بازبینی است"));
       await loadBootstrap();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Generate failed");
+      toast.error(e instanceof Error ? e.message : t("Generate failed", "تولید ناموفق بود"));
     } finally {
       setBusy(false);
     }
@@ -256,7 +261,10 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
           <div>
             <h1 className="text-base font-semibold tracking-tight">{page.title}</h1>
             <p className="text-xs text-muted-foreground">
-              Strategic publishing plans — never captions or scripts
+              {t(
+                "Strategic publishing plans — never captions or scripts",
+                "برنامه‌های انتشار استراتژیک — نه کپشن یا اسکریپت",
+              )}
             </p>
           </div>
         </div>
@@ -274,13 +282,13 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                     itemIds: [...selected],
                     status: "APPROVED",
                   }).then((d) => {
-                    toast.success("Approved");
+                    toast.success(t("Approved", "تأیید شد"));
                     return refreshPlan(d.plan);
                   })
                 }
               >
                 <Check className="size-3.5" />
-                Bulk approve
+                {t("Bulk approve", "تأیید گروهی")}
               </Button>
               <Button
                 size="sm"
@@ -292,13 +300,13 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                     planId: plan.id,
                     itemIds: [...selected],
                   }).then((d) => {
-                    toast.success("Regenerated");
+                    toast.success(t("Regenerated", "بازتولید شد"));
                     return refreshPlan(d.plan);
                   })
                 }
               >
                 <RefreshCw className="size-3.5" />
-                Bulk regen
+                {t("Bulk regen", "بازتولید گروهی")}
               </Button>
               <Button
                 size="sm"
@@ -317,16 +325,23 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                       }),
                     )
                     .then((d) => {
-                      toast.success(`Pushed ${d.createdCount} items to Studio`);
+                      toast.success(
+                        t(
+                          `Pushed ${d.createdCount} items to Studio`,
+                          `${d.createdCount} مورد به استودیو ارسال شد`,
+                        ),
+                      );
                       return refreshPlan(d.plan);
                     })
                     .catch((e) =>
-                      toast.error(e instanceof Error ? e.message : "Push failed"),
+                      toast.error(
+                        e instanceof Error ? e.message : t("Push failed", "ارسال ناموفق بود"),
+                      ),
                     )
                 }
               >
                 <Send className="size-3.5" />
-                Send to Studio
+                {t("Send to Studio", "ارسال به استودیو")}
               </Button>
             </>
           ) : null}
@@ -339,43 +354,43 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
             <div>
               <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Generate
+                {t("Generate", "تولید")}
               </p>
               <div className="space-y-2">
-                <Label className="text-xs">Plan type</Label>
+                <Label className="text-xs">{t("Plan type", "نوع برنامه")}</Label>
                 <select
                   className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
                   value={planType}
                   onChange={(e) => setPlanType(e.target.value as PlanTypeKey)}
                 >
-                  {PLAN_TYPES.map((t) => (
-                    <option key={t.key} value={t.key}>
-                      {t.label}
+                  {PLAN_TYPES.map((pt) => (
+                    <option key={pt.key} value={pt.key}>
+                      {pt.label}
                     </option>
                   ))}
                 </select>
-                <Label className="text-xs">Start date</Label>
+                <Label className="text-xs">{t("Start date", "تاریخ شروع")}</Label>
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
-                <Label className="text-xs">Business goal</Label>
+                <Label className="text-xs">{t("Business goal", "هدف کسب‌وکار")}</Label>
                 <Input
                   value={settings.businessGoal}
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, businessGoal: e.target.value }))
                   }
-                  placeholder="e.g. Increase engagement"
+                  placeholder={t("e.g. Increase engagement", "مثلاً افزایش تعامل")}
                 />
-                <Label className="text-xs">Audience</Label>
+                <Label className="text-xs">{t("Audience", "مخاطب")}</Label>
                 <Input
                   value={settings.targetAudience}
                   onChange={(e) =>
                     setSettings((s) => ({ ...s, targetAudience: e.target.value }))
                   }
                 />
-                <Label className="text-xs">Frequency</Label>
+                <Label className="text-xs">{t("Frequency", "فرکانس")}</Label>
                 <select
                   className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
                   value={settings.publishingFrequency}
@@ -386,11 +401,11 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                     }))
                   }
                 >
-                  <option value="light">Light</option>
-                  <option value="steady">Steady</option>
-                  <option value="aggressive">Aggressive</option>
+                  <option value="light">{t("Light", "کم")}</option>
+                  <option value="steady">{t("Steady", "ثابت")}</option>
+                  <option value="aggressive">{t("Aggressive", "پرحجم")}</option>
                 </select>
-                <Label className="text-xs">Tone / Language</Label>
+                <Label className="text-xs">{t("Tone / Language", "لحن / زبان")}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <Input
                     value={settings.tone}
@@ -405,7 +420,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                     }
                   />
                 </div>
-                <Label className="text-xs">Platforms</Label>
+                <Label className="text-xs">{t("Platforms", "پلتفرم‌ها")}</Label>
                 <div className="flex flex-wrap gap-1">
                   {PLANNER_PLATFORMS.map((p) => {
                     const on = settings.platforms.includes(p);
@@ -433,7 +448,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                     );
                   })}
                 </div>
-                <Label className="text-xs">Content mix</Label>
+                <Label className="text-xs">{t("Content mix", "ترکیب محتوا")}</Label>
                 <div className="flex flex-wrap gap-1">
                   {MIX_CATEGORIES.map((m) => {
                     const on = settings.contentMix.includes(m.key);
@@ -467,14 +482,14 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                   ) : (
                     <Sparkles className="size-3.5" />
                   )}
-                  Generate plan
+                  {t("Generate plan", "تولید برنامه")}
                 </Button>
               </div>
             </div>
 
             <div>
               <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                History
+                {t("History", "تاریخچه")}
               </p>
               <div className="space-y-1">
                 {plans.map((p) => (
@@ -495,7 +510,10 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                 ))}
                 {!plans.length ? (
                   <p className="px-1 text-xs text-muted-foreground">
-                    No plans yet — generate your first calendar.
+                    {t(
+                      "No plans yet — generate your first calendar.",
+                      "هنوز برنامه‌ای نیست — اولین تقویم خود را بسازید.",
+                    )}
                   </p>
                 ) : null}
               </div>
@@ -507,13 +525,16 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
         <section className="flex min-h-0 flex-col">
           <div className="border-b border-white/6 px-4 py-2">
             <p className="text-sm font-medium">
-              {plan?.title || "Calendar"}
+              {plan?.title || t("Calendar", "تقویم")}
             </p>
             {plan?.summary ? (
               <p className="line-clamp-2 text-xs text-muted-foreground">{plan.summary}</p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Generate → Review → Modify → Approve → Send to Studio
+                {t(
+                  "Generate → Review → Modify → Approve → Send to Studio",
+                  "تولید ← بازبینی ← ویرایش ← تأیید ← ارسال به استودیو",
+                )}
               </p>
             )}
           </div>
@@ -521,24 +542,37 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
           {!plan ? (
             <div className="flex flex-1 items-center justify-center p-8 text-center">
               <div className="max-w-md space-y-3">
-                <h2 className="font-serif text-2xl tracking-tight">
-                  Start from intelligence, not a blank page
+                <h2 className="text-2xl tracking-tight">
+                  {t(
+                    "Start from intelligence, not a blank page",
+                    "از هوش شروع کنید، نه از صفحه خالی",
+                  )}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Plans use Business Brain, pillars, campaigns, analytics and brand voice.
-                  Only strategic slots are created — never full captions.
+                  {t(
+                    "Plans use Business Brain, pillars, campaigns, analytics and brand voice. Only strategic slots are created — never full captions.",
+                    "برنامه‌ها از مغز کسب‌وکار، ستون‌ها، کمپین‌ها، تحلیل‌ها و لحن برند استفاده می‌کنند. فقط اسلات‌های استراتژیک ساخته می‌شوند — هرگز کپشن کامل.",
+                  )}
                 </p>
                 <Button disabled={busy} onClick={() => void generate()}>
                   <Sparkles className="size-3.5" />
-                  Generate weekly plan
+                  {t("Generate weekly plan", "تولید برنامه هفتگی")}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-auto p-3">
               <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[10px] uppercase tracking-wide text-muted-foreground">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                  <div key={d}>{d}</div>
+                {[
+                  t("Sun", "ی"),
+                  t("Mon", "د"),
+                  t("Tue", "س"),
+                  t("Wed", "چ"),
+                  t("Thu", "پ"),
+                  t("Fri", "ج"),
+                  t("Sat", "ش"),
+                ].map((d, i) => (
+                  <div key={`${d}-${i}`}>{d}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1">
@@ -617,14 +651,14 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
         <aside className="hidden min-h-0 flex-col border-l border-white/6 lg:flex">
           <div className="border-b border-white/6 px-3 py-3">
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Insight Panel
+              {t("Insight Panel", "پنل بینش")}
             </p>
           </div>
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
             {planConflicts.length ? (
               <div className="space-y-1.5">
                 <p className="text-[10px] uppercase tracking-[0.14em] text-amber-400/90">
-                  Conflicts
+                  {t("Conflicts", "تعارض‌ها")}
                 </p>
                 {planConflicts.slice(0, 6).map((c, i) => (
                   <div
@@ -640,7 +674,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
             {plan?.distribution ? (
               <div>
                 <p className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Distribution
+                  {t("Distribution", "توزیع")}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {Object.entries(plan.distribution).map(([k, v]) => (
@@ -656,7 +690,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Lightbulb className="size-3.5 text-teal-300" />
-                  <p className="text-sm font-medium">Why this slot</p>
+                  <p className="text-sm font-medium">{t("Why this slot", "چرا این اسلات")}</p>
                 </div>
                 {activeInsights.length ? (
                   activeInsights.map((i) => (
@@ -666,12 +700,15 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                   ))
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Grounded in business context and schedule balance.
+                    {t(
+                      "Grounded in business context and schedule balance.",
+                      "بر پایه زمینه کسب‌وکار و تعادل برنامه.",
+                    )}
                   </p>
                 )}
 
                 <div className="space-y-2 rounded-xl border border-white/8 p-2.5">
-                  <Label className="text-xs">Title</Label>
+                  <Label className="text-xs">{t("Title", "عنوان")}</Label>
                   <Input
                     value={activeItem.title}
                     onChange={(e) =>
@@ -696,7 +733,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                       }).then((d) => refreshPlan(d.plan))
                     }
                   />
-                  <Label className="text-xs">Goal</Label>
+                  <Label className="text-xs">{t("Goal", "هدف")}</Label>
                   <Textarea
                     className="min-h-[64px]"
                     value={activeItem.goal || ""}
@@ -724,7 +761,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-xs">Platform</Label>
+                      <Label className="text-xs">{t("Platform", "پلتفرم")}</Label>
                       <select
                         className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs"
                         value={activeItem.platform}
@@ -744,7 +781,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                       </select>
                     </div>
                     <div>
-                      <Label className="text-xs">Format</Label>
+                      <Label className="text-xs">{t("Format", "قالب")}</Label>
                       <select
                         className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs"
                         value={activeItem.contentType}
@@ -778,7 +815,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                       }
                     >
                       <Check className="size-3.5" />
-                      Approve
+                      {t("Approve", "تأیید")}
                     </Button>
                     <Button
                       size="sm"
@@ -793,7 +830,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                       }
                     >
                       <X className="size-3.5" />
-                      Reject
+                      {t("Reject", "رد")}
                     </Button>
                     <Button
                       size="sm"
@@ -818,7 +855,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                           planId: plan!.id,
                           itemIds: [activeItem.id],
                         }).then((d) => {
-                          toast.success("Item regenerated");
+                          toast.success(t("Item regenerated", "مورد بازتولید شد"));
                           return refreshPlan(d.plan);
                         })
                       }
@@ -837,14 +874,17 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                         }).then((d) => refreshPlan(d.plan))
                       }
                     >
-                      Move +1d
+                      {t("Move +1d", "انتقال +۱ روز")}
                     </Button>
                   </div>
                 </div>
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Select a calendar item to see why it was suggested and edit details.
+                {t(
+                  "Select a calendar item to see why it was suggested and edit details.",
+                  "یک مورد تقویم را انتخاب کنید تا دلیل پیشنهاد را ببینید و جزئیات را ویرایش کنید.",
+                )}
               </p>
             )}
           </div>

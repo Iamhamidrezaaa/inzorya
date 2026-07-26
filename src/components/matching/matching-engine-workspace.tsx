@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/use-t";
+
 import { usePageCopy } from "@/i18n/use-page-copy";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -81,6 +83,7 @@ export function MatchingEngineWorkspace({
   brandSlug,
 }: Props) {
   const page = usePageCopy("matching");
+  const t = useT();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("upcoming");
@@ -226,12 +229,14 @@ export function MatchingEngineWorkspace({
           <p className="text-xs uppercase tracking-[0.2em] text-orange-200/70">
             {page.title}
           </p>
-          <h1 className="font-serif text-2xl tracking-tight">
-            Deterministic business fit
+          <h1 className="text-2xl tracking-tight">
+            {t("Deterministic business fit", "تناسب قطعی کسب‌وکار")}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            No LLM. No content. Pure reproducible scoring from Knowledge Graph +
-            Business Brain.
+            {t(
+              "No LLM. No content. Pure reproducible scoring from Knowledge Graph + Business Brain.",
+              "بدون مدل زبانی. بدون محتوا. امتیازدهی تکرارپذیر از گراف دانش + مغز کسب‌وکار.",
+            )}
           </p>
         </div>
         <Button size="sm" disabled={busy} onClick={() => void run()}>
@@ -240,7 +245,7 @@ export function MatchingEngineWorkspace({
           ) : (
             <RefreshCw className="size-4" />
           )}
-          Run matching
+          {t("Run matching", "اجرای تطبیق")}
         </Button>
       </header>
 
@@ -248,12 +253,12 @@ export function MatchingEngineWorkspace({
         <aside className="min-h-0 space-y-3 overflow-y-auto border-r border-white/5 p-3">
           <div className="grid grid-cols-2 gap-2 text-center text-xs">
             <div className="rounded-lg border border-white/5 p-2">
-              <p className="font-serif text-lg">{counts.critical}</p>
-              <p className="text-muted-foreground">Critical</p>
+              <p className="text-lg">{counts.critical}</p>
+              <p className="text-muted-foreground">{t("Critical", "بحرانی")}</p>
             </div>
             <div className="rounded-lg border border-white/5 p-2">
-              <p className="font-serif text-lg">{counts.upcoming}</p>
-              <p className="text-muted-foreground">Upcoming</p>
+              <p className="text-lg">{counts.upcoming}</p>
+              <p className="text-muted-foreground">{t("Upcoming", "پیش‌رو")}</p>
             </div>
           </div>
           <div className="space-y-1">
@@ -263,20 +268,38 @@ export function MatchingEngineWorkspace({
                 type="button"
                 onClick={() => setFilter(f.key)}
                 className={cn(
-                  "w-full rounded-lg border px-2.5 py-2 text-left text-sm",
+                  "w-full rounded-lg border px-2.5 py-2 text-start text-sm",
                   filter === f.key
                     ? "border-orange-400/40 bg-orange-400/10"
                     : "border-transparent hover:border-white/10",
                 )}
               >
-                {f.label}
+                {t(
+                  f.label,
+                  (
+                    {
+                      upcoming: "فرصت‌های پیش‌رو",
+                      critical: "فرصت‌های بحرانی",
+                      ignored: "فرصت‌های نادیده‌گرفته",
+                      expired: "فرصت‌های منقضی",
+                      low_confidence: "تطبیق‌های کم‌اطمینان",
+                      manual: "لغو دستی",
+                    } as Record<string, string>
+                  )[f.key] ?? f.label,
+                )}
               </button>
             ))}
           </div>
           <div className="rounded-xl border border-white/5 p-3 text-xs text-muted-foreground">
-            <p>Conflicts · {counts.conflicts}</p>
-            <p className="mt-1">Overrides · {counts.overrides}</p>
-            <p className="mt-1">Low confidence · {counts.lowConfidence}</p>
+            <p>
+              {t("Conflicts", "تعارض‌ها")} · {counts.conflicts}
+            </p>
+            <p className="mt-1">
+              {t("Overrides", "لغوها")} · {counts.overrides}
+            </p>
+            <p className="mt-1">
+              {t("Low confidence", "اطمینان پایین")} · {counts.lowConfidence}
+            </p>
           </div>
         </aside>
 
@@ -317,7 +340,7 @@ export function MatchingEngineWorkspace({
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-serif text-2xl">
+                      <p className="text-2xl">
                         {Math.round(o.score?.overall ?? 0)}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
@@ -331,9 +354,12 @@ export function MatchingEngineWorkspace({
             {!list.length ? (
               <li className="rounded-xl border border-dashed border-white/10 p-8 text-center">
                 <Crosshair className="mx-auto mb-2 size-8 text-orange-300/70" />
-                <p className="font-serif text-lg">No matches in this filter</p>
+                <p className="text-lg">{t("No matches in this filter", "تطبیقی در این فیلتر نیست")}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Run matching to score events against this brand.
+                  {t(
+                    "Run matching to score events against this brand.",
+                    "تطبیق را اجرا کنید تا رویدادها در برابر این برند امتیاز بگیرند.",
+                  )}
                 </p>
               </li>
             ) : null}
@@ -343,13 +369,16 @@ export function MatchingEngineWorkspace({
         <aside className="min-h-0 overflow-y-auto border-l border-white/5 p-4">
           {!active ? (
             <p className="text-sm text-muted-foreground">
-              Select an opportunity to see explanation and overrides.
+              {t(
+                "Select an opportunity to see explanation and overrides.",
+                "یک فرصت را انتخاب کنید تا توضیح و لغوها را ببینید.",
+              )}
             </p>
           ) : (
             <div className="space-y-4">
               <div>
                 <Badge className="mb-2">{active.scoreLevel}</Badge>
-                <h2 className="font-serif text-2xl leading-tight">
+                <h2 className="text-2xl leading-tight">
                   {active.title}
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -361,7 +390,7 @@ export function MatchingEngineWorkspace({
                 <p className="text-xs uppercase tracking-wide text-orange-200/70">
                   Overall score
                 </p>
-                <p className="font-serif text-3xl">
+                <p className="text-3xl">
                   {Math.round(active.score?.overall ?? 0)}
                 </p>
                 <p className="text-xs text-muted-foreground">

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageCopy } from "@/i18n/use-page-copy";
+import { useI18n } from "@/i18n/client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -156,6 +157,8 @@ function ScoreBars({ score }: { score: Score }) {
 
 export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("creator");
+  const { locale } = useI18n();
+  const t = (en: string, fa: string) => (locale === "fa" ? fa : en);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -188,7 +191,9 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
       if (data.defaults?.objective) setObjective(data.defaults.objective);
       if (data.defaults?.contentType) setContentType(data.defaults.contentType);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unable to load creator");
+      toast.error(
+        e instanceof Error ? e.message : t("Unable to load creator", "بارگذاری تولیدکننده ممکن نشد"),
+      );
     } finally {
       setLoading(false);
     }
@@ -236,10 +241,10 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
       });
       setContent(data.content);
       setSelectedIds(data.content.variations?.[0] ? [data.content.variations[0].id] : []);
-      toast.success("Variations ready for review");
+      toast.success(t("Variations ready for review", "نسخه‌ها آماده بازبینی هستند"));
       await loadBootstrap();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Generate failed");
+      toast.error(e instanceof Error ? e.message : t("Generate failed", "تولید ناموفق بود"));
     } finally {
       setBusy(false);
     }
@@ -283,7 +288,10 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
           <div>
             <h1 className="text-base font-semibold tracking-tight">{page.title}</h1>
             <p className="text-xs text-muted-foreground">
-              Creative director workflow — context first, prompts never shown
+              {t(
+                "Creative director workflow — context first, prompts never shown",
+                "گردش کار کارگردان خلاق — اول زمینه، پرامپت هرگز نمایش داده نمی‌شود",
+              )}
             </p>
           </div>
         </div>
@@ -294,11 +302,11 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
             disabled={!content || selectedIds.length < 2}
             onClick={() => setCompareMode((v) => !v)}
           >
-            Compare
+            {t("Compare", "مقایسه")}
           </Button>
           <Button size="sm" disabled={busy} onClick={() => void generate()}>
             {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
-            Generate
+            {t("Generate", "تولید")}
           </Button>
         </div>
       </div>
@@ -309,7 +317,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                1 · Platform
+                {t("1 · Platform", "۱ · پلتفرم")}
               </p>
               <div className="flex flex-wrap gap-1">
                 {CREATOR_PLATFORMS.map((p) => (
@@ -332,7 +340,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
 
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                2 · Objective
+                {t("2 · Objective", "۲ · هدف")}
               </p>
               <select
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
@@ -349,14 +357,14 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
 
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                3 · Campaign
+                {t("3 · Campaign", "۳ · کمپین")}
               </p>
               <select
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
                 value={campaignId}
                 onChange={(e) => setCampaignId(e.target.value)}
               >
-                <option value="">No campaign</option>
+                <option value="">{t("No campaign", "بدون کمپین")}</option>
                 {campaigns.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -367,7 +375,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
 
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                4 · Content type
+                {t("4 · Content type", "۴ · نوع محتوا")}
               </p>
               <select
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
@@ -384,7 +392,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
 
             <div className="space-y-2">
               <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Variations
+                {t("Variations", "نسخه‌ها")}
               </p>
               <div className="flex gap-1">
                 {VARIATION_COUNTS.map((n) => (
@@ -403,13 +411,15 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-muted-foreground">⌘/Ctrl + Enter to generate</p>
+              <p className="text-[10px] text-muted-foreground">
+                {t("⌘/Ctrl + Enter to generate", "⌘/Ctrl + Enter برای تولید")}
+              </p>
             </div>
 
             <div>
               <p className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 <History className="size-3" />
-                History
+                {t("History", "تاریخچه")}
               </p>
               <div className="space-y-1">
                 {history.map((h) => (
@@ -429,7 +439,9 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                   </button>
                 ))}
                 {!history.length ? (
-                  <p className="text-xs text-muted-foreground">No generations yet.</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("No generations yet.", "هنوز تولیدی نیست.")}
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -441,16 +453,18 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
           {!content ? (
             <div className="flex flex-1 items-center justify-center p-8 text-center">
               <div className="max-w-lg space-y-3">
-                <h2 className="font-serif text-2xl tracking-tight">
-                  Select. Generate. Approve.
+                <h2 className="text-2xl tracking-tight">
+                  {t("Select. Generate. Approve.", "انتخاب. تولید. تأیید.")}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Business Brain, brand voice, audience, campaigns and content history are
-                  loaded automatically. You never start from a blank prompt.
+                  {t(
+                    "Business Brain, brand voice, audience, campaigns and content history are loaded automatically. You never start from a blank prompt.",
+                    "مغز کسب‌وکار، لحن برند، مخاطب، کمپین‌ها و تاریخچه محتوا به‌طور خودکار بارگذاری می‌شوند. هرگز از یک پرامپت خالی شروع نمی‌کنید.",
+                  )}
                 </p>
                 <Button disabled={busy} onClick={() => void generate()}>
                   <Sparkles className="size-3.5" />
-                  Generate variations
+                  {t("Generate variations", "تولید نسخه‌ها")}
                 </Button>
               </div>
             </div>
@@ -495,7 +509,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                         contentId: content.id,
                         duplicate: true,
                       }).then((d) => {
-                        toast.success("Duplicated");
+                        toast.success(t("Duplicated", "تکثیر شد"));
                         setContent(d.content);
                         return loadBootstrap();
                       })
@@ -575,12 +589,12 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                       ) : null}
                       {v.brandValidation?.passed ? (
                         <Badge variant="outline" className="rounded-md text-[10px]">
-                          Review passed
+                          {t("Review passed", "بازبینی موفق")}
                         </Badge>
                       ) : null}
                     </div>
 
-                    <h2 className="font-serif text-xl tracking-tight text-foreground">
+                    <h2 className="text-xl tracking-tight text-foreground">
                       {v.title}
                     </h2>
                     <p className="mt-3 text-sm font-medium text-teal-200/90">{v.hook}</p>
@@ -590,7 +604,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                     {v.cta ? (
                       <p className="mt-4 rounded-xl border border-white/8 bg-black/20 px-3 py-2 text-sm">
                         <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          CTA
+                          {t("CTA", "دعوت به اقدام")}
                         </span>
                         <br />
                         {v.cta}
@@ -600,7 +614,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                     {Array.isArray(v.carouselSlides) && v.carouselSlides.length ? (
                       <div className="mt-4 space-y-2">
                         <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                          Carousel
+                          {t("Carousel", "کاروسل")}
                         </p>
                         {v.carouselSlides.map((s) => (
                           <div
@@ -608,8 +622,8 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                             className="rounded-lg border border-white/8 px-3 py-2 text-sm"
                           >
                             <span className="text-xs text-muted-foreground">
-                              Slide {s.order}
-                              {s.isCta ? " · CTA" : ""}
+                              {t("Slide", "اسلاید")} {s.order}
+                              {s.isCta ? ` · ${t("CTA", "دعوت به اقدام")}` : ""}
                             </span>
                             <p className="font-medium">{s.title}</p>
                             <p className="text-muted-foreground">{s.text}</p>
@@ -621,10 +635,10 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                     {v.reelBreakdown ? (
                       <div className="mt-4 space-y-2">
                         <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                          Reel breakdown
+                          {t("Reel breakdown", "شرح ریل")}
                         </p>
                         <p className="text-sm">
-                          <strong>Hook:</strong> {v.reelBreakdown.openingHook}
+                          <strong>{t("Hook:", "قلاب:")}</strong> {v.reelBreakdown.openingHook}
                         </p>
                         {(v.reelBreakdown.scenes || []).map((s, idx) => (
                           <div
@@ -637,25 +651,26 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                           </div>
                         ))}
                         <p className="text-sm">
-                          <strong>Ending CTA:</strong> {v.reelBreakdown.endingCta}
+                          <strong>{t("Ending CTA:", "دعوت پایانی:")}</strong>{" "}
+                          {v.reelBreakdown.endingCta}
                         </p>
                       </div>
                     ) : null}
 
                     <div className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
                       <p>
-                        <span className="text-foreground/80">Visual:</span>{" "}
+                        <span className="text-foreground/80">{t("Visual:", "بصری:")}</span>{" "}
                         {v.visualDirection || "—"}
                       </p>
                       <p>
-                        <span className="text-foreground/80">Cover:</span>{" "}
+                        <span className="text-foreground/80">{t("Cover:", "کاور:")}</span>{" "}
                         {v.suggestedCover || "—"}
                       </p>
                       <p className="sm:col-span-2">
-                        Hashtags: {v.hashtags.join(" ") || "—"}
+                        {t("Hashtags:", "هشتگ‌ها:")} {v.hashtags.join(" ") || "—"}
                       </p>
                       <p className="sm:col-span-2">
-                        Keywords: {v.keywords.join(", ") || "—"}
+                        {t("Keywords:", "کلیدواژه‌ها:")} {v.keywords.join(", ") || "—"}
                       </p>
                     </div>
 
@@ -666,11 +681,11 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                         onClick={() =>
                           void navigator.clipboard.writeText(
                             [v.hook, v.body, v.cta].filter(Boolean).join("\n\n"),
-                          ).then(() => toast.success("Copied"))
+                          ).then(() => toast.success(t("Copied", "کپی شد")))
                         }
                       >
                         <Copy className="size-3.5" />
-                        Copy
+                        {t("Copy", "کپی")}
                       </Button>
                       <Button
                         size="sm"
@@ -762,13 +777,13 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                             contentId: content.id,
                             variationId: v.id,
                           }).then(() => {
-                            toast.success("Pushed to Content Studio");
+                            toast.success(t("Pushed to Content Studio", "به استودیو محتوا ارسال شد"));
                             return openContent(content.id);
                           })
                         }
                       >
                         <Send className="size-3.5" />
-                        Studio
+                        {t("Studio", "استودیو")}
                       </Button>
                     </div>
                   </article>
@@ -782,20 +797,23 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
         <aside className="hidden min-h-0 flex-col border-l border-white/6 lg:flex">
           <div className="border-b border-white/6 px-3 py-3">
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Score & visuals
+              {t("Score & visuals", "امتیاز و بصری‌ها")}
             </p>
           </div>
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
             {primary?.score ? <ScoreBars score={primary.score} /> : (
               <p className="text-xs text-muted-foreground">
-                Generate to see brand consistency, CTA strength, and platform fit.
+                {t(
+                  "Generate to see brand consistency, CTA strength, and platform fit.",
+                  "برای دیدن سازگاری برند، قدرت دعوت به اقدام و تناسب پلتفرم، تولید کنید.",
+                )}
               </p>
             )}
 
             {content?.qualityFlags?.length ? (
               <div className="space-y-1.5">
                 <Label className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Quality control
+                  {t("Quality control", "کنترل کیفیت")}
                 </Label>
                 {content.qualityFlags.map((f, i) => (
                   <p
@@ -811,7 +829,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
             {primary?.visuals?.length ? (
               <div className="space-y-1.5">
                 <Label className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Visual suggestions
+                  {t("Visual suggestions", "پیشنهادهای بصری")}
                 </Label>
                 {primary.visuals.map((vis) => (
                   <div
@@ -830,7 +848,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
             {primary ? (
               <div className="space-y-1.5">
                 <Label className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Rewrite
+                  {t("Rewrite", "بازنویسی")}
                 </Label>
                 <div className="flex flex-wrap gap-1">
                   {REWRITE_STYLES.map((s) => (
@@ -845,7 +863,9 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                           variationId: primary.id,
                           style: s.key,
                         }).then((d) => {
-                          toast.success(`Rewritten: ${s.label}`);
+                          toast.success(
+                            t(`Rewritten: ${s.label}`, `بازنویسی شد: ${s.label}`),
+                          );
                           setContent(d.content);
                           setSelectedIds(
                             d.content.variations?.[0]
@@ -867,7 +887,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
             {content?.versions?.length ? (
               <div className="space-y-1.5">
                 <Label className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                  Version history
+                  {t("Version history", "تاریخچه نسخه‌ها")}
                 </Label>
                 {content.versions.map((v) => (
                   <button
@@ -879,7 +899,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
                         intent: "restore",
                         contentId: v.id,
                       }).then((d) => {
-                        toast.success("Version restored");
+                        toast.success(t("Version restored", "نسخه بازیابی شد"));
                         setContent(d.content);
                         return loadBootstrap();
                       })

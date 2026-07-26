@@ -1,6 +1,7 @@
 "use client";
 
 import { usePageCopy } from "@/i18n/use-page-copy";
+import { useI18n } from "@/i18n/client";
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -138,6 +139,11 @@ export function StrategyWorkspace({
   brandSlug: string;
 }) {
   const page = usePageCopy("strategy");
+  const { locale } = useI18n();
+  const t = useCallback(
+    (en: string, fa: string) => (locale === "fa" ? fa : en),
+    [locale],
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [completion, setCompletion] = useState(0);
@@ -176,7 +182,7 @@ export function StrategyWorkspace({
     const res = await fetch(`/api/strategy?${params}`);
     setLoading(false);
     if (!res.ok) {
-      toast.error("Could not load strategy.");
+      toast.error(t("Could not load strategy.", "بارگذاری استراتژی ممکن نشد."));
       return;
     }
     const data = await res.json();
@@ -266,7 +272,7 @@ export function StrategyWorkspace({
         }),
       ),
     );
-  }, [workspaceSlug, brandSlug]);
+  }, [workspaceSlug, brandSlug, t]);
 
   useEffect(() => {
     void load();
@@ -281,12 +287,12 @@ export function StrategyWorkspace({
     });
     setSaving(false);
     if (!res.ok) {
-      toast.error("Could not save.");
+      toast.error(t("Could not save.", "ذخیره ممکن نشد."));
       return false;
     }
     const data = await res.json();
     if (typeof data.completion === "number") setCompletion(data.completion);
-    toast.success("Saved");
+    toast.success(t("Saved", "ذخیره شد"));
     return true;
   }
 
@@ -311,15 +317,23 @@ export function StrategyWorkspace({
         description={page.description}
         actions={
           <Badge variant="muted" className="tabular-nums">
-            {saving ? "Saving…" : `${completion}% business complete`}
+            {saving
+              ? t("Saving…", "در حال ذخیره…")
+              : t(
+                  `${completion}% business complete`,
+                  `${completion}% کسب‌وکار کامل شده`,
+                )}
           </Badge>
         }
       />
 
       {/* 1 — Business Overview */}
       <Section
-        title="Business overview"
-        description="Core facts Inzorya will use for every future plan."
+        title={t("Business overview", "نمای کلی کسب‌وکار")}
+        description={t(
+          "Core facts Inzorya will use for every future plan.",
+          "حقایق اصلی که اینزوریا برای هر برنامه آینده استفاده می‌کند.",
+        )}
         action={
           <Button
             size="sm"
@@ -341,18 +355,20 @@ export function StrategyWorkspace({
               })
             }
           >
-            Save overview
+            {t("Save overview", "ذخیره نمای کلی")}
           </Button>
         }
       >
         <div className="mb-5 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-sm">
-            <span className="text-muted-foreground">Completion</span>
+            <span className="text-muted-foreground">
+              {t("Completion", "میزان تکمیل")}
+            </span>
             <span className="font-medium tabular-nums">{completion}%</span>
           </div>
           {channels.length === 0 ? (
             <span className="text-sm text-muted-foreground">
-              No channels connected yet
+              {t("No channels connected yet", "هنوز کانالی وصل نشده است")}
             </span>
           ) : (
             channels.map((c) => (
@@ -366,9 +382,12 @@ export function StrategyWorkspace({
         <div className="grid gap-4 md:grid-cols-2">
           {(
             [
-              ["industry", "Industry"],
-              ["preferredTone", "Brand voice / tone"],
-              ["languages", "Languages (comma separated)"],
+              ["industry", t("Industry", "صنعت")],
+              ["preferredTone", t("Brand voice / tone", "لحن / صدای برند")],
+              [
+                "languages",
+                t("Languages (comma separated)", "زبان‌ها (با کاما جدا شود)"),
+              ],
             ] as const
           ).map(([key, label]) => (
             <div key={key} className="space-y-2">
@@ -383,10 +402,16 @@ export function StrategyWorkspace({
           ))}
           {(
             [
-              ["targetAudience", "Audience"],
-              ["businessGoals", "Goals"],
-              ["mainProducts", "Products / services"],
-              ["brandPersonality", "Brand personality"],
+              ["targetAudience", t("Audience", "مخاطب")],
+              ["businessGoals", t("Goals", "اهداف")],
+              [
+                "mainProducts",
+                t("Products / services", "محصولات / خدمات"),
+              ],
+              [
+                "brandPersonality",
+                t("Brand personality", "شخصیت برند"),
+              ],
             ] as const
           ).map(([key, label]) => (
             <div key={key} className="space-y-2 md:col-span-2">
@@ -405,15 +430,18 @@ export function StrategyWorkspace({
 
       {/* 2 — Marketing Goals */}
       <Section
-        title="Marketing goals"
-        description="Choose what success looks like. Multiple goals are fine."
+        title={t("Marketing goals", "اهداف بازاریابی")}
+        description={t(
+          "Choose what success looks like. Multiple goals are fine.",
+          "تعریف کنید موفقیت چه شکلی است. انتخاب چند هدف اشکالی ندارد.",
+        )}
         action={
           <Button
             size="sm"
             disabled={saving}
             onClick={() => void save({ goals })}
           >
-            Save goals
+            {t("Save goals", "ذخیره اهداف")}
           </Button>
         }
       >
@@ -431,8 +459,11 @@ export function StrategyWorkspace({
 
       {/* 3 — Target Audience */}
       <Section
-        title="Target audience"
-        description="Structured personas — not a freeform blob."
+        title={t("Target audience", "مخاطب هدف")}
+        description={t(
+          "Structured personas — not a freeform blob.",
+          "پرسوناهای ساخت‌یافته — نه یک متن آزاد.",
+        )}
         action={
           <div className="flex gap-2">
             <Button
@@ -444,7 +475,7 @@ export function StrategyWorkspace({
                   ...p,
                   {
                     id,
-                    name: "New persona",
+                    name: t("New persona", "پرسونای جدید"),
                     age: "",
                     gender: "",
                     location: "",
@@ -459,7 +490,7 @@ export function StrategyWorkspace({
               }}
             >
               <Plus className="h-4 w-4" />
-              Add persona
+              {t("Add persona", "افزودن پرسونا")}
             </Button>
             <Button
               size="sm"
@@ -481,7 +512,7 @@ export function StrategyWorkspace({
                 })
               }
             >
-              Save personas
+              {t("Save personas", "ذخیره پرسوناها")}
             </Button>
           </div>
         }
@@ -489,15 +520,18 @@ export function StrategyWorkspace({
         {personas.length === 0 ? (
           <EmptyState
             className="min-h-0 py-12"
-            title="No personas yet"
-            description="Add who you sell to — age, pains, motivations, objections."
-            actionLabel="Add persona"
+            title={t("No personas yet", "هنوز پرسونایی نیست")}
+            description={t(
+              "Add who you sell to — age, pains, motivations, objections.",
+              "مشتری‌تان را تعریف کنید — سن، دغدغه‌ها، انگیزه‌ها، اعتراض‌ها.",
+            )}
+            actionLabel={t("Add persona", "افزودن پرسونا")}
             onAction={() => {
               const id = uid();
               setPersonas([
                 {
                   id,
-                  name: "Primary buyer",
+                  name: t("Primary buyer", "خریدار اصلی"),
                   age: "",
                   gender: "",
                   location: "",
@@ -529,12 +563,12 @@ export function StrategyWorkspace({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">
-                        {persona.name || "Untitled persona"}
+                        {persona.name || t("Untitled persona", "پرسونای بدون عنوان")}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
                         {[persona.age, persona.location, persona.gender]
                           .filter(Boolean)
-                          .join(" · ") || "Fill in details"}
+                          .join(" · ") || t("Fill in details", "جزئیات را تکمیل کنید")}
                       </div>
                     </div>
                     {open ? (
@@ -548,10 +582,10 @@ export function StrategyWorkspace({
                       <div className="grid gap-3 sm:grid-cols-2">
                         {(
                           [
-                            ["name", "Persona name"],
-                            ["age", "Age"],
-                            ["gender", "Gender"],
-                            ["location", "Location"],
+                            ["name", t("Persona name", "نام پرسونا")],
+                            ["age", t("Age", "سن")],
+                            ["gender", t("Gender", "جنسیت")],
+                            ["location", t("Location", "موقعیت مکانی")],
                           ] as const
                         ).map(([key, label]) => (
                           <div key={key} className="space-y-1.5">
@@ -573,11 +607,14 @@ export function StrategyWorkspace({
                       </div>
                       {(
                         [
-                          ["interests", "Interests"],
-                          ["painPoints", "Pain points"],
-                          ["buyingMotivation", "Buying motivation"],
-                          ["objections", "Objections"],
-                          ["goals", "Goals"],
+                          ["interests", t("Interests", "علایق")],
+                          ["painPoints", t("Pain points", "دغدغه‌ها")],
+                          [
+                            "buyingMotivation",
+                            t("Buying motivation", "انگیزه خرید"),
+                          ],
+                          ["objections", t("Objections", "اعتراض‌ها")],
+                          ["goals", t("Goals", "اهداف")],
                         ] as const
                       ).map(([key, label]) => (
                         <div key={key} className="space-y-1.5">
@@ -638,7 +675,7 @@ export function StrategyWorkspace({
                           }
                         >
                           <Trash2 className="h-4 w-4" />
-                          Remove
+                          {t("Remove", "حذف")}
                         </Button>
                       </div>
                     </div>
@@ -652,8 +689,11 @@ export function StrategyWorkspace({
 
       {/* 4 — Competitors */}
       <Section
-        title="Competitors"
-        description="Who else is competing for attention."
+        title={t("Competitors", "رقبا")}
+        description={t(
+          "Who else is competing for attention.",
+          "چه کسان دیگری برای جلب توجه رقابت می‌کنند.",
+        )}
         action={
           <div className="flex gap-2">
             <Button
@@ -673,7 +713,7 @@ export function StrategyWorkspace({
               }
             >
               <Plus className="h-4 w-4" />
-              Add
+              {t("Add", "افزودن")}
             </Button>
             <Button
               size="sm"
@@ -692,7 +732,7 @@ export function StrategyWorkspace({
                 })
               }
             >
-              Save competitors
+              {t("Save competitors", "ذخیره رقبا")}
             </Button>
           </div>
         }
@@ -700,9 +740,12 @@ export function StrategyWorkspace({
         {competitors.length === 0 ? (
           <EmptyState
             className="min-h-0 py-12"
-            title="No competitors yet"
-            description="Add names, sites, Instagram handles, and notes."
-            actionLabel="Add competitor"
+            title={t("No competitors yet", "هنوز رقیبی نیست")}
+            description={t(
+              "Add names, sites, Instagram handles, and notes.",
+              "نام‌ها، سایت‌ها، آیدی اینستاگرام و یادداشت‌ها را اضافه کنید.",
+            )}
+            actionLabel={t("Add competitor", "افزودن رقیب")}
             onAction={() =>
               setCompetitors([
                 {
@@ -723,7 +766,7 @@ export function StrategyWorkspace({
                 className="grid gap-3 rounded-xl border border-border/70 bg-background/40 p-4 md:grid-cols-2"
               >
                 <div className="space-y-1.5">
-                  <Label>Name</Label>
+                  <Label>{t("Name", "نام")}</Label>
                   <Input
                     value={comp.name}
                     onChange={(e) =>
@@ -735,11 +778,11 @@ export function StrategyWorkspace({
                         ),
                       )
                     }
-                    placeholder="Competitor name"
+                    placeholder={t("Competitor name", "نام رقیب")}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Website</Label>
+                  <Label>{t("Website", "وب‌سایت")}</Label>
                   <Input
                     value={comp.website}
                     onChange={(e) =>
@@ -755,7 +798,7 @@ export function StrategyWorkspace({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Instagram</Label>
+                  <Label>{t("Instagram", "اینستاگرام")}</Label>
                   <Input
                     value={comp.instagram}
                     onChange={(e) =>
@@ -771,7 +814,7 @@ export function StrategyWorkspace({
                   />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label>Notes</Label>
+                  <Label>{t("Notes", "یادداشت‌ها")}</Label>
                   <Textarea
                     rows={2}
                     value={comp.notes}
@@ -799,7 +842,7 @@ export function StrategyWorkspace({
                     }
                   >
                     <Trash2 className="h-4 w-4" />
-                    Remove
+                    {t("Remove", "حذف")}
                   </Button>
                 </div>
               </div>
@@ -810,8 +853,11 @@ export function StrategyWorkspace({
 
       {/* 5 — Content Pillars */}
       <Section
-        title="Content pillars"
-        description="Categories you’ll talk about. Reorder to set priority."
+        title={t("Content pillars", "ستون‌های محتوا")}
+        description={t(
+          "Categories you'll talk about. Reorder to set priority.",
+          "دسته‌هایی که درباره‌شان صحبت می‌کنید. برای اولویت‌بندی جابه‌جا کنید.",
+        )}
         action={
           <div className="flex gap-2">
             <Button
@@ -820,12 +866,16 @@ export function StrategyWorkspace({
               onClick={() =>
                 setPillars((p) => [
                   ...p,
-                  { id: uid(), name: "New pillar", description: "" },
+                  {
+                    id: uid(),
+                    name: t("New pillar", "ستون جدید"),
+                    description: "",
+                  },
                 ])
               }
             >
               <Plus className="h-4 w-4" />
-              Add pillar
+              {t("Add pillar", "افزودن ستون")}
             </Button>
             <Button
               size="sm"
@@ -840,7 +890,7 @@ export function StrategyWorkspace({
                 })
               }
             >
-              Save pillars
+              {t("Save pillars", "ذخیره ستون‌ها")}
             </Button>
           </div>
         }
@@ -848,11 +898,16 @@ export function StrategyWorkspace({
         {pillars.length === 0 ? (
           <EmptyState
             className="min-h-0 py-12"
-            title="No pillars"
-            description="Add education, offers, culture — whatever shapes your content system."
-            actionLabel="Add pillar"
+            title={t("No pillars", "هنوز ستونی نیست")}
+            description={t(
+              "Add education, offers, culture — whatever shapes your content system.",
+              "آموزش، پیشنهادها، فرهنگ — هرچه سیستم محتوایی شما را شکل می‌دهد اضافه کنید.",
+            )}
+            actionLabel={t("Add pillar", "افزودن ستون")}
             onAction={() =>
-              setPillars([{ id: uid(), name: "Education", description: "" }])
+              setPillars([
+                { id: uid(), name: t("Education", "آموزش"), description: "" },
+              ])
             }
           />
         ) : (
@@ -888,7 +943,7 @@ export function StrategyWorkspace({
                 </div>
                 <div className="grid flex-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label>Name</Label>
+                    <Label>{t("Name", "نام")}</Label>
                     <Input
                       value={pillar.name}
                       onChange={(e) =>
@@ -903,7 +958,7 @@ export function StrategyWorkspace({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Description</Label>
+                    <Label>{t("Description", "توضیحات")}</Label>
                     <Input
                       value={pillar.description}
                       onChange={(e) =>
@@ -939,8 +994,11 @@ export function StrategyWorkspace({
 
       {/* 6 — Content Preferences */}
       <Section
-        title="Content preferences"
-        description="Cadence, formats, and how you sound — still no generation."
+        title={t("Content preferences", "ترجیحات محتوا")}
+        description={t(
+          "Cadence, formats, and how you sound — still no generation.",
+          "ریتم، فرمت‌ها و لحن شما — هنوز بدون تولید محتوا.",
+        )}
         action={
           <Button
             size="sm"
@@ -958,55 +1016,55 @@ export function StrategyWorkspace({
               })
             }
           >
-            Save preferences
+            {t("Save preferences", "ذخیره ترجیحات")}
           </Button>
         }
       >
         <div className="grid gap-5">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label>Posting frequency</Label>
+              <Label>{t("Posting frequency", "فرکانس انتشار")}</Label>
               <Input
                 value={prefs.postingFrequency}
                 onChange={(e) =>
                   setPrefs((p) => ({ ...p, postingFrequency: e.target.value }))
                 }
-                placeholder="e.g. 4× / week"
+                placeholder={t("e.g. 4× / week", "مثلاً ۴× در هفته")}
               />
             </div>
             <div className="space-y-2">
-              <Label>Tone</Label>
+              <Label>{t("Tone", "لحن")}</Label>
               <Input
                 value={prefs.tone}
                 onChange={(e) =>
                   setPrefs((p) => ({ ...p, tone: e.target.value }))
                 }
-                placeholder="Warm, expert…"
+                placeholder={t("Warm, expert…", "گرم، متخصصانه…")}
               />
             </div>
             <div className="space-y-2">
-              <Label>Length</Label>
+              <Label>{t("Length", "طول")}</Label>
               <Input
                 value={prefs.contentLength}
                 onChange={(e) =>
                   setPrefs((p) => ({ ...p, contentLength: e.target.value }))
                 }
-                placeholder="Short / medium"
+                placeholder={t("Short / medium", "کوتاه / متوسط")}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label>CTA style</Label>
+            <Label>{t("CTA style", "سبک فراخوان به اقدام")}</Label>
             <Input
               value={prefs.ctaStyle}
               onChange={(e) =>
                 setPrefs((p) => ({ ...p, ctaStyle: e.target.value }))
               }
-              placeholder="Soft invite, direct ask…"
+              placeholder={t("Soft invite, direct ask…", "دعوت ملایم، درخواست مستقیم…")}
             />
           </div>
           <div className="space-y-2">
-            <Label>Preferred platforms</Label>
+            <Label>{t("Preferred platforms", "پلتفرم‌های ترجیحی")}</Label>
             <div className="flex flex-wrap gap-2">
               {PLATFORM_OPTIONS.map((platform) => (
                 <ChipToggle
@@ -1027,17 +1085,17 @@ export function StrategyWorkspace({
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Content types</Label>
+            <Label>{t("Content types", "انواع محتوا")}</Label>
             <div className="flex flex-wrap gap-2">
-              {CONTENT_TYPE_OPTIONS.map((t) => (
+              {CONTENT_TYPE_OPTIONS.map((ct) => (
                 <ChipToggle
-                  key={t.key}
-                  label={t.label}
-                  selected={prefs.contentTypes.includes(t.key)}
+                  key={ct.key}
+                  label={ct.label}
+                  selected={prefs.contentTypes.includes(ct.key)}
                   onClick={() =>
                     setPrefs((p) => ({
                       ...p,
-                      contentTypes: toggleInList(p.contentTypes, t.key),
+                      contentTypes: toggleInList(p.contentTypes, ct.key),
                     }))
                   }
                 />
@@ -1049,8 +1107,11 @@ export function StrategyWorkspace({
 
       {/* 7 — Roadmap */}
       <Section
-        title="Roadmap"
-        description="Where you are in the strategy workflow — not AI output."
+        title={t("Roadmap", "نقشه راه")}
+        description={t(
+          "Where you are in the strategy workflow — not AI output.",
+          "جایگاه شما در گردش‌کار استراتژی — نه خروجی هوش مصنوعی.",
+        )}
         action={
           <Button
             size="sm"
@@ -1069,7 +1130,7 @@ export function StrategyWorkspace({
               })
             }
           >
-            Save roadmap
+            {t("Save roadmap", "ذخیره نقشه راه")}
           </Button>
         }
       >
@@ -1104,7 +1165,7 @@ export function StrategyWorkspace({
                     {stage.label}
                     {active ? (
                       <span className="ml-2 text-xs font-normal text-primary">
-                        Current
+                        {t("Current", "فعلی")}
                       </span>
                     ) : null}
                   </div>
@@ -1118,35 +1179,38 @@ export function StrategyWorkspace({
         </ol>
 
         <div className="mt-6 space-y-2">
-          <Label>Next step</Label>
+          <Label>{t("Next step", "قدم بعدی")}</Label>
           <Input
             value={nextStep}
             onChange={(e) => setNextStep(e.target.value)}
-            placeholder="What should happen next?"
+            placeholder={t("What should happen next?", "چه اتفاقی باید بعد بیفتد؟")}
           />
         </div>
 
         <div className="mt-6">
           <div className="mb-3 flex items-center justify-between">
-            <Label>Upcoming tasks</Label>
+            <Label>{t("Upcoming tasks", "کارهای پیش رو")}</Label>
             <Button
               type="button"
               size="sm"
               variant="outline"
               onClick={() =>
-                setTasks((t) => [
-                  ...t,
-                  { id: uid(), title: "New task", done: false },
+                setTasks((prev) => [
+                  ...prev,
+                  { id: uid(), title: t("New task", "کار جدید"), done: false },
                 ])
               }
             >
               <Plus className="h-4 w-4" />
-              Add task
+              {t("Add task", "افزودن کار")}
             </Button>
           </div>
           {tasks.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No tasks yet. Add the next few moves.
+              {t(
+                "No tasks yet. Add the next few moves.",
+                "هنوز کاری نیست. چند قدم بعدی را اضافه کنید.",
+              )}
             </p>
           ) : (
             <ul className="space-y-2">
@@ -1157,7 +1221,11 @@ export function StrategyWorkspace({
                 >
                   <button
                     type="button"
-                    aria-label={task.done ? "Mark undone" : "Mark done"}
+                    aria-label={
+                      task.done
+                        ? t("Mark undone", "علامت‌گذاری به‌عنوان انجام‌نشده")
+                        : t("Mark done", "علامت‌گذاری به‌عنوان انجام‌شده")
+                    }
                     className={cn(
                       "flex h-5 w-5 shrink-0 items-center justify-center rounded border",
                       task.done

@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/use-t";
+
 import { usePageCopy } from "@/i18n/use-page-copy";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -78,6 +80,7 @@ type ViewKey = (typeof WORK_VIEWS)[number]["key"];
 
 export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("work");
+  const t = useT();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -272,22 +275,35 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
           <p className="text-xs uppercase tracking-[0.2em] text-sky-200/70">
             {page.title}
           </p>
-          <h1 className="font-serif text-2xl tracking-tight">
-            From idea to done
+          <h1 className="text-2xl tracking-tight">
+            {t("From idea to done", "از ایده تا انجام")}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Execution layer — not another Kanban toy. One click from AI to work.
+            {t(
+              "Execution layer — not another Kanban toy. One click from AI to work.",
+              "لایه اجرا — نه یک کانبان اسباب‌بازی. یک کلیک از هوش مصنوعی تا کار.",
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-1">
-          {WORK_VIEWS.map((v) => (
+              {WORK_VIEWS.map((v) => (
             <Button
               key={v.key}
               size="sm"
               variant={view === v.key ? "default" : "outline"}
               onClick={() => setView(v.key)}
             >
-              {v.label}
+              {t(
+                v.label,
+                (
+                  {
+                    Dashboard: "داشبورد",
+                    List: "فهرست",
+                    Kanban: "کانبان",
+                    Table: "جدول",
+                  } as Record<string, string>
+                )[v.label] ?? v.label,
+              )}
             </Button>
           ))}
         </div>
@@ -297,17 +313,17 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
         <aside className="min-h-0 space-y-4 overflow-y-auto border-r border-white/5 p-3">
           <div className="grid grid-cols-2 gap-2 text-center text-xs">
             <div className="rounded-lg border border-white/5 p-2">
-              <p className="font-serif text-lg">{counts.open}</p>
-              <p className="text-muted-foreground">Open</p>
+              <p className="text-lg">{counts.open}</p>
+              <p className="text-muted-foreground">{t("Open", "باز")}</p>
             </div>
             <div className="rounded-lg border border-white/5 p-2">
-              <p className="font-serif text-lg">{counts.blocked}</p>
-              <p className="text-muted-foreground">Blocked</p>
+              <p className="text-lg">{counts.blocked}</p>
+              <p className="text-muted-foreground">{t("Blocked", "مسدود")}</p>
             </div>
           </div>
           <div className="flex gap-2">
             <Input
-              placeholder="Quick task…"
+              placeholder={t("Quick task…", "کار سریع…")}
               value={draftTitle}
               onChange={(e) => setDraftTitle(e.target.value)}
               onKeyDown={(e) => {
@@ -342,7 +358,10 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
             ))}
             {!tasks.length ? (
               <p className="px-1 text-xs text-muted-foreground">
-                No work yet — create a task or convert an AI recommendation.
+                {t(
+                  "No work yet — create a task or convert an AI recommendation.",
+                  "هنوز کاری نیست — یک کار بسازید یا پیشنهاد هوش مصنوعی را تبدیل کنید.",
+                )}
               </p>
             ) : null}
           </div>
@@ -353,25 +372,28 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
             <div className="mx-auto grid max-w-4xl gap-6">
               <div className="grid gap-3 sm:grid-cols-3">
                 <DashCard
-                  title="Today's priorities"
+                  title={t("Today's priorities", "اولویت‌های امروز")}
                   items={dashboard.todayPriorities}
                   onSelect={setActiveId}
+                  emptyLabel={t("Nothing here", "اینجا چیزی نیست")}
                 />
                 <DashCard
-                  title="My tasks"
+                  title={t("My tasks", "کارهای من")}
                   items={dashboard.myTasks}
                   onSelect={setActiveId}
+                  emptyLabel={t("Nothing here", "اینجا چیزی نیست")}
                 />
                 <DashCard
-                  title="Blocked"
+                  title={t("Blocked", "مسدود")}
                   items={dashboard.blocked}
                   onSelect={setActiveId}
+                  emptyLabel={t("Nothing here", "اینجا چیزی نیست")}
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-white/5 p-4">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Upcoming deadlines
+                    {t("Upcoming deadlines", "مهلت‌های پیش‌رو")}
                   </p>
                   <ul className="mt-3 space-y-2">
                     {dashboard.upcomingDeadlines.map((t) => (
@@ -391,13 +413,13 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
                       </li>
                     ))}
                     {!dashboard.upcomingDeadlines.length ? (
-                      <li className="text-sm text-muted-foreground">Clear week</li>
+                      <li className="text-sm text-muted-foreground">{t("Clear week", "هفته خالی")}</li>
                     ) : null}
                   </ul>
                 </div>
                 <div className="rounded-2xl border border-white/5 p-4">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Campaign / project health
+                    {t("Campaign / project health", "سلامت کمپین / پروژه")}
                   </p>
                   <ul className="mt-3 space-y-2 text-sm">
                     {dashboard.campaignProgress.map((p) => (
@@ -407,7 +429,7 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
                       </li>
                     ))}
                     {!dashboard.campaignProgress.length ? (
-                      <li className="text-muted-foreground">No projects yet</li>
+                      <li className="text-muted-foreground">{t("No projects yet", "هنوز پروژه‌ای نیست")}</li>
                     ) : null}
                   </ul>
                   <p className="mt-4 text-xs text-muted-foreground">
@@ -418,7 +440,7 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
               <div className="rounded-2xl border border-white/5 p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    AI workload
+                    {t("AI workload", "بار کاری هوش مصنوعی")}
                   </p>
                   <Button
                     size="sm"
@@ -427,7 +449,7 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
                     onClick={() => void assist("workload")}
                   >
                     <Sparkles className="size-3.5" />
-                    Refresh
+                    {t("Refresh", "بازخوانی")}
                   </Button>
                 </div>
                 <ul className="space-y-2 text-sm">
@@ -549,7 +571,7 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
           {!active ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <Workflow className="mb-3 size-8 text-sky-300/70" />
-              <p className="font-serif text-xl">Pick work to execute</p>
+              <p className="text-xl">{t("Pick work to execute", "کاری برای اجرا انتخاب کنید")}</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 Or convert a Decision Center recommendation with Create Task.
               </p>
@@ -558,7 +580,7 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
             <div className="space-y-5">
               <div>
                 <Badge className="mb-2">{taskTypeLabel(active.type)}</Badge>
-                <h2 className="font-serif text-2xl leading-tight">{active.title}</h2>
+                <h2 className="text-2xl leading-tight">{active.title}</h2>
                 {active.description ? (
                   <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
                     {active.description}
@@ -752,10 +774,12 @@ function DashCard({
   title,
   items,
   onSelect,
+  emptyLabel = "Nothing here",
 }: {
   title: string;
   items: Task[];
   onSelect: (id: string) => void;
+  emptyLabel?: string;
 }) {
   return (
     <div className="rounded-2xl border border-white/5 p-4">
@@ -763,19 +787,21 @@ function DashCard({
         {title}
       </p>
       <ul className="mt-3 space-y-2">
-        {items.slice(0, 5).map((t) => (
-          <li key={t.id}>
+        {items.slice(0, 5).map((task) => (
+          <li key={task.id}>
             <button
               type="button"
-              className="text-left text-sm hover:underline"
-              onClick={() => onSelect(t.id)}
+              className="text-start text-sm hover:underline"
+              onClick={() => onSelect(task.id)}
             >
-              {t.title}
+              {task.title}
             </button>
           </li>
         ))}
         {!items.length ? (
-          <li className="text-sm text-muted-foreground">Nothing here</li>
+          <li className="text-sm text-muted-foreground">
+            {emptyLabel}
+          </li>
         ) : null}
       </ul>
     </div>
