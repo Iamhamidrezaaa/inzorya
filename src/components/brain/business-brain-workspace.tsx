@@ -19,6 +19,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/page";
+import { useI18n } from "@/i18n/client";
+import { localizeBrainCompletion } from "@/i18n/localize-brain";
+import { usePageCopy } from "@/i18n/use-page-copy";
 import { cn } from "@/lib/utils";
 import {
   BRAIN_DEFAULT_PILLARS,
@@ -93,6 +96,8 @@ export function BusinessBrainWorkspace({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { dictionary: d } = useI18n();
+  const page = usePageCopy("brain");
   const brandBase = `/w/${workspaceSlug}/b/${brandSlug}`;
 
   const [loading, setLoading] = useState(true);
@@ -122,13 +127,25 @@ export function BusinessBrainWorkspace({
     estimateRemainingSeconds(index, answeredKeys),
   );
 
+  const displayCompletion = useMemo(
+    () =>
+      completion ? localizeBrainCompletion(completion, d.brain) : null,
+    [completion, d.brain],
+  );
+
+  const fill = (template: string, vars: Record<string, string | number>) =>
+    Object.entries(vars).reduce(
+      (s, [k, v]) => s.replaceAll(`{${k}}`, String(v)),
+      template,
+    );
+
   const load = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams({ workspaceSlug, brandSlug });
     const res = await fetch(`/api/brain?${params}`);
     setLoading(false);
     if (!res.ok) {
-      toast.error("Could not load Business Brain.");
+      toast.error(d.brain.loadError);
       return;
     }
     const data = await res.json();
@@ -355,21 +372,21 @@ export function BusinessBrainWorkspace({
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Business Brain"
-          description="Everything Inzorya knows about this business — captured like a consultant interview, not a settings form."
+          title={page.title}
+          description={d.brain.overviewDescription}
           actions={
             <Button asChild>
               <Link href={`${brandBase}/brain/interview`}>
                 <Sparkles className="h-4 w-4" />
-                {completion && completion.completionPercent > 0
-                  ? "Resume interview"
-                  : "Start interview"}
+                {displayCompletion && displayCompletion.completionPercent > 0
+                  ? d.brain.resumeInterview
+                  : d.brain.startInterview}
               </Link>
             </Button>
           }
           secondaryActions={
             <Button asChild variant="outline">
-              <Link href={`${brandBase}/strategy`}>Open Strategy</Link>
+              <Link href={`${brandBase}/strategy`}>{d.home.openStrategy}</Link>
             </Button>
           }
         />
@@ -377,48 +394,62 @@ export function BusinessBrainWorkspace({
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs md:col-span-1">
             <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Brain score
+              {d.brain.brainScore}
             </div>
             <div className="mt-3 text-4xl font-semibold tracking-tight tabular-nums">
-              {completion?.score ?? 0}
+              {displayCompletion?.score ?? 0}
             </div>
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-[width] duration-500"
-                style={{ width: `${completion?.completionPercent ?? 0}%` }}
+                style={{
+                  width: `${displayCompletion?.completionPercent ?? 0}%`,
+                }}
               />
             </div>
             <p className="mt-3 text-sm text-muted-foreground">
-              {completion?.completionPercent ?? 0}% complete ·{" "}
-              {completion?.sectionsCompleted ?? 0}/
-              {completion?.sectionsTotal ?? BRAIN_GROUPS.length} sections · v
-              {version}
+              {fill(d.brain.percentSections, {
+                percent: displayCompletion?.completionPercent ?? 0,
+                done: displayCompletion?.sectionsCompleted ?? 0,
+                total:
+                  displayCompletion?.sectionsTotal ?? BRAIN_GROUPS.length,
+                version,
+              })}
             </p>
           </div>
 
           <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs md:col-span-2">
             <h2 className="text-[15px] font-medium tracking-tight">
-              Next recommended action
+              {d.brain.nextActionTitle}
             </h2>
-            {completion?.nextAction ? (
+            {displayCompletion?.nextAction ? (
               <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-muted-foreground">
-                  {completion.nextAction.label} to strengthen {brandName || "this brand"}.
+                  {fill(d.brain.strengthen, {
+                    label: displayCompletion.nextAction.label,
+                    brand: brandName || d.brain.thisBrand,
+                  })}
                 </p>
                 <Button asChild size="sm">
-                  <Link href={`${brandBase}${completion.nextAction.hrefSuffix}`}>
-                    Continue
+                  <Link
+                    href={`${brandBase}${displayCompletion.nextAction.hrefSuffix}`}
+                  >
+                    {d.home.continue}
                   </Link>
                 </Button>
               </div>
             ) : (
               <p className="mt-4 text-sm text-muted-foreground">
-                Business Brain looks complete. Future AI can plan from this foundation.
+                {d.brain.completeMsg}
               </p>
             )}
             <div className="mt-5 flex flex-wrap gap-2">
-              {(completion?.recommendations ?? []).map((r) => (
-                <Badge key={r} variant="secondary" className="max-w-full whitespace-normal py-1">
+              {(displayCompletion?.recommendations ?? []).map((r) => (
+                <Badge
+                  key={r}
+                  variant="secondary"
+                  className="max-w-full whitespace-normal py-1"
+                >
                   {r}
                 </Badge>
               ))}
@@ -428,15 +459,15 @@ export function BusinessBrainWorkspace({
 
         <section className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
           <h2 className="text-[15px] font-medium tracking-tight">
-            Missing sections
+            {d.home.missingSections}
           </h2>
-          {(completion?.missing.length ?? 0) === 0 ? (
+          {(displayCompletion?.missing.length ?? 0) === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">
-              No missing sections.
+              {d.brain.noMissing}
             </p>
           ) : (
             <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-              {completion?.missing.map((m) => (
+              {displayCompletion?.missing.map((m) => (
                 <li key={m.groupKey}>
                   <Link
                     href={`${brandBase}/brain/interview?group=${m.groupKey}`}
@@ -444,7 +475,7 @@ export function BusinessBrainWorkspace({
                   >
                     <span>{m.groupLabel}</span>
                     <span className="text-xs text-muted-foreground">
-                      {m.keys.length} left
+                      {fill(d.home.leftCount, { count: m.keys.length })}
                     </span>
                   </Link>
                 </li>
@@ -455,8 +486,12 @@ export function BusinessBrainWorkspace({
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {BRAIN_GROUPS.map((g) => {
-            const miss = completion?.missing.find((m) => m.groupKey === g.key);
+            const miss = displayCompletion?.missing.find(
+              (m) => m.groupKey === g.key,
+            );
             const done = !miss;
+            const groupLabel =
+              d.brain.groups[g.key as keyof typeof d.brain.groups] ?? g.label;
             return (
               <Link
                 key={g.key}
@@ -468,9 +503,13 @@ export function BusinessBrainWorkspace({
                     : "border-border/80 bg-card hover:bg-accent/40",
                 )}
               >
-                <div className="font-medium tracking-tight">{g.label}</div>
+                <div className="font-medium tracking-tight">{groupLabel}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {done ? "Complete" : `${miss?.keys.length ?? 0} remaining`}
+                  {done
+                    ? d.brain.complete
+                    : fill(d.brain.remainingCount, {
+                        count: miss?.keys.length ?? 0,
+                      })}
                 </div>
               </Link>
             );
@@ -492,7 +531,7 @@ export function BusinessBrainWorkspace({
         <Button asChild variant="ghost" size="sm">
           <Link href={`${brandBase}/brain`}>
             <ArrowLeft className="h-4 w-4" />
-            Brain overview
+            {d.brain.brainOverview}
           </Link>
         </Button>
         <div className="text-xs text-muted-foreground">
@@ -503,7 +542,9 @@ export function BusinessBrainWorkspace({
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            {question.groupLabel} · {index + 1} of {BRAIN_QUESTIONS.length}
+            {(d.brain.groups[question.groupKey as keyof typeof d.brain.groups] ??
+              question.groupLabel)}{" "}
+            · {index + 1} / {BRAIN_QUESTIONS.length}
           </span>
           <span className="tabular-nums">{progress}%</span>
         </div>
@@ -517,7 +558,8 @@ export function BusinessBrainWorkspace({
 
       <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-md md:p-9">
         <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          {question.groupLabel}
+          {d.brain.groups[question.groupKey as keyof typeof d.brain.groups] ??
+            question.groupLabel}
         </p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight md:text-[1.75rem]">
           {question.prompt}

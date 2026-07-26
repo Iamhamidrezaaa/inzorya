@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -80,6 +82,7 @@ export function CommunityManagerWorkspace({
   workspaceSlug,
   brandSlug,
 }: Props) {
+  const page = usePageCopy("community");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -222,7 +225,7 @@ export function CommunityManagerWorkspace({
           </div>
           <div>
             <h1 className="text-base font-semibold tracking-tight">
-              AI Community Manager
+              {page.title}
             </h1>
             <p className="text-xs text-muted-foreground">
               Prioritize, draft, and assist — never a blind auto-reply bot

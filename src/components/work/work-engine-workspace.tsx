@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -75,6 +77,7 @@ type Props = {
 type ViewKey = (typeof WORK_VIEWS)[number]["key"];
 
 export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
+  const page = usePageCopy("work");
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -267,7 +270,7 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-6 py-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-sky-200/70">
-            Task Engine
+            {page.title}
           </p>
           <h1 className="font-serif text-2xl tracking-tight">
             From idea to done

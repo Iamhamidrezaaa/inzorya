@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -83,6 +85,7 @@ const emptyForm = {
 const SAVED_VIEWS_KEY = "inzorya.calendar.savedViews";
 
 export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
+  const page = usePageCopy("calendar");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
@@ -443,7 +446,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-6 py-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">
-            Calendar Intelligence
+            {page.title}
           </p>
           <h1 className="font-serif text-2xl tracking-tight">
             Global marketing calendar

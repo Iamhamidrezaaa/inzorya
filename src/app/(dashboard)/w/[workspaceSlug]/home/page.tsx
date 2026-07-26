@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { faIR } from "date-fns/locale";
 import {
   Inbox,
   MessageSquareWarning,
@@ -14,6 +15,8 @@ import {
   ensureStrategyForBrain,
   completionFromBrain,
 } from "@/server/services/business-brain";
+import { localizeBrainCompletion } from "@/i18n/localize-brain";
+import { getI18n } from "@/i18n/server";
 import { PageHeader } from "@/components/shared/page";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,11 +25,21 @@ type PageProps = {
   params: Promise<{ workspaceSlug: string }>;
 };
 
+function fill(template: string, vars: Record<string, string | number>) {
+  return Object.entries(vars).reduce(
+    (s, [k, v]) => s.replaceAll(`{${k}}`, String(v)),
+    template,
+  );
+}
+
 export default async function HomePage({ params }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
   const { workspaceSlug } = await params;
+  const { locale, dictionary: d } = await getI18n();
+  const dateLocale = locale === "fa" ? faIR : undefined;
+
   const workspace = await getWorkspaceForUser(workspaceSlug, session.user.id);
   if (!workspace) redirect("/dashboard");
 
@@ -38,13 +51,16 @@ export default async function HomePage({ params }: PageProps) {
   const brandBase = `/w/${workspaceSlug}/b/${brand.slug}`;
   const brain = await ensureBusinessBrain(brand.id);
   const strategy = await ensureStrategyForBrain(brand.id);
-  const brainCompletion = completionFromBrain({
-    answers: brain.answers,
-    voice: brain.voice,
-    assetsCount: brain.assets.length,
-    competitorsCount: strategy.competitors.length,
-    pillarsCount: strategy.pillars.length,
-  });
+  const brainCompletion = localizeBrainCompletion(
+    completionFromBrain({
+      answers: brain.answers,
+      voice: brain.voice,
+      assetsCount: brain.assets.length,
+      competitorsCount: strategy.competitors.length,
+      pillarsCount: strategy.pillars.length,
+    }),
+    d.brain,
+  );
 
   const [unread, pendingReplies, recentConversations, recentActivities] =
     await Promise.all([
@@ -67,18 +83,20 @@ export default async function HomePage({ params }: PageProps) {
       }),
     ]);
 
-  const firstName = session.user.name?.split(" ")[0] || "there";
+  const firstName =
+    session.user.name?.split(" ")[0] || d.home.welcomeGuest;
   const next = brainCompletion.nextAction;
+  const h = d.home;
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title={`Welcome back, ${firstName}`}
-        description="Business Brain first. Strategy and conversations build on what you teach Inzorya."
+        title={fill(h.welcomeBack, { name: firstName })}
+        description={h.description}
         actions={
           <div className="flex gap-2">
             <Button asChild variant="outline">
-              <Link href={`${brandBase}/brain`}>Business Brain</Link>
+              <Link href={`${brandBase}/brain`}>{h.businessBrain}</Link>
             </Button>
             <Button asChild>
               <Link
@@ -89,7 +107,7 @@ export default async function HomePage({ params }: PageProps) {
                 }
               >
                 <Sparkles className="h-4 w-4" />
-                {next?.label ?? "Start interview"}
+                {next?.label ?? h.startInterview}
               </Link>
             </Button>
           </div>
@@ -99,7 +117,7 @@ export default async function HomePage({ params }: PageProps) {
       <section className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-border/80 bg-card p-6 shadow-xs lg:col-span-1">
           <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Business Brain progress
+            {h.progressTitle}
           </div>
           <div className="mt-3 text-4xl font-semibold tracking-tight tabular-nums">
             {brainCompletion.score}
@@ -111,20 +129,22 @@ export default async function HomePage({ params }: PageProps) {
             />
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            {brainCompletion.completionPercent}% complete ·{" "}
-            {brainCompletion.sectionsCompleted}/
-            {brainCompletion.sectionsTotal} sections
+            {fill(h.percentComplete, {
+              percent: brainCompletion.completionPercent,
+              done: brainCompletion.sectionsCompleted,
+              total: brainCompletion.sectionsTotal,
+            })}
           </p>
         </div>
 
         <div className="rounded-xl border border-border/80 bg-card p-6 shadow-xs lg:col-span-2">
           <h2 className="text-[15px] font-medium tracking-tight">
-            Next recommended action
+            {h.nextActionTitle}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {next
-              ? `${next.label} — keep teaching Inzorya who you are.`
-              : "Brain looks solid. Open Strategy when you are ready to plan."}
+              ? fill(h.nextActionHint, { label: next.label })
+              : h.brainSolid}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {brainCompletion.recommendations.map((r) => (
@@ -146,7 +166,7 @@ export default async function HomePage({ params }: PageProps) {
                     : `${brandBase}/strategy`
                 }
               >
-                {next ? "Continue" : "Open Strategy"}
+                {next ? h.continue : h.openStrategy}
               </Link>
             </Button>
           </div>
@@ -156,11 +176,11 @@ export default async function HomePage({ params }: PageProps) {
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-border/80 bg-card p-6 shadow-xs">
           <h3 className="text-[15px] font-medium tracking-tight">
-            Missing sections
+            {h.missingSections}
           </h3>
           {brainCompletion.missing.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              All interview sections have content.
+              {h.allSectionsFilled}
             </p>
           ) : (
             <ul className="mt-4 space-y-2">
@@ -172,7 +192,7 @@ export default async function HomePage({ params }: PageProps) {
                   >
                     <span>{m.groupLabel}</span>
                     <span className="text-xs text-muted-foreground">
-                      {m.keys.length} left
+                      {fill(h.leftCount, { count: m.keys.length })}
                     </span>
                   </Link>
                 </li>
@@ -184,23 +204,24 @@ export default async function HomePage({ params }: PageProps) {
         <div className="rounded-xl border border-border/80 bg-card p-6 shadow-xs">
           <div className="flex items-center justify-between">
             <h3 className="text-[15px] font-medium tracking-tight">
-              Recent updates
+              {h.recentUpdates}
             </h3>
             <Button asChild size="sm" variant="ghost">
-              <Link href={`/w/${workspaceSlug}/activity`}>Activity</Link>
+              <Link href={`/w/${workspaceSlug}/activity`}>{h.activity}</Link>
             </Button>
           </div>
           {recentActivities.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Updates to Business Brain and workspace will appear here.
-            </p>
+            <p className="mt-4 text-sm text-muted-foreground">{h.noUpdates}</p>
           ) : (
             <ul className="mt-4 space-y-3">
               {recentActivities.map((a) => (
                 <li key={a.id} className="flex justify-between gap-3 text-sm">
                   <span className="truncate">{a.title}</span>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatDistanceToNow(a.createdAt, { addSuffix: true })}
+                    {formatDistanceToNow(a.createdAt, {
+                      addSuffix: true,
+                      locale: dateLocale,
+                    })}
                   </span>
                 </li>
               ))}
@@ -213,15 +234,15 @@ export default async function HomePage({ params }: PageProps) {
         <section className="rounded-xl border border-border/80 bg-card p-6 shadow-xs">
           <div className="flex items-center justify-between">
             <h3 className="text-[15px] font-medium tracking-tight">
-              Recent conversations
+              {h.recentConversations}
             </h3>
             <Button asChild size="sm" variant="ghost">
-              <Link href={`${brandBase}/inbox`}>Inbox</Link>
+              <Link href={`${brandBase}/inbox`}>{h.inbox}</Link>
             </Button>
           </div>
           {recentConversations.length === 0 ? (
             <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-              No conversations yet. Connect channels when you are ready.
+              {h.noConversations}
             </p>
           ) : (
             <ul className="mt-5 space-y-3.5">
@@ -230,10 +251,13 @@ export default async function HomePage({ params }: PageProps) {
                   <span className="truncate font-medium">
                     {c.contact.name ||
                       c.contact.instagramUsername ||
-                      "Contact"}
+                      h.contact}
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatDistanceToNow(c.lastMessageAt, { addSuffix: true })}
+                    {formatDistanceToNow(c.lastMessageAt, {
+                      addSuffix: true,
+                      locale: dateLocale,
+                    })}
                   </span>
                 </li>
               ))}
@@ -243,22 +267,25 @@ export default async function HomePage({ params }: PageProps) {
 
         <section className="rounded-xl border border-border/80 bg-card p-6 shadow-xs">
           <h3 className="text-[15px] font-medium tracking-tight">
-            Pending replies
+            {h.pendingReplies}
           </h3>
           {pendingReplies === 0 && unread === 0 ? (
             <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-              Nothing waiting.
+              {h.nothingWaiting}
             </p>
           ) : (
             <div className="mt-5 flex items-center gap-3 text-sm">
               <MessageSquareWarning className="h-4 w-4 text-muted-foreground" />
               <span>
-                {pendingReplies} pending · {unread} unread
+                {fill(h.pendingUnread, {
+                  pending: pendingReplies,
+                  unread,
+                })}
               </span>
-              <Button asChild size="sm" variant="outline" className="ml-auto">
+              <Button asChild size="sm" variant="outline" className="ms-auto">
                 <Link href={`${brandBase}/inbox`}>
                   <Inbox className="h-4 w-4" />
-                  Review
+                  {h.review}
                 </Link>
               </Button>
             </div>

@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { dictionary: d } = useI18n();
   const [pending, setPending] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -44,7 +46,7 @@ export default function LoginPage() {
     setPending(false);
 
     if (result?.error) {
-      toast.error("Invalid email or password.");
+      toast.error(d.auth.invalidCredentials);
       return;
     }
 
@@ -55,18 +57,22 @@ export default function LoginPage() {
   return (
     <Card className="border-border/80 shadow-md">
       <CardHeader className="space-y-2 pb-2">
-        <CardTitle className="text-xl tracking-tight">Welcome back</CardTitle>
-        <CardDescription>Sign in to your workspace.</CardDescription>
+        <CardTitle className="text-xl tracking-tight">
+          {d.auth.welcomeBack}
+        </CardTitle>
+        <CardDescription>{d.auth.signInDesc}</CardDescription>
       </CardHeader>
       <CardContent className="pt-4">
         <form className="space-y-5" onSubmit={onSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{d.auth.email}</Label>
             <Input
               id="email"
               type="email"
               autoComplete="email"
               placeholder="you@company.com"
+              dir="ltr"
+              className="text-start"
               {...form.register("email")}
             />
             {form.formState.errors.email ? (
@@ -76,19 +82,21 @@ export default function LoginPage() {
             ) : null}
           </div>
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="password">{d.auth.password}</Label>
               <Link
                 href="/forgot-password"
                 className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
-                Forgot password?
+                {d.auth.forgotPassword}
               </Link>
             </div>
             <Input
               id="password"
               type="password"
               autoComplete="current-password"
+              dir="ltr"
+              className="text-start"
               {...form.register("password")}
             />
             {form.formState.errors.password ? (
@@ -98,16 +106,16 @@ export default function LoginPage() {
             ) : null}
           </div>
           <Button className="w-full" size="lg" type="submit" disabled={pending}>
-            {pending ? "Signing in…" : "Sign in"}
+            {pending ? d.auth.signingIn : d.auth.signIn}
           </Button>
         </form>
         <p className="mt-8 text-center text-sm text-muted-foreground">
-          No account?{" "}
+          {d.auth.noAccount}{" "}
           <Link
             href="/register"
             className="font-medium text-foreground underline-offset-4 hover:underline"
           >
-            Create one
+            {d.auth.createOne}
           </Link>
         </p>
       </CardContent>

@@ -13,7 +13,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
+import { faIR } from "date-fns/locale";
 
 type NotificationItem = {
   id: string;
@@ -41,6 +43,7 @@ export function NotificationsPanel({
   onUnreadChange,
 }: NotificationsPanelProps) {
   const router = useRouter();
+  const { locale, dictionary: d } = useI18n();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -91,13 +94,11 @@ export function NotificationsPanel({
         <SheetHeader>
           <div className="flex items-start justify-between gap-3 pr-6">
             <div>
-              <SheetTitle>Notifications</SheetTitle>
-              <SheetDescription>
-                System, workspace, channel, and strategy updates.
-              </SheetDescription>
+              <SheetTitle>{d.shell.notifications}</SheetTitle>
+              <SheetDescription>{d.shell.notificationsDesc}</SheetDescription>
             </div>
             <Button size="sm" variant="ghost" onClick={() => void markAllRead()}>
-              Mark all read
+              {d.shell.markAllRead}
             </Button>
           </div>
         </SheetHeader>
@@ -115,8 +116,8 @@ export function NotificationsPanel({
           ) : items.length === 0 ? (
             <EmptyState
               className="min-h-0 border-0 bg-transparent py-16"
-              title="No notifications"
-              description="Workspace events and reminders will show up here."
+              title={d.shell.noNotifications}
+              description={d.shell.noNotificationsDesc}
             />
           ) : (
             <ul className="space-y-1">
@@ -140,6 +141,7 @@ export function NotificationsPanel({
                       <span className="ml-auto text-[11px] text-muted-foreground">
                         {formatDistanceToNow(new Date(item.createdAt), {
                           addSuffix: true,
+                          locale: locale === "fa" ? faIR : undefined,
                         })}
                       </span>
                     </div>

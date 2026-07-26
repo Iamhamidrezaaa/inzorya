@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -48,6 +50,7 @@ type Props = {
 };
 
 export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
+  const page = usePageCopy("knowledge-graph");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
@@ -362,7 +365,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-6 py-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/70">
-            Knowledge Graph
+            {page.title}
           </p>
           <h1 className="font-serif text-2xl tracking-tight">
             Business meaning behind every event

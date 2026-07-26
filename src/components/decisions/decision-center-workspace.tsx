@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -124,6 +126,7 @@ function ScoreBars({ rec }: { rec: Recommendation }) {
 }
 
 export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
+  const page = usePageCopy("decisions");
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -259,9 +262,7 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
           <p className="text-xs uppercase tracking-[0.2em] text-amber-200/70">
             Decision Center
           </p>
-          <h1 className="font-serif text-2xl tracking-tight">
-            What deserves attention today
-          </h1>
+          <h1 className="font-serif text-2xl tracking-tight">{page.title}</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             Executive brain — decisions with evidence, not another analytics page.
           </p>

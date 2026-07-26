@@ -6,8 +6,19 @@ import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { LocaleProvider } from "@/i18n/client";
+import type { Locale } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/dictionaries";
 
-export function AppProviders({ children }: { children: React.ReactNode }) {
+export function AppProviders({
+  children,
+  locale,
+  dictionary,
+}: {
+  children: React.ReactNode;
+  locale: Locale;
+  dictionary: Dictionary;
+}) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -29,15 +40,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           enableSystem={false}
           forcedTheme={undefined}
         >
-          <TooltipProvider delayDuration={200}>
-            {children}
-            <Toaster
-              theme="system"
-              position="bottom-right"
-              richColors
-              closeButton
-            />
-          </TooltipProvider>
+          <LocaleProvider locale={locale} dictionary={dictionary}>
+            <TooltipProvider delayDuration={200}>
+              {children}
+              <Toaster
+                theme="system"
+                position={locale === "fa" ? "bottom-left" : "bottom-right"}
+                richColors
+                closeButton
+                dir={locale === "fa" ? "rtl" : "ltr"}
+              />
+            </TooltipProvider>
+          </LocaleProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </SessionProvider>

@@ -52,76 +52,160 @@ export function getNavGroups(
   workspaceSlug: string,
   brandSlug?: string | null,
   badges: NavBadges = {},
+  labels?: {
+    operate: string;
+    brand: string;
+    system: string;
+    home: string;
+    businessBrain: string;
+    strategy: string;
+    aiStrategist: string;
+    aiContentPlanner: string;
+    aiContentCreator: string;
+    opportunities: string;
+    communityManager: string;
+    decisionCenter: string;
+    taskEngine: string;
+    calendarIntelligence: string;
+    knowledgeGraph: string;
+    matchingEngine: string;
+    campaignRecommendations: string;
+    executionPipeline: string;
+    inbox: string;
+    contacts: string;
+    channels: string;
+    automations: string;
+    analytics: string;
+    business: string;
+    knowledge: string;
+    contentStudio: string;
+    campaigns: string;
+    media: string;
+    activity: string;
+    settings: string;
+  },
 ): NavGroup[] {
   const base = `/w/${workspaceSlug}`;
   const b = brandSlug ? `${base}/b/${brandSlug}` : base;
+  const t = labels ?? {
+    operate: "Operate",
+    brand: "Brand",
+    system: "System",
+    home: "Home",
+    businessBrain: "Business Brain",
+    strategy: "Strategy",
+    aiStrategist: "AI Strategist",
+    aiContentPlanner: "AI Content Planner",
+    aiContentCreator: "AI Content Creator",
+    opportunities: "Opportunities",
+    communityManager: "Community Manager",
+    decisionCenter: "Decision Center",
+    taskEngine: "Task Engine",
+    calendarIntelligence: "Calendar Intelligence",
+    knowledgeGraph: "Knowledge Graph",
+    matchingEngine: "Matching Engine",
+    campaignRecommendations: "Campaign Recommendations",
+    executionPipeline: "Execution Pipeline",
+    inbox: "Inbox",
+    contacts: "Contacts",
+    channels: "Channels",
+    automations: "Automations",
+    analytics: "Analytics",
+    business: "Business",
+    knowledge: "Knowledge",
+    contentStudio: "Content Studio",
+    campaigns: "Campaigns",
+    media: "Media",
+    activity: "Activity",
+    settings: "Settings",
+  };
 
   return [
     {
-      label: "Operate",
+      label: t.operate,
       items: [
-        { title: "Home", href: `${base}/home`, icon: Home },
-        { title: "Business Brain", href: `${b}/brain`, icon: Brain },
-        { title: "Strategy", href: `${b}/strategy`, icon: Compass },
-        { title: "AI Strategist", href: `${b}/strategist`, icon: Sparkles },
-        { title: "AI Content Planner", href: `${b}/planner`, icon: CalendarDays },
-        { title: "AI Content Creator", href: `${b}/creator`, icon: PenLine },
-        { title: "Opportunities", href: `${b}/opportunities`, icon: Radar },
-        { title: "Community Manager", href: `${b}/community`, icon: Headphones },
+        { title: t.home, href: `${base}/home`, icon: Home },
+        { title: t.businessBrain, href: `${b}/brain`, icon: Brain },
+        { title: t.strategy, href: `${b}/strategy`, icon: Compass },
+        { title: t.aiStrategist, href: `${b}/strategist`, icon: Sparkles },
         {
-          title: "Decision Center",
+          title: t.aiContentPlanner,
+          href: `${b}/planner`,
+          icon: CalendarDays,
+        },
+        {
+          title: t.aiContentCreator,
+          href: `${b}/creator`,
+          icon: PenLine,
+        },
+        { title: t.opportunities, href: `${b}/opportunities`, icon: Radar },
+        {
+          title: t.communityManager,
+          href: `${b}/community`,
+          icon: Headphones,
+        },
+        {
+          title: t.decisionCenter,
           href: `${b}/decisions`,
           icon: BriefcaseBusiness,
         },
-        { title: "Task Engine", href: `${b}/work`, icon: ListTodo },
-        { title: "Calendar Intelligence", href: `${b}/calendar`, icon: Globe2 },
-        { title: "Knowledge Graph", href: `${b}/knowledge-graph`, icon: Network },
+        { title: t.taskEngine, href: `${b}/work`, icon: ListTodo },
         {
-          title: "Matching Engine",
+          title: t.calendarIntelligence,
+          href: `${b}/calendar`,
+          icon: Globe2,
+        },
+        {
+          title: t.knowledgeGraph,
+          href: `${b}/knowledge-graph`,
+          icon: Network,
+        },
+        {
+          title: t.matchingEngine,
           href: `${b}/matching`,
           icon: Crosshair,
         },
         {
-          title: "Campaign Recommendations",
+          title: t.campaignRecommendations,
           href: `${b}/recommendations`,
           icon: Layers3,
         },
         {
-          title: "Execution Pipeline",
+          title: t.executionPipeline,
           href: `${b}/pipeline`,
           icon: GitBranch,
         },
         {
-          title: "Inbox",
+          title: t.inbox,
           href: `${b}/inbox`,
           icon: Inbox,
           badge: badges.inbox,
         },
-        { title: "Contacts", href: `${b}/contacts`, icon: Users },
-        { title: "Channels", href: `${b}/channels`, icon: Radio },
-        { title: "Automations", href: `${b}/automations`, icon: Workflow },
-        { title: "Analytics", href: `${b}/analytics`, icon: LineChart },
+        { title: t.contacts, href: `${b}/contacts`, icon: Users },
+        { title: t.channels, href: `${b}/channels`, icon: Radio },
+        { title: t.automations, href: `${b}/automations`, icon: Workflow },
+        { title: t.analytics, href: `${b}/analytics`, icon: LineChart },
       ],
     },
     {
-      label: "Brand",
+      label: t.brand,
       items: [
-        { title: "Business", href: `${b}/business`, icon: Briefcase },
+        { title: t.business, href: `${b}/business`, icon: Briefcase },
         {
-          title: "Knowledge",
+          title: t.knowledge,
           href: `${b}/knowledge`,
           icon: Library,
           badge: badges.knowledge,
         },
         {
-          title: "Content Studio",
+          title: t.contentStudio,
           href: `${b}/studio`,
           icon: Clapperboard,
           badge: badges.content,
         },
-        { title: "Campaigns", href: `${b}/campaigns`, icon: FolderKanban },
+        { title: t.campaigns, href: `${b}/campaigns`, icon: FolderKanban },
         {
-          title: "Media",
+          title: t.media,
           href: `${b}/media`,
           icon: ImageIcon,
           badge: badges.media,
@@ -129,10 +213,10 @@ export function getNavGroups(
       ],
     },
     {
-      label: "System",
+      label: t.system,
       items: [
-        { title: "Activity", href: `${base}/activity`, icon: History },
-        { title: "Settings", href: `${base}/settings`, icon: Settings },
+        { title: t.activity, href: `${base}/activity`, icon: History },
+        { title: t.settings, href: `${base}/settings`, icon: Settings },
       ],
     },
   ];

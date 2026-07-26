@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -27,6 +29,7 @@ export function KnowledgeWorkspace({
   brandSlug: string;
   initialDocId?: string;
 }) {
+  const page = usePageCopy("knowledge");
   const router = useRouter();
   const [docs, setDocs] = useState<Doc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,8 +171,8 @@ export function KnowledgeWorkspace({
   return (
     <div>
       <PageHeader
-        title="Knowledge"
-        description="Brand documents and source material. No AI yet — just your truth."
+        title={page.title}
+        description={page.description}
         actions={
           <Button onClick={() => void createDoc()}>
             <Plus className="h-4 w-4" />

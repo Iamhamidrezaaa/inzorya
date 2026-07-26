@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -36,6 +38,7 @@ export function ContactsView({
   workspaceSlug: string;
   brandSlug: string;
 }) {
+  const page = usePageCopy("contacts");
   const router = useRouter();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,8 +159,8 @@ export function ContactsView({
   return (
     <div>
       <PageHeader
-        title="Contacts"
-        description="People you talk to. Conversation count stays attached to each contact."
+        title={page.title}
+        description={page.description}
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" />

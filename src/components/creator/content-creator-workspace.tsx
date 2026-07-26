@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -153,6 +155,7 @@ function ScoreBars({ score }: { score: Score }) {
 }
 
 export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
+  const page = usePageCopy("creator");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -278,7 +281,7 @@ export function ContentCreatorWorkspace({ workspaceSlug, brandSlug }: Props) {
             <PenLine className="size-4" />
           </div>
           <div>
-            <h1 className="text-base font-semibold tracking-tight">AI Content Creator</h1>
+            <h1 className="text-base font-semibold tracking-tight">{page.title}</h1>
             <p className="text-xs text-muted-foreground">
               Creative director workflow — context first, prompts never shown
             </p>

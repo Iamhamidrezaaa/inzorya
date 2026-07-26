@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -78,6 +80,7 @@ export function MatchingEngineWorkspace({
   workspaceSlug,
   brandSlug,
 }: Props) {
+  const page = usePageCopy("matching");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("upcoming");
@@ -221,7 +224,7 @@ export function MatchingEngineWorkspace({
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-6 py-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-orange-200/70">
-            Opportunity Matching
+            {page.title}
           </p>
           <h1 className="font-serif text-2xl tracking-tight">
             Deterministic business fit

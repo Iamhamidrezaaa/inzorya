@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -129,6 +131,7 @@ export function ContentStudio({
   workspaceSlug: string;
   brandSlug: string;
 }) {
+  const page = usePageCopy("studio");
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as Tab | null) || "pipeline";
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -306,8 +309,8 @@ export function ContentStudio({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Content Studio"
-        description="Ideas to published — the production floor for every future AI agent."
+        title={page.title}
+        description={page.description}
         actions={
           <Button onClick={() => void createIdea()}>
             <Plus className="h-4 w-4" />

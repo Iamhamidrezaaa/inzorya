@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -135,6 +137,7 @@ export function StrategyWorkspace({
   workspaceSlug: string;
   brandSlug: string;
 }) {
+  const page = usePageCopy("strategy");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [completion, setCompletion] = useState(0);
@@ -304,8 +307,8 @@ export function StrategyWorkspace({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Strategy"
-        description="Understand the business first. Structure goals, audience, and pillars — before any content is generated."
+        title={page.title}
+        description={page.description}
         actions={
           <Badge variant="muted" className="tabular-nums">
             {saving ? "Saving…" : `${completion}% business complete`}

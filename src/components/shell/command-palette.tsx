@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/command";
 import { getNavGroups } from "@/lib/navigation";
 import { useShellStore } from "@/hooks/use-shell-store";
+import { useI18n } from "@/i18n/client";
 
 type SearchHit = {
   id: string;
@@ -69,9 +70,15 @@ export function CommandPalette({
   const router = useRouter();
   const pathname = usePathname();
   const { commandOpen, setCommandOpen } = useShellStore();
+  const { dictionary } = useI18n();
   const brandFromPath = pathname.match(/\/b\/([^/]+)/)?.[1] ?? null;
   const activeBrand = brandFromPath ?? brandSlug;
-  const groups = getNavGroups(workspaceSlug, activeBrand);
+  const groups = getNavGroups(
+    workspaceSlug,
+    activeBrand,
+    {},
+    dictionary.nav,
+  );
   const base = `/w/${workspaceSlug}`;
   const b = activeBrand ? `${base}/b/${activeBrand}` : base;
 
@@ -155,7 +162,7 @@ export function CommandPalette({
         onValueChange={setQuery}
       />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>{dictionary.shell.noResults}</CommandEmpty>
 
         {!searching && recents.length > 0 ? (
           <CommandGroup heading="Recent">

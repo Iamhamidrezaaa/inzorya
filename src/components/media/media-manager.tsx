@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -30,6 +32,7 @@ export function MediaManager({
   workspaceSlug: string;
   brandSlug: string;
 }) {
+  const page = usePageCopy("media");
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -98,8 +101,8 @@ export function MediaManager({
   return (
     <div>
       <PageHeader
-        title="Media"
-        description="Upload and manage images for this brand. Stored locally for now."
+        title={page.title}
+        description={page.description}
         actions={
           <>
             <input

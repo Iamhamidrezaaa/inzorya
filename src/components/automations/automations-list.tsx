@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -69,6 +71,7 @@ export function AutomationsList({
   workspaceSlug: string;
   brandSlug: string;
 }) {
+  const page = usePageCopy("automations");
   const router = useRouter();
   const base = `/w/${workspaceSlug}/b/${brandSlug}/automations`;
   const [list, setList] = useState<AutomationCard[]>([]);
@@ -258,8 +261,8 @@ export function AutomationsList({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Automations"
-        description="Visually build social marketing workflows — triggers, conditions, and actions."
+        title={page.title}
+        description={page.description}
         actions={
           <>
             <label className="inline-flex">

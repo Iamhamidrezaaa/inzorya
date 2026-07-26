@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -91,6 +93,7 @@ export function ChannelsView({
   workspaceSlug: string;
   brandSlug: string;
 }) {
+  const page = usePageCopy("channels");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [channels, setChannels] = useState<ChannelCard[]>([]);
@@ -231,8 +234,8 @@ export function ChannelsView({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Channels"
-        description="Connect Instagram Business, Facebook Pages, and Messenger with production-ready OAuth architecture."
+        title={page.title}
+        description={page.description}
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link href={`/w/${workspaceSlug}/settings/integrations`}>

@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -350,6 +352,7 @@ function AdviceCard({
 }
 
 export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
+  const page = usePageCopy("strategist");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [conversations, setConversations] = useState<ConversationListItem[]>([]);
@@ -555,7 +558,7 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
             <Sparkles className="size-4" />
           </div>
           <div>
-            <h1 className="text-base font-semibold tracking-tight">AI Strategist</h1>
+            <h1 className="text-base font-semibold tracking-tight">{page.title}</h1>
             <p className="text-xs text-muted-foreground">
               Senior marketing counsel grounded in your business context
             </p>

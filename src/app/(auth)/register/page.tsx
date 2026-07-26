@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,9 +21,9 @@ import {
 } from "@/components/ui/card";
 
 const schema = z.object({
-  name: z.string().min(2, "Name is required"),
+  name: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(8, "Use at least 8 characters"),
+  password: z.string().min(8),
   workspaceName: z.string().min(2).optional().or(z.literal("")),
 });
 
@@ -30,6 +31,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { dictionary: d } = useI18n();
   const [pending, setPending] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -67,7 +69,7 @@ export default function RegisterPage() {
     setPending(false);
 
     if (signInResult?.error) {
-      toast.error("Account created. Please log in.");
+      toast.error(d.auth.alreadyHave);
       router.push("/login");
       return;
     }
@@ -81,56 +83,59 @@ export default function RegisterPage() {
   return (
     <Card className="border-border/80 shadow-md">
       <CardHeader className="space-y-2 pb-2">
-        <CardTitle className="text-xl tracking-tight">Create account</CardTitle>
-        <CardDescription>
-          Start a workspace. Set up your brand next.
-        </CardDescription>
+        <CardTitle className="text-xl tracking-tight">
+          {d.auth.createAccount}
+        </CardTitle>
+        <CardDescription>{d.auth.registerDesc}</CardDescription>
       </CardHeader>
       <CardContent className="pt-4">
         <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="name">Full name</Label>
+            <Label htmlFor="name">{d.auth.fullName}</Label>
             <Input id="name" autoComplete="name" {...form.register("name")} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{d.auth.email}</Label>
             <Input
               id="email"
               type="email"
               autoComplete="email"
               placeholder="you@company.com"
+              dir="ltr"
+              className="text-start"
               {...form.register("email")}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{d.auth.password}</Label>
             <Input
               id="password"
               type="password"
               autoComplete="new-password"
-              placeholder="At least 8 characters"
+              dir="ltr"
+              className="text-start"
               {...form.register("password")}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="workspaceName">Workspace name</Label>
+            <Label htmlFor="workspaceName">{d.auth.workspaceName}</Label>
             <Input
               id="workspaceName"
-              placeholder="Optional"
+              placeholder={d.auth.optional}
               {...form.register("workspaceName")}
             />
           </div>
           <Button className="mt-1 w-full" size="lg" type="submit" disabled={pending}>
-            {pending ? "Creating…" : "Create account"}
+            {pending ? d.common.loading : d.auth.createAccount}
           </Button>
         </form>
         <p className="mt-8 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+          {d.auth.alreadyHave}{" "}
           <Link
             href="/login"
             className="font-medium text-foreground underline-offset-4 hover:underline"
           >
-            Log in
+            {d.common.login}
           </Link>
         </p>
       </CardContent>

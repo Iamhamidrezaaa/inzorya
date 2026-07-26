@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -74,6 +76,7 @@ export function ExecutionPipelineWorkspace({
   workspaceSlug,
   brandSlug,
 }: Props) {
+  const page = usePageCopy("pipeline");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<Filter>("ALL");
@@ -182,7 +185,7 @@ export function ExecutionPipelineWorkspace({
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-6 py-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-sky-200/70">
-            Execution Pipeline
+            {page.title}
           </p>
           <h1 className="font-serif text-2xl tracking-tight">
             Calendar → Planner → Tasks → Publish

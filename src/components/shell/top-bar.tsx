@@ -37,6 +37,9 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useShellStore } from "@/hooks/use-shell-store";
 import { NotificationsPanel } from "@/components/shell/notifications-panel";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { useI18n } from "@/i18n/client";
+import type { Dictionary } from "@/i18n/dictionaries";
 import { cn } from "@/lib/utils";
 
 type BrandOption = { id: string; name: string; slug: string };
@@ -60,11 +63,42 @@ function titleCase(segment: string) {
     .join(" ");
 }
 
+const BREADCRUMB_NAV: Record<string, keyof Dictionary["nav"]> = {
+  home: "home",
+  brain: "businessBrain",
+  strategy: "strategy",
+  strategist: "aiStrategist",
+  planner: "aiContentPlanner",
+  creator: "aiContentCreator",
+  opportunities: "opportunities",
+  community: "communityManager",
+  decisions: "decisionCenter",
+  work: "taskEngine",
+  calendar: "calendarIntelligence",
+  "knowledge-graph": "knowledgeGraph",
+  matching: "matchingEngine",
+  recommendations: "campaignRecommendations",
+  pipeline: "executionPipeline",
+  inbox: "inbox",
+  contacts: "contacts",
+  channels: "channels",
+  automations: "automations",
+  analytics: "analytics",
+  knowledge: "knowledge",
+  studio: "contentStudio",
+  campaigns: "campaigns",
+  media: "media",
+  activity: "activity",
+  settings: "settings",
+  brand: "brand",
+};
+
 export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
+  const { dictionary: d } = useI18n();
   const {
     setMobileNavOpen,
     setCommandOpen,
@@ -92,23 +126,35 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
     void refreshUnread();
   }, [refreshUnread]);
 
+  const brandSlugs = new Set(workspace.brands.map((b) => b.slug));
   const crumbs = pathname
     .split("/")
     .filter(Boolean)
     .slice(2)
     .filter((segment) => segment !== "b")
-    .map((segment, index, arr) => ({
-      label: titleCase(segment),
-      href:
-        index === arr.length - 1
-          ? undefined
-          : `/w/${workspace.slug}/` +
-            pathname
-              .split("/")
-              .filter(Boolean)
-              .slice(2, index + 3)
-              .join("/"),
-    }));
+    .map((segment, index, arr) => {
+      const navKey = BREADCRUMB_NAV[segment];
+      const brand = workspace.brands.find((b) => b.slug === segment);
+      const label = brand
+        ? brand.name
+        : navKey
+          ? d.nav[navKey]
+          : brandSlugs.has(segment)
+            ? segment
+            : titleCase(segment);
+      return {
+        label,
+        href:
+          index === arr.length - 1
+            ? undefined
+            : `/w/${workspace.slug}/` +
+              pathname
+                .split("/")
+                .filter(Boolean)
+                .slice(2, index + 3)
+                .join("/"),
+      };
+    });
 
   const initials =
     session?.user?.name
@@ -130,7 +176,7 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
           onClick={() => setMobileNavOpen(true)}
         >
           <Menu className="h-4 w-4" />
-          <span className="sr-only">Open navigation</span>
+          <span className="sr-only">{d.shell.openNav}</span>
         </Button>
 
         <DropdownMenu>
@@ -141,7 +187,7 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+            <DropdownMenuLabel>{d.shell.workspaces}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {workspaces.map((ws) => (
               <DropdownMenuItem
@@ -161,13 +207,13 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="max-w-[160px] gap-1">
               <span className="truncate">
-                {activeBrand?.name ?? "Select brand"}
+                {activeBrand?.name ?? d.shell.selectBrand}
               </span>
               <ChevronsUpDown className="h-3.5 w-3.5 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel>Brands</DropdownMenuLabel>
+            <DropdownMenuLabel>{d.shell.brands}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {workspace.brands.length === 0 ? (
               <DropdownMenuItem
@@ -175,7 +221,7 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
                   router.push(`/onboarding/business?workspace=${workspace.slug}`)
                 }
               >
-                Create first brand
+                {d.shell.createBrand}
               </DropdownMenuItem>
             ) : (
               workspace.brands.map((brand) => (
@@ -223,7 +269,8 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
           </Breadcrumb>
         </div>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ms-auto flex items-center gap-1">
+          <LanguageSwitcher variant="ghost" size="sm" showLabel={false} />
           <Button
             variant="outline"
             size="sm"
@@ -231,7 +278,7 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
             onClick={() => setCommandOpen(true)}
           >
             <Search className="h-3.5 w-3.5" />
-            Search
+            {d.common.search}
             <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px]">
               ⌘K
             </kbd>
@@ -255,13 +302,13 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
             {unreadCount > 0 ? (
               <span
                 className={cn(
-                  "absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground",
+                  "absolute end-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground",
                 )}
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             ) : null}
-            <span className="sr-only">Notifications</span>
+            <span className="sr-only">{d.shell.notifications}</span>
           </Button>
 
           <DropdownMenu>
@@ -276,7 +323,7 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium">
-                    {session?.user?.name ?? "Account"}
+                    {session?.user?.name ?? d.shell.account}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {session?.user?.email}
@@ -290,7 +337,7 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
                 }
               >
                 <UserRound className="h-4 w-4" />
-                Preferences
+                {d.shell.settings}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -300,18 +347,18 @@ export function TopBar({ workspace, workspaces, brandSlug }: TopBarProps) {
                 ) : (
                   <Moon className="h-4 w-4" />
                 )}
-                Toggle theme
+                {d.common.themeToggle}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setCommandOpen(true)}>
                 <Keyboard className="h-4 w-4" />
-                Keyboard shortcuts
+                {d.common.shortcuts}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => signOut({ callbackUrl: "/" })}
               >
                 <LogOut className="h-4 w-4" />
-                Sign out
+                {d.common.signOut}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

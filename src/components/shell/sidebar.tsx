@@ -7,6 +7,7 @@ import { ChevronsLeft, ChevronsRight, Star } from "lucide-react";
 import { getNavGroups, type NavBadges } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { useShellStore } from "@/hooks/use-shell-store";
+import { useI18n } from "@/i18n/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -30,11 +31,17 @@ export function Sidebar({
   badges,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { dictionary, locale } = useI18n();
   const { sidebarCollapsed, toggleSidebar, mobileNavOpen, setMobileNavOpen } =
     useShellStore();
   const brandFromPath = pathname.match(/\/b\/([^/]+)/)?.[1] ?? null;
   const activeBrandSlug = brandFromPath ?? brandSlug;
-  const groups = getNavGroups(workspaceSlug, activeBrandSlug, badges);
+  const groups = getNavGroups(
+    workspaceSlug,
+    activeBrandSlug,
+    badges,
+    dictionary.nav,
+  );
   const { items: favorites, togglePageFavorite } = useFavorites(workspaceSlug);
 
   const pageKey = pathname;
@@ -93,7 +100,9 @@ export function Sidebar({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isFavorited ? "Remove favorite" : "Favorite this page"}
+              {isFavorited
+                ? dictionary.shell.unfavorite
+                : dictionary.shell.favorite}
             </TooltipContent>
           </Tooltip>
         ) : null}
@@ -130,8 +139,8 @@ export function Sidebar({
                       className={cn(
                         "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-[background-color,color,box-shadow] duration-150",
                         active
-                          ? "bg-accent text-accent-foreground shadow-[inset_2px_0_0_0_var(--primary)]"
-                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                          ? "border-s-2 border-primary bg-accent text-accent-foreground"
+                          : "border-s-2 border-transparent text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                         sidebarCollapsed && "justify-center px-0",
                       )}
                     >
@@ -160,7 +169,7 @@ export function Sidebar({
                     return (
                       <Tooltip key={item.title}>
                         <TooltipTrigger asChild>{link}</TooltipTrigger>
-                        <TooltipContent side="right">
+                        <TooltipContent side={locale === "fa" ? "left" : "right"}>
                           {item.title}
                           {badge ? ` (${badge})` : ""}
                         </TooltipContent>
@@ -187,11 +196,11 @@ export function Sidebar({
           onClick={toggleSidebar}
         >
           {sidebarCollapsed ? (
-            <ChevronsRight className="h-4 w-4" />
+            <ChevronsRight className="h-4 w-4 rtl:rotate-180" />
           ) : (
             <>
-              <ChevronsLeft className="h-4 w-4" />
-              Collapse
+              <ChevronsLeft className="h-4 w-4 rtl:rotate-180" />
+              {dictionary.shell.collapse}
             </>
           )}
         </Button>
@@ -205,7 +214,7 @@ export function Sidebar({
         initial={false}
         animate={{ width: sidebarCollapsed ? 56 : 240 }}
         transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-        className="hidden h-svh shrink-0 overflow-hidden border-r border-border/60 bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:flex md:flex-col"
+        className="hidden h-svh shrink-0 overflow-hidden border-e border-border/60 bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:flex md:flex-col"
       >
         {content}
       </motion.aside>
@@ -215,10 +224,10 @@ export function Sidebar({
           <button
             type="button"
             className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
-            aria-label="Close navigation"
+            aria-label={dictionary.shell.closeNav}
             onClick={() => setMobileNavOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 w-72 border-r border-border/60 bg-sidebar shadow-lg">
+          <aside className="absolute inset-y-0 start-0 w-72 border-e border-border/60 bg-sidebar shadow-lg">
             {content}
           </aside>
         </div>

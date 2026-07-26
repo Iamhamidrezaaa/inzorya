@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -100,6 +102,7 @@ export function CampaignRecommendationsWorkspace({
   workspaceSlug,
   brandSlug,
 }: Props) {
+  const page = usePageCopy("recommendations");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<Filter>("pending");
@@ -258,7 +261,7 @@ export function CampaignRecommendationsWorkspace({
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-6 py-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-teal-200/70">
-            Campaign Recommendations
+            {page.title}
           </p>
           <h1 className="font-serif text-2xl tracking-tight">
             Opportunity → campaign blueprint

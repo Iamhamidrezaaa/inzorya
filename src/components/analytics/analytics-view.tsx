@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -72,6 +74,7 @@ export function AnalyticsView({
   workspaceSlug: string;
   brandSlug: string;
 }) {
+  const page = usePageCopy("analytics");
   const [tab, setTab] = useState<Tab>("overview");
   const [range, setRange] = useState("30d");
   const [compare, setCompare] = useState(true);
@@ -288,8 +291,8 @@ export function AnalyticsView({
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Analytics"
-        description="What happened, why it moved, and what to investigate next — mock data ready for real providers."
+        title={page.title}
+        description={page.description}
         actions={
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={exportCsv}>

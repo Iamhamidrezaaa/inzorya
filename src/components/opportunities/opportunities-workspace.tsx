@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -104,6 +106,7 @@ function ScoreGrid({ score }: { score: Score }) {
 }
 
 export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
+  const page = usePageCopy("opportunities");
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -247,9 +250,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
             <Radar className="size-4" />
           </div>
           <div>
-            <h1 className="text-base font-semibold tracking-tight">
-              Opportunity Intelligence
-            </h1>
+            <h1 className="text-base font-semibold tracking-tight">{page.title}</h1>
             <p className="text-xs text-muted-foreground">
               Always-on matching of world moments to your business — not a holiday dump
             </p>

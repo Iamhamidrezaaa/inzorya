@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -121,6 +123,7 @@ function buildMonthGrid(anchor: string) {
 }
 
 export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
+  const page = usePageCopy("planner");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [plans, setPlans] = useState<PlanListItem[]>([]);
@@ -251,9 +254,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
             <CalendarDays className="size-4" />
           </div>
           <div>
-            <h1 className="text-base font-semibold tracking-tight">
-              AI Content Planner
-            </h1>
+            <h1 className="text-base font-semibold tracking-tight">{page.title}</h1>
             <p className="text-xs text-muted-foreground">
               Strategic publishing plans — never captions or scripts
             </p>

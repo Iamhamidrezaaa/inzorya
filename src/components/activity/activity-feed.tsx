@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
@@ -18,6 +20,7 @@ type ActivityItem = {
 };
 
 export function ActivityFeed({ workspaceSlug }: { workspaceSlug: string }) {
+  const page = usePageCopy("activity");
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,8 +40,8 @@ export function ActivityFeed({ workspaceSlug }: { workspaceSlug: string }) {
   return (
     <div>
       <PageHeader
-        title="Activity"
-        description="A single timeline of meaningful workspace changes — no noise, no AI."
+        title={page.title}
+        description={page.description}
       />
 
       {loading ? (

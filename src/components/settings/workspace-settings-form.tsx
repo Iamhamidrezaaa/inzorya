@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -15,6 +17,7 @@ export function WorkspaceSettingsForm({
   workspaceSlug: string;
   initialName: string;
 }) {
+  const page = usePageCopy("settings-workspace");
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [pending, setPending] = useState(false);
@@ -40,8 +43,8 @@ export function WorkspaceSettingsForm({
   return (
     <div>
       <PageHeader
-        title="Workspace settings"
-        description="Name and basics for this workspace."
+        title={page.title}
+        description={page.description}
       />
       <form onSubmit={onSave} className="max-w-lg space-y-4">
         <div className="space-y-2">

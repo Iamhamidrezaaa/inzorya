@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -29,6 +31,7 @@ export function BrandEditor({
   workspaceSlug: string;
   brand: BrandFormData;
 }) {
+  const page = usePageCopy("brand");
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState(false);
@@ -94,8 +97,8 @@ export function BrandEditor({
   return (
     <div>
       <PageHeader
-        title="Brand"
-        description="Identity, voice, audience, and colors for this brand."
+        title={page.title}
+        description={page.description}
       />
       <form onSubmit={onSave} className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">

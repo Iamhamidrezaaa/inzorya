@@ -1,5 +1,7 @@
 "use client";
 
+import { usePageCopy } from "@/i18n/use-page-copy";
+
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page";
@@ -14,14 +16,15 @@ export function SettingsHub({
   initialEmail: string;
   brandSlug: string;
 }) {
+  const page = usePageCopy("settings");
   const params = useParams<{ workspaceSlug: string }>();
   const workspaceSlug = params.workspaceSlug;
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Settings"
-        description="Profile, workspace, and brand."
+        title={page.title}
+        description={page.description}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
