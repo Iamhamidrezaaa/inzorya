@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import {
   getBrandForWorkspace,
@@ -14,10 +14,10 @@ export default async function BrandLayout({
 }) {
   const session = await auth();
   const { workspaceSlug, brandSlug } = await params;
-  if (!session?.user?.id) notFound();
+  if (!session?.user?.id) redirect("/login");
 
   const workspace = await getWorkspaceForUser(workspaceSlug, session.user.id);
-  if (!workspace) notFound();
+  if (!workspace) redirect("/dashboard");
 
   const brand = await getBrandForWorkspace(workspace.id, brandSlug);
   if (!brand) notFound();

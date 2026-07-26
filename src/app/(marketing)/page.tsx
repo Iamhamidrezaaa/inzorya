@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
+import { hasActiveWorkspaceSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 
 const features = [
@@ -18,9 +18,9 @@ const features = [
 ];
 
 export default async function LandingPage() {
-  const session = await auth();
-  const ctaHref = session?.user ? "/dashboard" : "/register";
-  const ctaLabel = session?.user ? "Open dashboard" : "Start free";
+  const loggedIn = await hasActiveWorkspaceSession();
+  const ctaHref = loggedIn ? "/dashboard" : "/register";
+  const ctaLabel = loggedIn ? "Open dashboard" : "Start free";
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col px-6 pb-28 pt-20 md:pt-28">
@@ -39,7 +39,7 @@ export default async function LandingPage() {
           <Button asChild size="lg">
             <Link href={ctaHref}>{ctaLabel}</Link>
           </Button>
-          {!session?.user ? (
+          {!loggedIn ? (
             <Button asChild size="lg" variant="ghost">
               <Link href="/login">Log in</Link>
             </Button>
@@ -70,7 +70,7 @@ export default async function LandingPage() {
         <div className="mt-8">
           <Button asChild size="lg">
             <Link href={ctaHref}>
-              {session?.user ? "Go to dashboard" : "Create account"}
+              {loggedIn ? "Go to dashboard" : "Create account"}
             </Link>
           </Button>
         </div>

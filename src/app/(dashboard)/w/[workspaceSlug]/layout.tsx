@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
@@ -28,7 +28,8 @@ export default async function WorkspaceLayout({
   ]);
 
   if (!workspace) {
-    notFound();
+    // Stale URL / lost membership — re-enter via dashboard, not a dead 404
+    redirect("/dashboard");
   }
 
   if (workspace.brands.length === 0) {

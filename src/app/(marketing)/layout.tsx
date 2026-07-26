@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
+import { hasActiveWorkspaceSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 
 export default async function MarketingLayout({
@@ -7,7 +7,7 @@ export default async function MarketingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const loggedIn = await hasActiveWorkspaceSession();
 
   return (
     <div className="surface-ambient relative min-h-svh overflow-hidden">
@@ -19,7 +19,7 @@ export default async function MarketingLayout({
           Inzorya
         </Link>
         <nav className="flex items-center gap-1.5">
-          {session?.user ? (
+          {loggedIn ? (
             <Button asChild size="sm">
               <Link href="/dashboard">Dashboard</Link>
             </Button>

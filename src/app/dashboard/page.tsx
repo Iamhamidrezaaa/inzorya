@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { auth, signOut } from "@/lib/auth";
 import { getUserWorkspaces } from "@/server/services/workspace";
 
 export default async function DashboardEntryPage() {
@@ -11,8 +11,9 @@ export default async function DashboardEntryPage() {
   const workspaces = await getUserWorkspaces(session.user.id);
   const workspace = workspaces[0];
 
+  // Stale cookie after DB reset / expired membership — clear session, show login
   if (!workspace) {
-    redirect("/register");
+    return signOut({ redirectTo: "/login" });
   }
 
   if (workspace.brands.length === 0) {
