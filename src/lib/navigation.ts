@@ -7,6 +7,7 @@ import {
   Clapperboard,
   Compass,
   FolderKanban,
+  Globe2,
   Headphones,
   History,
   Home,
@@ -15,6 +16,9 @@ import {
   Library,
   LineChart,
   ListTodo,
+  Crosshair,
+  Layers3,
+  Network,
   PenLine,
   Radar,
   Radio,
@@ -69,6 +73,18 @@ export function getNavGroups(
           icon: BriefcaseBusiness,
         },
         { title: "Task Engine", href: `${b}/work`, icon: ListTodo },
+        { title: "Calendar Intelligence", href: `${b}/calendar`, icon: Globe2 },
+        { title: "Knowledge Graph", href: `${b}/knowledge-graph`, icon: Network },
+        {
+          title: "Matching Engine",
+          href: `${b}/matching`,
+          icon: Crosshair,
+        },
+        {
+          title: "Campaign Recommendations",
+          href: `${b}/recommendations`,
+          icon: Layers3,
+        },
         {
           title: "Inbox",
           href: `${b}/inbox`,
@@ -206,6 +222,38 @@ export const pageCopy = {
     emptyDescription:
       "Convert decisions, campaigns, and ideas into actionable work in one click.",
   },
+  calendar: {
+    title: "Calendar Intelligence",
+    description:
+      "Global marketing event database — countries, seasons, localization, imports.",
+    emptyTitle: "Seed the calendar",
+    emptyDescription:
+      "Build the worldwide event catalog. No AI — structured data only.",
+  },
+  "knowledge-graph": {
+    title: "Marketing Knowledge Graph",
+    description:
+      "Structured business meaning for every event — industries, audiences, CTAs.",
+    emptyTitle: "Ensure the graph",
+    emptyDescription:
+      "Connect events to industries, products, objectives and channels — no AI.",
+  },
+  matching: {
+    title: "Opportunity Matching Engine",
+    description:
+      "Deterministic relevance scoring — no LLM, no content, reproducible rules.",
+    emptyTitle: "Run matching",
+    emptyDescription:
+      "Score every marketing event against this brand using weighted business rules.",
+  },
+  recommendations: {
+    title: "Campaign Recommendation Engine",
+    description:
+      "Turn high-value opportunities into campaign blueprints for human approval.",
+    emptyTitle: "Generate proposals",
+    emptyDescription:
+      "Eligible opportunities become structured campaign plans — never auto-launched.",
+  },
   brain: {
     title: "Business Brain",
     description: "Structured business knowledge captured through interview.",
@@ -291,12 +339,6 @@ export const pageCopy = {
     description: "Reserved.",
     emptyTitle: "Not available yet",
     emptyDescription: "Inbox is the priority.",
-  },
-  calendar: {
-    title: "Calendar",
-    description: "Reserved.",
-    emptyTitle: "Not available yet",
-    emptyDescription: "Conversations first.",
   },
   brand: {
     title: "Brand",

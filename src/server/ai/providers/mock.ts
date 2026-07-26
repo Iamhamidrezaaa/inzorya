@@ -313,6 +313,191 @@ export class MockAIProvider implements AIProviderAdapter {
         };
       }
 
+      if (joined.includes("campaign.generate")) {
+        let opportunityIds: string[] = [];
+        try {
+          const m = joined.match(/"id"\s*:\s*"([^"]+)"/g);
+          if (m) {
+            opportunityIds = m
+              .map((x) => x.match(/"([^"]+)"$/)?.[1] || "")
+              .filter(Boolean)
+              .slice(0, 6);
+          }
+        } catch {
+          /* ignore */
+        }
+        if (!opportunityIds.length) opportunityIds = ["opp-demo-1"];
+        const strategies = [
+          "SEASONAL",
+          "PROMOTION",
+          "AWARENESS",
+          "SALES",
+          "COMMUNITY",
+        ];
+        const proposals = opportunityIds.flatMap((opportunityId, i) => {
+          const priority = 70 + ((i * 7) % 25);
+          const strategy = strategies[i % strategies.length];
+          return [
+            {
+              opportunityId,
+              name: `Campaign blueprint · option ${i + 1}`,
+              objective: `Capitalize on the matched opportunity with a ${strategy.toLowerCase()} push — human approval required before any launch.`,
+              strategy,
+              targetAudience:
+                "Primary brand audience overlapping with the event's relevant segments.",
+              primaryChannel: "INSTAGRAM",
+              supportingChannels: ["EMAIL", "STORIES"],
+              suggestedDurationDays: 10 + (i % 3) * 4,
+              priority,
+              confidence: 0.72 + (i % 4) * 0.05,
+              components: {
+                offer: "Time-boxed value proposition aligned to brand positioning (direction only).",
+                theme: "Moment-led creative theme tied to the opportunity.",
+                visualDirection:
+                  "Clean product-forward visuals; avoid generic holiday clichés.",
+                messaging:
+                  "Lead with relevance + proof; keep tone consistent with Brand DNA.",
+                cta: "Soft conversion CTA toward owned landing/offer page.",
+                landingPage: "Single-purpose landing focused on the campaign objective.",
+                email: "2–3 touch email sequence structure (subjects/outline only).",
+                storySequence: [
+                  { step: 1, purpose: "Tease the moment" },
+                  { step: 2, purpose: "Show social proof" },
+                  { step: 3, purpose: "Drive to CTA" },
+                ],
+                reelSeries: [
+                  { episode: 1, purpose: "Hook + problem" },
+                  { episode: 2, purpose: "Solution demo" },
+                ],
+                carouselSeries: [
+                  { slide: 1, purpose: "Context" },
+                  { slide: 2, purpose: "Benefits" },
+                  { slide: 3, purpose: "CTA" },
+                ],
+              },
+              contentPlan: {
+                items: [
+                  {
+                    contentType: "REEL",
+                    quantity: 2,
+                    publishOffsetDays: -7,
+                    dependencies: ["brief"],
+                  },
+                  {
+                    contentType: "CAROUSEL",
+                    quantity: 1,
+                    publishOffsetDays: -3,
+                    dependencies: ["design"],
+                  },
+                  {
+                    contentType: "STORY",
+                    quantity: 3,
+                    publishOffsetDays: 0,
+                    dependencies: ["reel"],
+                  },
+                  {
+                    contentType: "EMAIL",
+                    quantity: 2,
+                    publishOffsetDays: -2,
+                    dependencies: ["landing"],
+                  },
+                ],
+              },
+              execution: {
+                preparation: "Confirm offer, audience, and channel readiness.",
+                design: "Produce visual system and asset checklist.",
+                approval: "Human review of blueprint before any publish.",
+                publishing: "Stagger posts across primary + supporting channels.",
+                followUp: "Engage comments and nurture warm leads.",
+                measurement: "Track reach, engagement, leads vs baseline.",
+                steps: [
+                  { phase: "preparation", detail: "Kickoff brief", offsetDays: -14 },
+                  { phase: "design", detail: "Assets ready", offsetDays: -7 },
+                  { phase: "approval", detail: "Stakeholder sign-off", offsetDays: -3 },
+                  { phase: "publishing", detail: "Go-live window", offsetDays: 0 },
+                  { phase: "followUp", detail: "Community + CRM", offsetDays: 3 },
+                  { phase: "measurement", detail: "Post-mortem", offsetDays: 10 },
+                ],
+              },
+              resources: {
+                complexity: i % 2 === 0 ? "medium" : "high",
+                requiredTeam: ["marketer", "designer", "copywriter"],
+                estimatedHours: 18 + i * 4,
+                assetsNeeded: ["hero visual", "product shots", "logo lockup"],
+                riskLevel: i % 3 === 0 ? "low" : "medium",
+              },
+              impact: {
+                expectedReach: 60 + i * 5,
+                expectedEngagement: 55 + i * 4,
+                expectedLeads: 50 + i * 3,
+                expectedRevenueImpact: 48 + i * 6,
+                brandImpact: 62,
+                confidence: 0.7,
+                notes: "Estimates only — not forecasts. Requires human judgment.",
+              },
+              scenarios: [
+                {
+                  kind: "CONSERVATIVE",
+                  name: "Conservative",
+                  summary: "Fewer assets, owned channels only, lower spend risk.",
+                  priority: priority - 12,
+                  confidence: 0.78,
+                  adjustments: { channels: 1, contentItems: 4 },
+                },
+                {
+                  kind: "BALANCED",
+                  name: "Balanced",
+                  summary: "Core mix of reel + carousel + email with moderate effort.",
+                  priority,
+                  confidence: 0.74,
+                  adjustments: { channels: 2, contentItems: 7 },
+                  selected: true,
+                },
+                {
+                  kind: "AGGRESSIVE",
+                  name: "Aggressive",
+                  summary: "Full multi-channel push with denser publishing cadence.",
+                  priority: priority + 10,
+                  confidence: 0.62,
+                  adjustments: { channels: 3, contentItems: 12 },
+                },
+              ],
+              explanation: {
+                whyThisCampaign:
+                  "Opportunity score and evidence show strong fit with brand goals and audience.",
+                whyNow:
+                  "Preparation window is open; delaying risks missing the event peak.",
+                supportingEvidence: [
+                  {
+                    source: "opportunity",
+                    label: "Overall score",
+                    detail: "Eligible above threshold with supporting rule evidence.",
+                  },
+                  {
+                    source: "knowledge_graph",
+                    label: "Industry / audience fit",
+                    detail: "Event industries and audiences overlap brand DNA.",
+                  },
+                ],
+                tradeOffs:
+                  "Higher visibility vs bandwidth for other active campaigns.",
+                potentialRisks:
+                  "Creative fatigue if messaging drifts from Brand DNA; schedule collisions.",
+              },
+            },
+          ];
+        });
+        const payload = { ok: true, proposals };
+        const content = JSON.stringify(payload, null, 2);
+        return {
+          content,
+          finishReason: "stop",
+          promptTokens: Math.ceil(JSON.stringify(req.messages).length / 4),
+          completionTokens: Math.ceil(content.length / 4),
+          raw: { mock: true, task: "campaign.generate" },
+        };
+      }
+
       if (joined.includes("opportunity.match")) {
         let eventKeys: string[] = [];
         try {

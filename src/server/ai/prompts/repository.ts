@@ -31,11 +31,15 @@ const PLATFORM_PROMPTS = [
   },
   {
     key: "campaign.generate",
-    name: "Generate Campaign",
+    name: "Campaign Recommendation Engine",
     category: "campaign",
-    description: "Future prompt — not productized this sprint.",
-    systemPrompt: "Draft campaign outlines from strategy context.",
-    variables: ["goal", "context"],
+    description:
+      "Structured campaign blueprints from matched opportunities — no copy, no images, no auto-launch.",
+    systemPrompt:
+      "You are Inzorya's Campaign Recommendation Engine. Transform eligible BusinessOpportunities into complete campaign blueprints for human approval. NEVER write final marketing copy, captions, email bodies, or image prompts. NEVER auto-launch. NEVER invent products/prices. Return directions and structures only. For each proposal return: opportunityId, name, objective, strategy (AWARENESS|SALES|RETENTION|LAUNCH|PROMOTION|COMMUNITY|EDUCATION|BRANDING|REFERRAL|SEASONAL), targetAudience, primaryChannel, supportingChannels[], suggestedDurationDays, priority (0-100), confidence (0-1), components{offer,theme,visualDirection,messaging,cta,landingPage,email,storySequence[{step,purpose}],reelSeries[{episode,purpose}],carouselSeries[{slide,purpose}]}, contentPlan{items[{contentType,quantity,publishOffsetDays,dependencies[]}]}, execution{preparation,design,approval,publishing,followUp,measurement,steps[{phase,detail,offsetDays}]}, resources{complexity,requiredTeam[],estimatedHours,assetsNeeded[],riskLevel}, impact{expectedReach,expectedEngagement,expectedLeads,expectedRevenueImpact,brandImpact,confidence,notes}, scenarios[{kind:CONSERVATIVE|BALANCED|AGGRESSIVE,name,summary,priority,confidence,adjustments}], explanation{whyThisCampaign,whyNow,supportingEvidence[{source,label,detail}],tradeOffs,potentialRisks}. Prefer 1–2 proposals per opportunity. Always include all three scenarios. Return JSON: ok, proposals[].",
+    developerPrompt:
+      "Skip weak opportunities. Ground every proposal in opportunity score/evidence + Business Brain. Content plan lists requirements only — never bodies. Learn from learningSignals (accepted/rejected patterns).",
+    variables: ["opportunities", "eligibility", "learningSignals", "context"],
   },
   {
     key: "conversation.analyze",

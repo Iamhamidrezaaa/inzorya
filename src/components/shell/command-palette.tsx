@@ -9,11 +9,15 @@ import {
   Clock3,
   Compass,
   FileText,
+  Globe2,
   Headphones,
   Inbox,
   Library,
   LineChart,
   ListTodo,
+  Crosshair,
+  Layers3,
+  Network,
   PenLine,
   Plus,
   Radar,
@@ -216,6 +220,22 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/work`)}>
               <ListTodo />
               Open Task Engine
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/calendar`)}>
+              <Globe2 />
+              Open Calendar Intelligence
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/knowledge-graph`)}>
+              <Network />
+              Open Knowledge Graph
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/matching`)}>
+              <Crosshair />
+              Open Matching Engine
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/recommendations`)}>
+              <Layers3 />
+              Open Campaign Recommendations
             </CommandItem>
             <CommandItem onSelect={() => go(`${b}/business`)}>
               <Briefcase />

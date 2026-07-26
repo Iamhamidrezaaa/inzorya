@@ -85,14 +85,42 @@ export const PLATFORM_TASKS: TaskDefinition[] = [
   },
   {
     key: "campaign.generate",
-    name: "Generate Campaign",
-    description: "Future task contract — not exposed this sprint.",
+    name: "Campaign Recommendation Engine",
+    description:
+      "Turn high-value opportunities into structured campaign blueprints for human approval.",
     category: "campaign",
-    inputSchema: { type: "object", properties: { goal: { type: "string" } } },
-    outputSchema: { type: "object", properties: { outline: { type: "string" } } },
+    inputSchema: {
+      type: "object",
+      required: ["opportunities"],
+      properties: {
+        opportunities: { type: "array" },
+        eligibility: { type: "object" },
+        learningSignals: { type: "object" },
+      },
+    },
+    outputSchema: {
+      type: "object",
+      required: ["ok", "proposals"],
+      properties: {
+        ok: { type: "boolean" },
+        proposals: { type: "array" },
+      },
+    },
     outputFormat: "json",
     promptKey: "campaign.generate",
-    contextProviders: ["marketing_strategy", "brand_voice"],
+    contextProviders: [
+      "business_brain",
+      "brand_voice",
+      "marketing_strategy",
+      "campaign",
+      "analytics_summary",
+      "content_history",
+      "connected_channels",
+      "knowledge_base",
+    ],
+    requiredOutputKeys: ["ok", "proposals"],
+    priority: 87,
+    timeoutMs: 60_000,
   },
   {
     key: "conversation.analyze",

@@ -309,6 +309,7 @@ model Workspace {
   communityRules CommunityRule[]
   executiveBriefs ExecutiveBrief[]
   marketingProjects MarketingProject[]
+  campaignRecommendations CampaignRecommendation[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -388,6 +389,7 @@ model Brand {
   generatedContents     GeneratedContent[]
   businessOpportunities BusinessOpportunity[]
   opportunityFeedback   OpportunityFeedback[]
+  opportunityOverrides  OpportunityOverride[]
   communityRules        CommunityRule[]
   autoReplyRules        AutoReplyRule[]
   customerProfiles      CustomerProfile[]
@@ -402,6 +404,8 @@ model Brand {
   marketingTasks        MarketingTask[]
   taskLabels            TaskLabel[]
   marketingMilestones   Milestone[]
+  campaignRecommendations CampaignRecommendation[]
+  campaignLearnings     CampaignLearning[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -767,6 +771,7 @@ model Campaign {
   contents    ContentItem[]
   projects    MarketingProject[]
   tasks       MarketingTask[]
+  recommendations CampaignRecommendation[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -2519,6 +2524,7 @@ model VisualSuggestion {
 }
 
 /// EPIC-017 — Opportunity Intelligence Engine
+/// EPIC-021 — Calendar Intelligence Foundation (core platform; no AI)
 
 enum MarketingEventSource {
   INTERNATIONAL_DAY
@@ -2535,6 +2541,51 @@ enum MarketingEventSource {
   WEATHER_SEASON
   SCHOOL_CALENDAR
   SHOPPING
+  CUSTOM
+}
+
+enum EventRecurrence {
+  ONE_TIME
+  ANNUAL
+  MONTHLY
+  WEEKLY
+  CUSTOM
+}
+
+enum EventImportance {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CalendarEventStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum EventVerificationStatus {
+  OFFICIAL
+  VERIFIED
+  COMMUNITY_VERIFIED
+  DRAFT
+  ARCHIVED
+}
+
+enum ImportJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum ImportFormat {
+  CSV
+  EXCEL
+  JSON
+  ICS
+  REST
 }
 
 enum OpportunityStatus {
@@ -2543,6 +2594,31 @@ enum OpportunityStatus {
   DISMISSED
   ACTED
   MISSED
+  IGNORED
+  EXPIRED
+}
+
+enum OpportunityMatchSource {
+  DETERMINISTIC
+  AI
+  MANUAL
+}
+
+enum OpportunityOverrideKind {
+  FORCE_MATCH
+  IGNORE_EVENT
+  PIN
+  PRIORITY
+  BLACKLIST
+  WHITELIST
+}
+
+enum OpportunityConflictKind {
+  COMPETING_CAMPAIGN
+  SCHEDULE_COLLISION
+  DUPLICATE_OPPORTUNITY
+  EXPIRED_PREPARATION
+  RESOURCE_CONFLICT
 }
 
 enum OpportunityPlanningMode {
@@ -2568,42 +2644,529 @@ enum OpportunityFeedbackAction {
   ACTED
 }
 
+model MarketingSource {
+  id               String                         @id @default(cuid())
+  key              String                         @unique
+  name             String
+  description      String?
+  events           MarketingEvent[]               @relation("EventPrimarySource")
+  secondaryEvents  MarketingEventSecondarySource[]
+  createdAt        DateTime                       @default(now())
+  updatedAt        DateTime                       @updatedAt
+}
+
+model MarketingCategory {
+  id          String              @id @default(cuid())
+  key         String              @unique
+  name        String
+  description String?
+  parentId    String?
+  sortOrder   Int                 @default(0)
+  parent      MarketingCategory?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    MarketingCategory[] @relation("CategoryTree")
+  events      MarketingEvent[]    @relation("EventPrimaryCategory")
+  subEvents   MarketingEvent[]    @relation("EventSubcategory")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([parentId, sortOrder])
+}
+
+model MarketingRegion {
+  id        String             @id @default(cuid())
+  key       String             @unique
+  name      String
+  kind      String             @default("REGION")
+  parentId  String?
+  parent    MarketingRegion?   @relation("RegionTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  MarketingRegion[]  @relation("RegionTree")
+  countries MarketingCountry[]
+  events    MarketingEvent[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([parentId])
+}
+
+model MarketingCountry {
+  id        String                   @id @default(cuid())
+  code      String                   @unique
+  name      String
+  regionId  String?
+  region    MarketingRegion?         @relation(fields: [regionId], references: [id], onDelete: SetNull)
+  events    MarketingEventCountry[]
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+
+  @@index([regionId])
+}
+
+model MarketingTag {
+  id        String              @id @default(cuid())
+  key       String              @unique
+  name      String
+  events    MarketingEventTag[]
+  createdAt DateTime            @default(now())
+
+  @@index([name])
+}
+
 model OpportunityCategory {
   id          String           @id @default(cuid())
   key         String           @unique
   name        String
   description String?
   sortOrder   Int              @default(0)
-  events      MarketingEvent[]
+  events      MarketingEvent[] @relation("OpportunityEventCategory")
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 }
 
 model MarketingEvent {
-  id           String               @id @default(cuid())
-  key          String               @unique
-  name         String
-  description  String?              @db.Text
-  source       MarketingEventSource
-  categoryId   String?
-  /// Annual recurrence (1-12). Null for fixed-date one-offs.
-  month        Int?
-  day          Int?
-  startDate    DateTime?            @db.Date
-  endDate      DateTime?            @db.Date
-  countries    String[]             @default([])
-  industries   String[]             @default([])
-  tags         String[]             @default([])
-  audienceHints String[]            @default([])
-  active       Boolean              @default(true)
-  category     OpportunityCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  opportunities BusinessOpportunity[]
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  id                  String                @id @default(cuid())
+  key                 String                @unique
+  /// Canonical title (original language)
+  name                String
+  title               String?
+  description         String?               @db.Text
+  source              MarketingEventSource
+  sourceId            String?
+  categoryId          String?
+  marketingCategoryId String?
+  subcategoryId       String?
+  regionId            String?
+  state               String?
+  province            String?
+  city                String?
+  language            String                @default("en")
+  timezone            String                @default("UTC")
+  /// Annual recurrence helpers (1-12 / 1-31). Null for non-annual.
+  month               Int?
+  day                 Int?
+  /// 1-4 derived from month when set
+  quarter             Int?
+  startDate           DateTime?             @db.Date
+  endDate             DateTime?             @db.Date
+  recurrence          EventRecurrence       @default(ANNUAL)
+  recurrenceRule      String?
+  importance          EventImportance       @default(MEDIUM)
+  status              CalendarEventStatus   @default(ACTIVE)
+  verificationStatus  EventVerificationStatus @default(DRAFT)
+  /// Legacy flag — mirrored from status for Opportunity Engine
+  active              Boolean               @default(true)
+  version             Int                   @default(1)
+  importedAt          DateTime?
+  lastVerifiedAt      DateTime?
+  /// Denormalized keyword index for fast search
+  searchText          String?               @db.Text
+  countries           String[]              @default([])
+  industries          String[]              @default([])
+  tags                String[]              @default([])
+  audienceHints       String[]              @default([])
+  sourceRef           MarketingSource?      @relation("EventPrimarySource", fields: [sourceId], references: [id], onDelete: SetNull)
+  category            OpportunityCategory?  @relation("OpportunityEventCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  marketingCategory   MarketingCategory?    @relation("EventPrimaryCategory", fields: [marketingCategoryId], references: [id], onDelete: SetNull)
+  subcategory         MarketingCategory?    @relation("EventSubcategory", fields: [subcategoryId], references: [id], onDelete: SetNull)
+  region              MarketingRegion?      @relation(fields: [regionId], references: [id], onDelete: SetNull)
+  countryLinks        MarketingEventCountry[]
+  tagLinks            MarketingEventTag[]
+  secondarySources    MarketingEventSecondarySource[]
+  translations        MarketingTranslation[]
+  localizations       MarketingLocalization[]
+  seasons             MarketingEventSeason[]
+  versions            MarketingEventVersion[]
+  history             MarketingEventHistory[]
+  verifications       MarketingVerification[]
+  knowledgeLinks      MarketingEventKnowledge[]
+  opportunityOverrides OpportunityOverride[]
+  /// Preparation windows for deterministic planning (days before event)
+  preparationDays     Int?
+  planningWindowDays  Int?
+  publishingWindowDays Int?
+  reminderOffsets     Int[]                 @default([])
+  expirationDays      Int?
+  opportunities       BusinessOpportunity[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
 
   @@index([source, active])
+  @@index([status, importance])
+  @@index([verificationStatus, status])
   @@index([month, day])
+  @@index([quarter, month])
+  @@index([startDate, endDate])
+  @@index([recurrence, month, day])
   @@index([categoryId])
+  @@index([marketingCategoryId, status])
+  @@index([regionId])
+  @@index([language])
+  @@index([name])
+  @@index([city])
+  @@index([version])
+}
+
+model MarketingEventCountry {
+  eventId   String
+  countryId String
+  event     MarketingEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  country   MarketingCountry @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, countryId])
+  @@index([countryId])
+}
+
+model MarketingEventTag {
+  eventId String
+  tagId   String
+  event   MarketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tag     MarketingTag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, tagId])
+  @@index([tagId])
+}
+
+model MarketingEventSecondarySource {
+  eventId  String
+  sourceId String
+  event    MarketingEvent  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  source   MarketingSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, sourceId])
+  @@index([sourceId])
+}
+
+model MarketingTranslation {
+  id            String         @id @default(cuid())
+  eventId       String
+  language      String
+  title         String
+  description   String?        @db.Text
+  slug          String?
+  keywords      String[]       @default([])
+  seoTitle      String?
+  seoDescription String?       @db.Text
+  event         MarketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([eventId, language])
+  @@index([language, title])
+  @@index([slug])
+}
+
+/// EPIC-022 — richer localization layer (keeps MarketingTranslation in sync)
+model MarketingLocalization {
+  id             String         @id @default(cuid())
+  eventId        String
+  language       String
+  title          String
+  description    String?        @db.Text
+  slug           String?
+  keywords       String[]       @default([])
+  seoTitle       String?
+  seoDescription String?        @db.Text
+  seoKeywords    String[]       @default([])
+  event          MarketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([eventId, language])
+  @@index([language, title])
+  @@index([slug])
+}
+
+model MarketingSeason {
+  id         String                @id @default(cuid())
+  key        String                @unique
+  name       String
+  kind       String
+  startMonth Int?
+  startDay   Int?
+  endMonth   Int?
+  endDay     Int?
+  hemisphere String?
+  events     MarketingEventSeason[]
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  @@index([kind])
+}
+
+model MarketingEventSeason {
+  eventId  String
+  seasonId String
+  event    MarketingEvent  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  season   MarketingSeason @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, seasonId])
+  @@index([seasonId])
+}
+
+model MarketingEventVersion {
+  id        String         @id @default(cuid())
+  eventId   String
+  version   Int
+  snapshot  Json
+  note      String?
+  event     MarketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@unique([eventId, version])
+  @@index([eventId, createdAt])
+}
+
+model MarketingEventHistory {
+  id        String         @id @default(cuid())
+  eventId   String
+  action    String
+  message   String
+  meta      Json?
+  actorId   String?
+  event     MarketingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@index([eventId, createdAt])
+  @@index([action])
+}
+
+model MarketingVerification {
+  id         String                  @id @default(cuid())
+  eventId    String
+  status     EventVerificationStatus
+  note       String?
+  verifiedAt DateTime                @default(now())
+  verifiedBy String?
+  event      MarketingEvent          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt  DateTime                @default(now())
+
+  @@index([eventId, verifiedAt])
+  @@index([status])
+}
+
+model MarketingImportJob {
+  id        String          @id @default(cuid())
+  format    ImportFormat
+  status    ImportJobStatus @default(PENDING)
+  fileName  String?
+  sourceUrl String?
+  total     Int             @default(0)
+  success   Int             @default(0)
+  failed    Int             @default(0)
+  meta      Json?
+  logs      MarketingImportLog[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([status, createdAt])
+  @@index([format])
+}
+
+model MarketingImportLog {
+  id        String             @id @default(cuid())
+  jobId     String
+  level     String             @default("info")
+  message   String
+  row       Int?
+  meta      Json?
+  job       MarketingImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt DateTime           @default(now())
+
+  @@index([jobId, createdAt])
+}
+
+/// EPIC-023 — Marketing Knowledge Graph (no AI; structured relationships only)
+
+enum KnowledgeStrength {
+  VERY_WEAK
+  WEAK
+  MEDIUM
+  STRONG
+  VERY_STRONG
+}
+
+enum KnowledgeNodeKind {
+  INDUSTRY
+  BUSINESS_TYPE
+  PRODUCT_CATEGORY
+  AUDIENCE
+  CAMPAIGN_TYPE
+  OBJECTIVE
+  CONTENT_TYPE
+  CHANNEL
+  CTA
+  EMOTIONAL_TONE
+  SEASON
+  CUSTOM
+}
+
+model Industry {
+  id            String         @id @default(cuid())
+  key           String         @unique
+  name          String
+  description   String?
+  businessTypes BusinessType[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model BusinessType {
+  id         String         @id @default(cuid())
+  key        String         @unique
+  name       String
+  industryId String?
+  parentId   String?
+  industry   Industry?      @relation(fields: [industryId], references: [id], onDelete: SetNull)
+  parent     BusinessType?  @relation("BusinessTypeTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children   BusinessType[] @relation("BusinessTypeTree")
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([industryId, parentId])
+}
+
+model ProductCategory {
+  id          String            @id @default(cuid())
+  key         String            @unique
+  name        String
+  kind        String            @default("CATEGORY")
+  parentId    String?
+  description String?
+  parent      ProductCategory?  @relation("ProductCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    ProductCategory[] @relation("ProductCategoryTree")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([parentId, kind])
+}
+
+model Audience {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CampaignType {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MarketingObjective {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ContentType {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DistributionChannel {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CTA {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EmotionalTone {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model KnowledgeRelationType {
+  id          String              @id @default(cuid())
+  key         String              @unique
+  name        String
+  description String?
+  relations   KnowledgeRelation[]
+  eventLinks  MarketingEventKnowledge[]
+  createdAt   DateTime            @default(now())
+}
+
+model KnowledgeNode {
+  id          String              @id @default(cuid())
+  kind        KnowledgeNodeKind
+  key         String
+  name        String
+  description String?
+  parentId    String?
+  meta        Json?
+  active      Boolean             @default(true)
+  parent      KnowledgeNode?      @relation("KnowledgeNodeTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    KnowledgeNode[]     @relation("KnowledgeNodeTree")
+  fromRels    KnowledgeRelation[] @relation("KnowledgeFrom")
+  toRels      KnowledgeRelation[] @relation("KnowledgeTo")
+  eventLinks  MarketingEventKnowledge[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([kind, key])
+  @@index([kind, name])
+  @@index([parentId])
+  @@index([active])
+}
+
+model KnowledgeRelation {
+  id        String                 @id @default(cuid())
+  fromNodeId String
+  toNodeId  String
+  typeId    String
+  strength  KnowledgeStrength      @default(MEDIUM)
+  note      String?
+  fromNode  KnowledgeNode          @relation("KnowledgeFrom", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNode    KnowledgeNode          @relation("KnowledgeTo", fields: [toNodeId], references: [id], onDelete: Cascade)
+  type      KnowledgeRelationType  @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  @@unique([fromNodeId, toNodeId, typeId])
+  @@index([toNodeId])
+  @@index([typeId, strength])
+}
+
+model MarketingEventKnowledge {
+  eventId   String
+  nodeId    String
+  typeId    String?
+  strength  KnowledgeStrength     @default(MEDIUM)
+  note      String?
+  event     MarketingEvent        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  node      KnowledgeNode         @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  type      KnowledgeRelationType? @relation(fields: [typeId], references: [id], onDelete: SetNull)
+  createdAt DateTime              @default(now())
+
+  @@id([eventId, nodeId])
+  @@index([nodeId])
+  @@index([typeId, strength])
 }
 
 model BusinessOpportunity {
@@ -2619,6 +3182,24 @@ model BusinessOpportunity {
   planningMode  OpportunityPlanningMode  @default(AUTO)
   constraints   Json?
   impactTier    String                   @default("medium")
+  /// EPIC-024 deterministic matching
+  matchSource   OpportunityMatchSource   @default(DETERMINISTIC)
+  scoreLevel    String?
+  confidence    Float?
+  whyMatched    String?                  @db.Text
+  rulesMatched  String[]                 @default([])
+  rulesFailed   String[]                 @default([])
+  missingInfo   String[]                 @default([])
+  planningStart DateTime?
+  contentDeadline DateTime?
+  designDeadline DateTime?
+  approvalDeadline DateTime?
+  publishingStart DateTime?
+  publishingEnd DateTime?
+  expirationAt  DateTime?
+  pinned        Boolean                  @default(false)
+  ignored       Boolean                  @default(false)
+  priorityOverride Int?
   workspace     Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   brand         Brand                    @relation(fields: [brandId], references: [id], onDelete: Cascade)
   event         MarketingEvent           @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -2626,29 +3207,115 @@ model BusinessOpportunity {
   recommendations OpportunityRecommendation[]
   alerts        OpportunityAlert[]
   feedback      OpportunityFeedback[]
+  evidence      OpportunityEvidence[]
+  history       OpportunityHistory[]
+  conflicts     OpportunityConflict[]
+  campaignRecommendations CampaignRecommendation[]
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt
 
   @@unique([brandId, eventId, eventDate])
   @@index([brandId, status, eventDate])
   @@index([workspaceId, eventDate])
+  @@index([brandId, matchSource, scoreLevel])
+  @@index([brandId, pinned, ignored])
 }
 
 model OpportunityScore {
-  id                  String              @id @default(cuid())
-  opportunityId       String              @unique
-  relevance           Float
-  urgency             Float
-  expectedReach       Float
-  salesPotential      Float
-  engagementPotential Float
-  difficulty          Float
-  confidence          Float
-  overall             Float
-  explanation         String              @db.Text
-  opportunity         BusinessOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  id                     String              @id @default(cuid())
+  opportunityId          String              @unique
+  relevance              Float               @default(0)
+  urgency                Float               @default(0)
+  expectedReach          Float               @default(0)
+  salesPotential         Float               @default(0)
+  engagementPotential    Float               @default(0)
+  difficulty             Float               @default(0)
+  confidence             Float               @default(0)
+  overall                Float               @default(0)
+  industryScore          Float               @default(0)
+  audienceScore          Float               @default(0)
+  productScore           Float               @default(0)
+  goalScore              Float               @default(0)
+  seasonScore            Float               @default(0)
+  locationScore          Float               @default(0)
+  channelScore           Float               @default(0)
+  preparationScore       Float               @default(0)
+  brandCompatibilityScore Float              @default(0)
+  explanation            String              @db.Text
+  opportunity            BusinessOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+}
+
+model OpportunityEvidence {
+  id            String              @id @default(cuid())
+  opportunityId String
+  ruleKey       String
+  passed        Boolean
+  detail        String              @db.Text
+  weight        Float               @default(0)
+  contribution  Float               @default(0)
+  opportunity   BusinessOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  createdAt     DateTime            @default(now())
+
+  @@index([opportunityId, ruleKey])
+}
+
+model OpportunityRule {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  weight      Float
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model OpportunityHistory {
+  id            String              @id @default(cuid())
+  opportunityId String?
+  brandId       String
+  eventId       String?
+  action        String
+  message       String
+  meta          Json?
+  opportunity   BusinessOpportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  createdAt     DateTime            @default(now())
+
+  @@index([brandId, createdAt])
+  @@index([opportunityId, createdAt])
+}
+
+model OpportunityOverride {
+  id        String                  @id @default(cuid())
+  brandId   String
+  eventId   String?
+  kind      OpportunityOverrideKind
+  priority  Int?
+  note      String?
+  active    Boolean                 @default(true)
+  brand     Brand                   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  event     MarketingEvent?         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  @@index([brandId, kind, active])
+  @@index([eventId])
+}
+
+model OpportunityConflict {
+  id            String                 @id @default(cuid())
+  opportunityId String
+  kind          OpportunityConflictKind
+  title         String
+  detail        String                 @db.Text
+  resolved      Boolean                @default(false)
+  opportunity   BusinessOpportunity    @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  createdAt     DateTime               @default(now())
+
+  @@index([opportunityId, resolved])
+  @@index([kind])
 }
 
 model OpportunityRecommendation {
@@ -2693,6 +3360,163 @@ model OpportunityFeedback {
 
   @@index([brandId, action, createdAt])
   @@index([opportunityId])
+}
+
+/// EPIC-025 — Campaign Recommendation Engine
+
+enum CampaignRecStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ARCHIVED
+  SENT_TO_PLANNER
+}
+
+enum CampaignStrategyKind {
+  AWARENESS
+  SALES
+  RETENTION
+  LAUNCH
+  PROMOTION
+  COMMUNITY
+  EDUCATION
+  BRANDING
+  REFERRAL
+  SEASONAL
+}
+
+enum CampaignScenarioKind {
+  CONSERVATIVE
+  BALANCED
+  AGGRESSIVE
+}
+
+enum CampaignLearningOutcome {
+  ACCEPTED
+  REJECTED
+  MODIFIED
+  RESULT_RECORDED
+}
+
+model CampaignRecommendation {
+  id                       String               @id @default(cuid())
+  workspaceId              String
+  brandId                  String
+  opportunityId            String
+  campaignId               String?
+  contentPlanId            String?
+  name                     String
+  objective                String               @db.Text
+  strategy                 CampaignStrategyKind @default(AWARENESS)
+  targetAudience           String               @db.Text
+  primaryChannel           String
+  supportingChannels       String[]             @default([])
+  suggestedDurationDays    Int                  @default(14)
+  priority                 Float                @default(50)
+  confidence               Float                @default(0.7)
+  status                   CampaignRecStatus    @default(PENDING)
+  /// Structured directions only — never final marketing copy or images
+  suggestedOffer           String?              @db.Text
+  suggestedTheme           String?              @db.Text
+  suggestedVisualDirection String?              @db.Text
+  suggestedMessaging       String?              @db.Text
+  suggestedCta             String?              @db.Text
+  suggestedLandingPage     String?              @db.Text
+  suggestedEmail           String?              @db.Text
+  suggestedStorySequence   Json?
+  suggestedReelSeries      Json?
+  suggestedCarouselSeries  Json?
+  contentPlan              Json?
+  whyThisCampaign          String               @db.Text
+  whyNow                   String               @db.Text
+  supportingEvidence       Json?
+  tradeOffs                String?              @db.Text
+  potentialRisks           String?              @db.Text
+  complexity               String               @default("medium")
+  requiredTeam             String[]             @default([])
+  estimatedHours           Float?
+  assetsNeeded             String[]             @default([])
+  riskLevel                String               @default("medium")
+  explanation              String               @db.Text
+  eligibleOverride         Boolean              @default(false)
+  sortOrder                Int                  @default(0)
+  workspace                Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand                    Brand                @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  opportunity              BusinessOpportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  campaign                 Campaign?            @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  scenarios                CampaignScenario[]
+  executionPlan            CampaignExecutionPlan?
+  impactEstimate           CampaignImpactEstimate?
+  learnings                CampaignLearning[]
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+
+  @@index([brandId, status, priority])
+  @@index([opportunityId, status])
+  @@index([workspaceId, createdAt])
+}
+
+model CampaignScenario {
+  id               String               @id @default(cuid())
+  recommendationId String
+  kind             CampaignScenarioKind
+  name             String
+  summary          String               @db.Text
+  priority         Float                @default(50)
+  confidence       Float                @default(0.7)
+  adjustments      Json?
+  selected         Boolean              @default(false)
+  recommendation   CampaignRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@unique([recommendationId, kind])
+  @@index([recommendationId, selected])
+}
+
+model CampaignExecutionPlan {
+  id               String                 @id @default(cuid())
+  recommendationId String                 @unique
+  preparation      String?                @db.Text
+  design           String?                @db.Text
+  approval         String?                @db.Text
+  publishing       String?                @db.Text
+  followUp         String?                @db.Text
+  measurement      String?                @db.Text
+  steps            Json?
+  recommendation   CampaignRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+}
+
+model CampaignImpactEstimate {
+  id                    String                 @id @default(cuid())
+  recommendationId      String                 @unique
+  expectedReach         Float                  @default(0)
+  expectedEngagement    Float                  @default(0)
+  expectedLeads         Float                  @default(0)
+  expectedRevenueImpact Float                  @default(0)
+  brandImpact           Float                  @default(0)
+  confidence            Float                  @default(0.7)
+  notes                 String?                @db.Text
+  recommendation        CampaignRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+}
+
+model CampaignLearning {
+  id               String                   @id @default(cuid())
+  brandId          String
+  recommendationId String?
+  outcome          CampaignLearningOutcome
+  note             String?
+  meta             Json?
+  brand            Brand                    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  recommendation   CampaignRecommendation?  @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+  createdAt        DateTime                 @default(now())
+
+  @@index([brandId, outcome, createdAt])
+  @@index([recommendationId])
 }
 
 /// EPIC-018 — AI Community Manager
@@ -3130,6 +3954,7 @@ enum TaskSource {
   CRM
   ANALYTICS
   DECISION_CENTER
+  CAMPAIGN_RECOMMENDATION
   MANUAL
 }
 
