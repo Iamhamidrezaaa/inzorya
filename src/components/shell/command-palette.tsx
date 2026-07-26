@@ -16,6 +16,7 @@ import {
   LineChart,
   ListTodo,
   Crosshair,
+  GitBranch,
   Layers3,
   Network,
   PenLine,
@@ -236,6 +237,10 @@ export function CommandPalette({
             <CommandItem onSelect={() => go(`${b}/recommendations`)}>
               <Layers3 />
               Open Campaign Recommendations
+            </CommandItem>
+            <CommandItem onSelect={() => go(`${b}/pipeline`)}>
+              <GitBranch />
+              Open Execution Pipeline
             </CommandItem>
             <CommandItem onSelect={() => go(`${b}/business`)}>
               <Briefcase />

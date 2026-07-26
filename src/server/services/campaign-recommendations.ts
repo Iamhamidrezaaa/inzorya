@@ -672,6 +672,18 @@ export async function runRecommendationAction(input: {
       note: input.note,
       meta: { campaignId: campaign.id },
     });
+    const { ensureWorkflowFromRecommendation } = await import(
+      "@/server/services/execution-pipeline"
+    );
+    const workflow = await ensureWorkflowFromRecommendation({
+      workspaceId: input.workspaceId,
+      brandId: input.brandId,
+      recommendationId: rec.id,
+      campaignId: campaign.id,
+      actorId: input.userId,
+    });
+    meta.workflowId = workflow.id;
+    href = `/w/${input.workspaceSlug}/b/${input.brandSlug}/pipeline`;
   } else if (action === "REJECT") {
     status = "REJECTED";
     await prisma.campaignRecommendation.update({
@@ -691,131 +703,53 @@ export async function runRecommendationAction(input: {
       data: { status },
     });
   } else if (action === "SEND_TO_PLANNER") {
-    const start = new Date(rec.opportunity.eventDate);
-    start.setUTCDate(start.getUTCDate() - Math.max(7, rec.suggestedDurationDays));
-    const end = new Date(
-      rec.opportunity.eventDate.getTime() + rec.suggestedDurationDays * 86400000,
-    );
-    const planItems = Array.isArray(
-      (rec.contentPlan as { items?: unknown })?.items,
-    )
-      ? ((rec.contentPlan as { items: Array<Record<string, unknown>> }).items)
-      : [];
-
-    const plan = await prisma.contentPlan.create({
-      data: {
-        workspaceId: input.workspaceId,
-        brandId: input.brandId,
-        createdById: input.userId,
-        title: `Plan · ${rec.name}`.slice(0, 160),
-        type: "CAMPAIGN",
-        status: "DRAFT",
-        startDate: start,
-        endDate: end,
-        settings: asJson({
-          source: "campaign_recommendation",
-          recommendationId: rec.id,
-          primaryChannel: rec.primaryChannel,
-        }),
-        summary: rec.objective,
-        items: {
-          create: planItems.slice(0, 20).map((item, idx) => {
-            const offset = Number(item.publishOffsetDays) || 0;
-            const d = new Date(rec.opportunity.eventDate);
-            d.setUTCDate(d.getUTCDate() + offset);
-            return {
-              title: `${str(item.contentType, "CONTENT")} · ${idx + 1}`,
-              goal: rec.objective.slice(0, 200),
-              platform: rec.primaryChannel,
-              contentType: str(item.contentType, "INSTAGRAM_POST"),
-              suggestedDate: d,
-              targetAudience: rec.targetAudience.slice(0, 200),
-              campaignName: rec.name,
-              campaignId: rec.campaignId || undefined,
-              expectedOutcome: `Qty ${item.quantity || 1}`,
-              sortOrder: idx,
-            };
-          }),
-        },
-      },
+    const {
+      ensureWorkflowFromRecommendation,
+      handoffToPlanner,
+    } = await import("@/server/services/execution-pipeline");
+    const workflow = await ensureWorkflowFromRecommendation({
+      workspaceId: input.workspaceId,
+      brandId: input.brandId,
+      recommendationId: rec.id,
+      campaignId: rec.campaignId,
+      actorId: input.userId,
+    });
+    const result = await handoffToPlanner({
+      workspaceId: input.workspaceId,
+      brandId: input.brandId,
+      userId: input.userId,
+      workspaceSlug: input.workspaceSlug,
+      brandSlug: input.brandSlug,
+      workflowId: workflow.id,
     });
     status = "SENT_TO_PLANNER";
-    meta.contentPlanId = plan.id;
+    meta.contentPlanId = result?.handoff.contentPlanId || workflow.contentPlanId;
+    meta.workflowId = workflow.id;
+    meta.duplicated = result?.duplicated;
     href = `/w/${input.workspaceSlug}/b/${input.brandSlug}/planner`;
-    await prisma.campaignRecommendation.update({
-      where: { id: rec.id },
-      data: { status, contentPlanId: plan.id },
-    });
-    await recordLearning({
-      brandId: input.brandId,
-      recommendationId: rec.id,
-      outcome: "MODIFIED",
-      note: "Sent to planner",
-      meta: { contentPlanId: plan.id },
-    });
   } else if (action === "CREATE_TASKS") {
-    const { createTaskFromSource } = await import("@/server/services/work");
-    const phases = [
-      {
-        title: `Prepare · ${rec.name}`,
-        type: "CAMPAIGN_SETUP",
-        detail: rec.executionPlan?.preparation,
-      },
-      {
-        title: `Design · ${rec.name}`,
-        type: "DESIGN",
-        detail: rec.executionPlan?.design,
-      },
-      {
-        title: `Approve · ${rec.name}`,
-        type: "APPROVAL",
-        detail: rec.executionPlan?.approval,
-      },
-      {
-        title: `Publish · ${rec.name}`,
-        type: "PUBLISHING",
-        detail: rec.executionPlan?.publishing,
-      },
-      {
-        title: `Follow-up · ${rec.name}`,
-        type: "FOLLOW_UP",
-        detail: rec.executionPlan?.followUp,
-      },
-    ];
-    const created = [];
-    for (const phase of phases) {
-      const result = await createTaskFromSource({
-        workspaceId: input.workspaceId,
-        brandId: input.brandId,
-        userId: input.userId,
-        workspaceSlug: input.workspaceSlug,
-        brandSlug: input.brandSlug,
-        title: phase.title.slice(0, 160),
-        description: phase.detail || rec.objective,
-        type: phase.type,
-        priority: rec.priority >= 80 ? "HIGH" : "MEDIUM",
-        source: "CAMPAIGN_RECOMMENDATION",
-        sourceKey: `camp-rec:${rec.id}:${phase.type}`,
-        sourceContext: {
-          recommendationId: rec.id,
-          opportunityId: rec.opportunityId,
-        },
-        campaignId: rec.campaignId || undefined,
-        createProject: true,
-        projectTitle: rec.name,
-        estimatedMinutes: Math.round(((rec.estimatedHours || 12) * 60) / 5),
-      });
-      created.push(result.task.id);
-    }
-    meta.taskIds = created;
-    href = `/w/${input.workspaceSlug}/b/${input.brandSlug}/work`;
-    await recordLearning({
+    const {
+      ensureWorkflowFromRecommendation,
+      createPipelineTasks,
+    } = await import("@/server/services/execution-pipeline");
+    const workflow = await ensureWorkflowFromRecommendation({
+      workspaceId: input.workspaceId,
       brandId: input.brandId,
       recommendationId: rec.id,
-      outcome: "MODIFIED",
-      note: "Tasks created",
-      meta: { taskIds: created },
+      campaignId: rec.campaignId,
+      actorId: input.userId,
     });
+    const result = await createPipelineTasks({
+      workspaceId: input.workspaceId,
+      brandId: input.brandId,
+      userId: input.userId,
+      workspaceSlug: input.workspaceSlug,
+      brandSlug: input.brandSlug,
+      workflowId: workflow.id,
+    });
+    meta.taskIds = result?.tasks.map((t) => t.taskId) || [];
+    meta.workflowId = workflow.id;
+    href = `/w/${input.workspaceSlug}/b/${input.brandSlug}/work`;
   } else if (action === "SCHEDULE_REVIEW") {
     const { createTaskFromSource } = await import("@/server/services/work");
     const due = new Date();

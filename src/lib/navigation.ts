@@ -17,6 +17,7 @@ import {
   LineChart,
   ListTodo,
   Crosshair,
+  GitBranch,
   Layers3,
   Network,
   PenLine,
@@ -84,6 +85,11 @@ export function getNavGroups(
           title: "Campaign Recommendations",
           href: `${b}/recommendations`,
           icon: Layers3,
+        },
+        {
+          title: "Execution Pipeline",
+          href: `${b}/pipeline`,
+          icon: GitBranch,
         },
         {
           title: "Inbox",
@@ -253,6 +259,14 @@ export const pageCopy = {
     emptyTitle: "Generate proposals",
     emptyDescription:
       "Eligible opportunities become structured campaign plans — never auto-launched.",
+  },
+  pipeline: {
+    title: "Execution Pipeline",
+    description:
+      "Connect approved campaigns into planner, tasks, calendar sync, and publishing.",
+    emptyTitle: "Approve a recommendation",
+    emptyDescription:
+      "Workflow starts when a campaign blueprint is approved — context never lost.",
   },
   brain: {
     title: "Business Brain",

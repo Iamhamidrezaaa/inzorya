@@ -236,6 +236,8 @@ model User {
   taskComments TaskComment[] @relation("TaskCommentAuthor")
   taskActivities TaskActivity[] @relation("TaskActivityActor")
   tasksWatching TaskWatcher[] @relation("TaskWatcher")
+  plannerHandoffs PlannerHandoff[] @relation("PlannerHandoffActor")
+  workflowAudits WorkflowAudit[] @relation("WorkflowAuditActor")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -310,6 +312,7 @@ model Workspace {
   executiveBriefs ExecutiveBrief[]
   marketingProjects MarketingProject[]
   campaignRecommendations CampaignRecommendation[]
+  campaignWorkflows CampaignWorkflow[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -406,6 +409,7 @@ model Brand {
   marketingMilestones   Milestone[]
   campaignRecommendations CampaignRecommendation[]
   campaignLearnings     CampaignLearning[]
+  campaignWorkflows     CampaignWorkflow[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -772,6 +776,7 @@ model Campaign {
   projects    MarketingProject[]
   tasks       MarketingTask[]
   recommendations CampaignRecommendation[]
+  workflows   CampaignWorkflow[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -3448,6 +3453,7 @@ model CampaignRecommendation {
   executionPlan            CampaignExecutionPlan?
   impactEstimate           CampaignImpactEstimate?
   learnings                CampaignLearning[]
+  workflow                 CampaignWorkflow?
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt
 
@@ -3517,6 +3523,140 @@ model CampaignLearning {
 
   @@index([brandId, outcome, createdAt])
   @@index([recommendationId])
+}
+
+/// EPIC-026 — Planner Integration & Execution Pipeline
+
+enum WorkflowStatus {
+  DRAFT
+  PLANNING
+  READY
+  IN_PROGRESS
+  WAITING_APPROVAL
+  SCHEDULED
+  PUBLISHED
+  COMPLETED
+  ARCHIVED
+}
+
+enum WorkflowTimelineKind {
+  PLANNING
+  PUBLISHING
+  REVIEW
+  APPROVAL
+  REMINDER
+}
+
+enum WorkflowDependencyKind {
+  TASK
+  CONTENT
+  CAMPAIGN
+  APPROVAL
+}
+
+model CampaignWorkflow {
+  id                String                @id @default(cuid())
+  workspaceId       String
+  brandId           String
+  recommendationId  String?               @unique
+  campaignId        String?
+  contentPlanId     String?
+  projectId         String?
+  opportunityId     String?
+  title             String
+  status            WorkflowStatus        @default(DRAFT)
+  priority          Float                 @default(50)
+  /// Anchor publish / event date
+  anchorDate        DateTime              @db.Date
+  planningStart     DateTime?
+  reviewAt          DateTime?
+  approvalAt        DateTime?
+  publishingStart   DateTime?
+  publishingEnd     DateTime?
+  /// Snapshot of business context — never drop on handoff
+  context           Json
+  reversible        Boolean               @default(true)
+  archivedAt        DateTime?
+  workspace         Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand             Brand                 @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  recommendation    CampaignRecommendation? @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+  campaign          Campaign?             @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  project           MarketingProject?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  handoffs          PlannerHandoff[]
+  timelines         WorkflowTimeline[]
+  dependencies      WorkflowDependency[]
+  audits            WorkflowAudit[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@index([brandId, status, anchorDate])
+  @@index([workspaceId, createdAt])
+  @@index([campaignId])
+  @@index([projectId])
+}
+
+model PlannerHandoff {
+  id            String           @id @default(cuid())
+  workflowId    String
+  contentPlanId String?
+  /// Transferred objective, audience, requirements, channels, timeline, priority, brand DNA
+  payload       Json
+  createdById   String?
+  workflow      CampaignWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  createdBy     User?            @relation("PlannerHandoffActor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime         @default(now())
+
+  @@index([workflowId, createdAt])
+}
+
+model WorkflowTimeline {
+  id          String               @id @default(cuid())
+  workflowId  String
+  kind        WorkflowTimelineKind
+  title       String
+  dueAt       DateTime
+  milestoneId String?
+  offsetDays  Int                  @default(0)
+  meta        Json?
+  workflow    CampaignWorkflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([workflowId, kind, title])
+  @@index([workflowId, dueAt])
+  @@index([kind, dueAt])
+}
+
+model WorkflowDependency {
+  id         String                 @id @default(cuid())
+  workflowId String
+  kind       WorkflowDependencyKind
+  fromKey    String
+  toKey      String
+  fromTaskId String?
+  toTaskId   String?
+  note       String?
+  workflow   CampaignWorkflow       @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  createdAt  DateTime               @default(now())
+
+  @@unique([workflowId, kind, fromKey, toKey])
+  @@index([workflowId, kind])
+}
+
+model WorkflowAudit {
+  id         String           @id @default(cuid())
+  workflowId String
+  actorId    String?
+  action     String
+  message    String
+  before     Json?
+  after      Json?
+  workflow   CampaignWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  actor      User?            @relation("WorkflowAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime         @default(now())
+
+  @@index([workflowId, createdAt])
+  @@index([actorId, createdAt])
 }
 
 /// EPIC-018 — AI Community Manager
@@ -3997,6 +4137,7 @@ model MarketingProject {
   campaign      Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   milestones    Milestone[]
   tasks         MarketingTask[]
+  workflows     CampaignWorkflow[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 

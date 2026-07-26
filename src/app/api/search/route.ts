@@ -36,6 +36,7 @@ export async function GET(request: Request) {
       { id: "knowledge-graph", title: "Knowledge Graph", href: `${b}/knowledge-graph`, group: "Pages" },
       { id: "matching", title: "Matching Engine", href: `${b}/matching`, group: "Pages" },
       { id: "recommendations", title: "Campaign Recommendations", href: `${b}/recommendations`, group: "Pages" },
+      { id: "pipeline", title: "Execution Pipeline", href: `${b}/pipeline`, group: "Pages" },
       { id: "inbox", title: "Inbox", href: `${b}/inbox`, group: "Pages" },
       { id: "contacts", title: "Contacts", href: `${b}/contacts`, group: "Pages" },
       { id: "channels", title: "Channels", href: `${b}/channels`, group: "Pages" },
