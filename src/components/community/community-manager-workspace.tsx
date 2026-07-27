@@ -24,6 +24,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
+  CONVERSATION_STATUS_FA,
+  INTENT_TYPE_FA,
+  MESSAGE_DIR_FA,
+  faLabel,
+} from "@/i18n/display-labels";
+import {
   COMMUNITY_TONES,
   INTENT_TYPES,
   QUALITY_DIMENSIONS,
@@ -450,16 +456,21 @@ export function CommunityManagerWorkspace({
                 <Users className="size-8 text-muted-foreground" />
                 <div>
                   <h2 className="text-2xl tracking-tight">
-                    Scan to prioritize conversations
+                    {t(
+                      "Scan to prioritize conversations",
+                      "اسکن کنید تا گفتگوها اولویت‌بندی شوند",
+                    )}
                   </h2>
                   <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                    AI classifies intent, ranks urgency, and drafts brand-safe suggestions
-                    grounded in Business Brain and Knowledge Base.
+                    {t(
+                      "AI classifies intent, ranks urgency, and drafts brand-safe suggestions grounded in Business Brain and Knowledge Base.",
+                      "هوش مصنوعی نیت را طبقه‌بندی می‌کند، فوریت را رتبه‌بندی می‌کند و پیشنهادهای امن برای برند بر پایه مغز کسب‌وکار و پایگاه دانش می‌سازد.",
+                    )}
                   </p>
                 </div>
                 <Button disabled={busy} onClick={() => void scan()}>
                   <Sparkles className="size-3.5" />
-                  Run first scan
+                  {t("Run first scan", "اولین اسکن را اجرا کنید")}
                 </Button>
               </div>
             ) : (
@@ -480,11 +491,11 @@ export function CommunityManagerWorkspace({
                       <div className="mb-1 flex flex-wrap items-center gap-1.5">
                         {c.intent ? (
                           <Badge variant="outline" className="rounded-md text-[10px]">
-                            {c.intent.type.replaceAll("_", " ")}
+                            {faLabel(locale, c.intent.type, INTENT_TYPE_FA)}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="rounded-md text-[10px]">
-                            Unscanned
+                            {t("Unscanned", "اسکن‌نشده")}
                           </Badge>
                         )}
                         {c.priority?.vip ? (
@@ -497,7 +508,7 @@ export function CommunityManagerWorkspace({
                             variant="secondary"
                             className="rounded-md bg-amber-500/20 text-[10px]"
                           >
-                            Urgent
+                            {t("Urgent", "فوری")}
                           </Badge>
                         ) : null}
                         {c.sentiment?.label === "negative" ? (
@@ -505,12 +516,13 @@ export function CommunityManagerWorkspace({
                         ) : null}
                       </div>
                       <p className="truncate text-sm font-medium">
-                        {c.contact.name || "Unknown"} · {c.subject || "Conversation"}
+                        {c.contact.name || t("Unknown", "ناشناس")} ·{" "}
+                        {c.subject || t("Conversation", "گفتگو")}
                       </p>
                       <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                         {c.priority?.rankReason ||
                           c.messages[0]?.body ||
-                          "Awaiting intelligence scan"}
+                          t("Awaiting intelligence scan", "در انتظار اسکن هوشمندی")}
                       </p>
                     </div>
                     <p className="text-xl tracking-tight">
@@ -533,24 +545,30 @@ export function CommunityManagerWorkspace({
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
             {!active ? (
               <p className="text-xs text-muted-foreground">
-                Select a conversation to review insights and reply drafts.
+                {t(
+                  "Select a conversation to review insights and reply drafts.",
+                  "یک گفتگو را انتخاب کنید تا بینش‌ها و پیش‌نویس پاسخ را ببینید.",
+                )}
               </p>
             ) : (
               <>
                 <div>
                   <h2 className="text-xl tracking-tight">
-                    {active.contact.name || "Customer"}
+                    {active.contact.name || t("Customer", "مشتری")}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    {active.subject || "Conversation"} · {active.status}
+                    {active.subject || t("Conversation", "گفتگو")} ·{" "}
+                    {faLabel(locale, active.status, CONVERSATION_STATUS_FA)}
                   </p>
                 </div>
 
                 {active.intent ? (
                   <div className="rounded-xl border border-white/8 px-3 py-2 text-xs">
                     <p className="font-medium">
-                      Intent · {active.intent.type.replaceAll("_", " ")} (
-                      {Math.round(active.intent.confidence * 100)}% confidence)
+                      {t("Intent", "نیت")} ·{" "}
+                      {faLabel(locale, active.intent.type, INTENT_TYPE_FA)} (
+                      {Math.round(active.intent.confidence * 100)}%{" "}
+                      {t("confidence", "اطمینان")})
                     </p>
                     <p className="mt-1 text-muted-foreground">
                       {active.intent.explanation}
@@ -561,19 +579,30 @@ export function CommunityManagerWorkspace({
                 {active.sentiment ? (
                   <div className="space-y-1 text-xs">
                     <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      Conversation insights
+                      {t("Conversation insights", "بینش گفتگو")}
                     </p>
-                    <p>Sentiment: {active.sentiment.label}</p>
-                    <p>Buying intent: {Math.round(active.sentiment.buyingIntent)}</p>
-                    <p>Sales opportunity: {Math.round(active.sentiment.salesOpportunity)}</p>
-                    <p>Retention risk: {Math.round(active.sentiment.retentionRisk)}</p>
+                    <p>
+                      {t("Sentiment:", "احساس:")} {active.sentiment.label}
+                    </p>
+                    <p>
+                      {t("Buying intent:", "نیت خرید:")}{" "}
+                      {Math.round(active.sentiment.buyingIntent)}
+                    </p>
+                    <p>
+                      {t("Sales opportunity:", "فرصت فروش:")}{" "}
+                      {Math.round(active.sentiment.salesOpportunity)}
+                    </p>
+                    <p>
+                      {t("Retention risk:", "ریسک نگهداشت:")}{" "}
+                      {Math.round(active.sentiment.retentionRisk)}
+                    </p>
                     <p className="text-muted-foreground">{active.sentiment.explanation}</p>
                   </div>
                 ) : null}
 
                 <div className="space-y-2">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    Recent messages
+                    {t("Recent messages", "پیام‌های اخیر")}
                   </p>
                   {[...active.messages].reverse().map((m) => (
                     <div
@@ -586,7 +615,7 @@ export function CommunityManagerWorkspace({
                       )}
                     >
                       <span className="text-[10px] text-muted-foreground">
-                        {m.direction}
+                        {faLabel(locale, m.direction, MESSAGE_DIR_FA)}
                       </span>
                       <p>{m.body}</p>
                     </div>
@@ -597,10 +626,12 @@ export function CommunityManagerWorkspace({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                        Suggested {primaryReply.kind.replaceAll("_", " ")}
+                        {t("Suggested", "پیشنهادی")}{" "}
+                        {primaryReply.kind.replaceAll("_", " ")}
                       </p>
                       <Badge variant="outline" className="rounded-md text-[10px]">
-                        {Math.round(primaryReply.confidence * 100)}% conf · score{" "}
+                        {Math.round(primaryReply.confidence * 100)}%{" "}
+                        {t("conf · score", "اطمینان · امتیاز")}{" "}
                         {Math.round(primaryReply.qualityScore || 0)}
                       </Badge>
                     </div>

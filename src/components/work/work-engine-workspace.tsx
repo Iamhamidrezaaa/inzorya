@@ -337,23 +337,23 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
           </div>
           <div className="space-y-1">
             <p className="px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              Queue
+              {t("Queue", "صف")}
             </p>
-            {tasks.map((t) => (
+            {tasks.map((task) => (
               <button
-                key={t.id}
+                key={task.id}
                 type="button"
-                onClick={() => setActiveId(t.id)}
+                onClick={() => setActiveId(task.id)}
                 className={cn(
                   "w-full rounded-lg border px-2.5 py-2 text-left text-sm transition",
-                  active?.id === t.id
+                  active?.id === task.id
                     ? "border-sky-400/40 bg-sky-400/10"
                     : "border-transparent hover:border-white/10",
                 )}
               >
-                <p className="line-clamp-2 font-medium leading-snug">{t.title}</p>
+                <p className="line-clamp-2 font-medium leading-snug">{task.title}</p>
                 <p className="mt-1 text-[10px] text-muted-foreground">
-                  {taskStatusLabel(t.status)} · {t.priority}
+                  {taskStatusLabel(task.status)} · {task.priority}
                 </p>
               </button>
             ))}
@@ -434,7 +434,8 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
                     ) : null}
                   </ul>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    Completed this week · {dashboard.completedThisWeek}
+                    {t("Completed this week", "تکمیل‌شده این هفته")} ·{" "}
+                    {dashboard.completedThisWeek}
                   </p>
                 </div>
               </div>
@@ -458,8 +459,12 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
                     <li key={w.userId} className="flex justify-between gap-2">
                       <span>{w.name}</span>
                       <span className="text-muted-foreground">
-                        {w.estimatedMinutes}m
-                        {w.overloaded ? " · overloaded" : w.free ? " · free" : ""}
+                        {w.estimatedMinutes}{t("m", "د")}
+                        {w.overloaded
+                          ? t(" · overloaded", " · پربار")
+                          : w.free
+                            ? t(" · free", " · آزاد")
+                            : ""}
                       </span>
                     </li>
                   ))}
@@ -574,7 +579,10 @@ export function WorkEngineWorkspace({ workspaceSlug, brandSlug }: Props) {
               <Workflow className="mb-3 size-8 text-sky-300/70" />
               <p className="text-xl">{t("Pick work to execute", "کاری برای اجرا انتخاب کنید")}</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Or convert a Decision Center recommendation with Create Task.
+                {t(
+                  "Or convert a Decision Center recommendation with Create Task.",
+                  "یا یک پیشنهاد مرکز تصمیم را با «ایجاد کار» تبدیل کنید.",
+                )}
               </p>
             </div>
           ) : (

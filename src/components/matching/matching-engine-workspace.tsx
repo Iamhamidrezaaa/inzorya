@@ -1,6 +1,10 @@
 "use client";
 
 import { useT } from "@/i18n/use-t";
+import {
+  faLabel,
+  localizeEventishTitle,
+} from "@/i18n/display-labels";
 
 import { usePageCopy } from "@/i18n/use-page-copy";
 
@@ -319,13 +323,21 @@ export function MatchingEngineWorkspace({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium">{o.title}</p>
+                      <p className="font-medium">
+                        {localizeEventishTitle(t.locale, o.title)}
+                      </p>
                       <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                         {o.whyMatched || o.summary}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1">
                         <Badge variant="secondary" className="text-[10px]">
-                          {o.scoreLevel || "n/a"}
+                          {o.scoreLevel
+                            ? faLabel(t.locale, o.scoreLevel.toUpperCase(), {
+                                HIGH: "بالا",
+                                MEDIUM: "متوسط",
+                                LOW: "کم",
+                              })
+                            : t("n/a", "نامشخص")}
                         </Badge>
                         {o.pinned ? (
                           <Badge variant="secondary" className="text-[10px]">
@@ -379,7 +391,7 @@ export function MatchingEngineWorkspace({
               <div>
                 <Badge className="mb-2">{active.scoreLevel}</Badge>
                 <h2 className="text-2xl leading-tight">
-                  {active.title}
+                  {localizeEventishTitle(t.locale, active.title)}
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {active.whyMatched}
@@ -388,27 +400,28 @@ export function MatchingEngineWorkspace({
 
               <div className="rounded-xl border border-orange-400/20 bg-orange-400/5 p-3">
                 <p className="text-xs uppercase tracking-wide text-orange-200/70">
-                  Overall score
+                  {t("Overall score", "امتیاز کل")}
                 </p>
                 <p className="text-3xl">
                   {Math.round(active.score?.overall ?? 0)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Confidence {Math.round(active.confidence ?? 0)}
+                  {t("Confidence", "اطمینان")}{" "}
+                  {Math.round(active.confidence ?? 0)}
                 </p>
               </div>
 
               <div className="space-y-2">
                 {[
-                  ["Industry", active.score?.industryScore],
-                  ["Audience", active.score?.audienceScore],
-                  ["Product", active.score?.productScore],
-                  ["Goal", active.score?.goalScore],
-                  ["Season", active.score?.seasonScore],
-                  ["Location", active.score?.locationScore],
-                  ["Channel", active.score?.channelScore],
-                  ["Preparation", active.score?.preparationScore],
-                  ["Brand tone", active.score?.brandCompatibilityScore],
+                  [t("Industry", "صنعت"), active.score?.industryScore],
+                  [t("Audience", "مخاطب"), active.score?.audienceScore],
+                  [t("Product", "محصول"), active.score?.productScore],
+                  [t("Goal", "هدف"), active.score?.goalScore],
+                  [t("Season", "فصل"), active.score?.seasonScore],
+                  [t("Location", "مکان"), active.score?.locationScore],
+                  [t("Channel", "کانال"), active.score?.channelScore],
+                  [t("Preparation", "آماده‌سازی"), active.score?.preparationScore],
+                  [t("Brand tone", "لحن برند"), active.score?.brandCompatibilityScore],
                 ].map(([label, value]) => (
                   <div key={label as string}>
                     <div className="mb-0.5 flex justify-between text-[10px] text-muted-foreground">

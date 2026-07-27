@@ -24,6 +24,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { TIME_FILTERS, IMPORT_FORMATS, VERIFICATION_STATUSES } from "@/lib/calendar";
+import {
+  CATEGORY_NAME_FA,
+  EVENT_STATUS_FA,
+  EVENT_TITLE_FA,
+  IMPORTANCE_FA,
+  RECURRENCE_FA,
+  TIME_FILTER_FA,
+  VERIFICATION_FA,
+  faLabel,
+} from "@/i18n/display-labels";
 
 type Category = { id: string; key: string; name: string };
 type Country = { id: string; code: string; name: string };
@@ -503,7 +513,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
             >
               {TIME_FILTERS.map((f) => (
                 <option key={f.key} value={f.key}>
-                  {f.label}
+                  {faLabel(t.locale, f.key, TIME_FILTER_FA)}
                 </option>
               ))}
             </select>
@@ -515,7 +525,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               <option value="">{t("All categories", "همه دسته‌ها")}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.key}>
-                  {c.name}
+                  {faLabel(t.locale, c.name, CATEGORY_NAME_FA)}
                 </option>
               ))}
             </select>
@@ -539,7 +549,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               <option value="">{t("All verification", "همه وضعیت‌های تأیید")}</option>
               {VERIFICATION_STATUSES.map((v) => (
                 <option key={v.key} value={v.key}>
-                  {v.label}
+                  {faLabel(t.locale, v.key, VERIFICATION_FA)}
                 </option>
               ))}
             </select>
@@ -561,12 +571,14 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">{t("Active + Draft", "فعال + پیش‌نویس")}</option>
-              <option value="ACTIVE">Active</option>
-              <option value="DRAFT">Draft</option>
-              <option value="ARCHIVED">Archived</option>
+              <option value="ACTIVE">{faLabel(t.locale, "ACTIVE", EVENT_STATUS_FA)}</option>
+              <option value="DRAFT">{faLabel(t.locale, "DRAFT", EVENT_STATUS_FA)}</option>
+              <option value="ARCHIVED">
+                {faLabel(t.locale, "ARCHIVED", EVENT_STATUS_FA)}
+              </option>
             </select>
             <Button size="sm" variant="outline" onClick={() => void load()}>
-              Search
+              {t("Search", "جستجو")}
             </Button>
           </div>
 
@@ -631,7 +643,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
           ) : null}
 
           <p className="mb-3 text-xs text-muted-foreground">
-            {total} events · global marketing database
+            {total} {t("events · global marketing database", "رویداد · پایگاه بازاریابی جهانی")}
           </p>
 
           {showImport ? (
@@ -706,25 +718,36 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium">{e.title || e.name}</p>
+                      <p className="font-medium">
+                        {faLabel(t.locale, e.title || e.name, EVENT_TITLE_FA)}
+                      </p>
                       <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                         {e.description}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {e.marketingCategory ? (
                           <Badge variant="secondary" className="text-[10px]">
-                            {e.marketingCategory.name}
+                            {faLabel(
+                              t.locale,
+                              e.marketingCategory.name,
+                              CATEGORY_NAME_FA,
+                            )}
                           </Badge>
                         ) : null}
                         <Badge variant="secondary" className="text-[10px]">
-                          {e.recurrence}
+                          {faLabel(t.locale, e.recurrence, RECURRENCE_FA)}
                         </Badge>
                         <Badge variant="secondary" className="text-[10px]">
-                          {e.verificationStatus || "DRAFT"}
+                          {faLabel(
+                            t.locale,
+                            e.verificationStatus || "DRAFT",
+                            VERIFICATION_FA,
+                          )}
                         </Badge>
                         {e.version ? (
                           <Badge variant="secondary" className="text-[10px]">
-                            v{e.version}
+                            {t.locale === "fa" ? "ن" : "v"}
+                            {e.version}
                           </Badge>
                         ) : null}
                       </div>
@@ -755,14 +778,20 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
 
           <div className="mb-4 rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-3">
             <p className="text-lg">
-              {form.name || active?.name || t("Untitled event", "رویداد بدون عنوان")}
+              {faLabel(
+                t.locale,
+                form.name || active?.name || t("Untitled event", "رویداد بدون عنوان"),
+                EVENT_TITLE_FA,
+              )}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {form.month && form.day
-                ? `Recurs ${form.recurrence.toLowerCase()} on ${form.month}/${form.day}`
-                : form.recurrence}
+                ? t.locale === "fa"
+                  ? `${faLabel(t.locale, form.recurrence, RECURRENCE_FA)} در ${form.month}/${form.day}`
+                  : `Recurs ${form.recurrence.toLowerCase()} on ${form.month}/${form.day}`
+                : faLabel(t.locale, form.recurrence, RECURRENCE_FA)}
               {" · "}
-              {form.importance}
+              {faLabel(t.locale, form.importance, IMPORTANCE_FA)}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               {form.description || t("No description yet.", "هنوز توضیحی نیست.")}
@@ -801,7 +830,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.key}>
-                      {c.name}
+                      {faLabel(t.locale, c.name, CATEGORY_NAME_FA)}
                     </option>
                   ))}
                 </select>
@@ -815,15 +844,15 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
                     setForm((f) => ({ ...f, importance: e.target.value }))
                   }
                 >
-                  {["LOW", t("MEDIUM", "متوسط"), "HIGH", "CRITICAL"].map((k) => (
+                  {(["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const).map((k) => (
                     <option key={k} value={k}>
-                      {k}
+                      {faLabel(t.locale, k, IMPORTANCE_FA)}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <Label>Verification</Label>
+                <Label>{t("Verification", "تأیید")}</Label>
                 <select
                   className="mt-1 h-9 w-full rounded-md border border-white/10 bg-transparent px-2 text-sm"
                   value={form.verificationStatus}
@@ -836,7 +865,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
                 >
                   {VERIFICATION_STATUSES.map((v) => (
                     <option key={v.key} value={v.key}>
-                      {v.label}
+                      {faLabel(t.locale, v.key, VERIFICATION_FA)}
                     </option>
                   ))}
                 </select>
@@ -844,7 +873,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <Label>Month</Label>
+                <Label>{t("Month", "ماه")}</Label>
                 <Input
                   className="mt-1"
                   value={form.month}
@@ -854,7 +883,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
                 />
               </div>
               <div>
-                <Label>Day</Label>
+                <Label>{t("Day", "روز")}</Label>
                 <Input
                   className="mt-1"
                   value={form.day}
@@ -864,7 +893,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
                 />
               </div>
               <div>
-                <Label>Recurrence</Label>
+                <Label>{t("Recurrence", "تکرار")}</Label>
                 <select
                   className="mt-1 h-9 w-full rounded-md border border-white/10 bg-transparent px-2 text-sm"
                   value={form.recurrence}
@@ -872,10 +901,10 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
                     setForm((f) => ({ ...f, recurrence: e.target.value }))
                   }
                 >
-                  {["ONE_TIME", "ANNUAL", "MONTHLY", "WEEKLY", "CUSTOM"].map(
+                  {(["ONE_TIME", "ANNUAL", "MONTHLY", "WEEKLY", "CUSTOM"] as const).map(
                     (k) => (
                       <option key={k} value={k}>
-                        {k}
+                        {faLabel(t.locale, k, RECURRENCE_FA)}
                       </option>
                     ),
                   )}
@@ -883,7 +912,7 @@ export function CalendarAdminWorkspace({ workspaceSlug, brandSlug }: Props) {
               </div>
             </div>
             <div>
-              <Label>Countries (comma codes)</Label>
+              <Label>{t("Countries (comma codes)", "کشورها (کد با ویرگول)")}</Label>
               <Input
                 className="mt-1"
                 value={form.countryCodes}

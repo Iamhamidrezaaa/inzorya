@@ -22,6 +22,12 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
+  INDUSTRY_NAME_FA,
+  NODE_KIND_FA,
+  faLabel,
+  localizeEventishTitle,
+} from "@/i18n/display-labels";
+import {
   NODE_KINDS,
   RELATION_STRENGTHS,
   kindLabel,
@@ -54,6 +60,14 @@ type Props = {
 export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("knowledge-graph");
   const t = useT();
+  const displayKind = (kindKey: string) =>
+    faLabel(t.locale, kindKey, NODE_KIND_FA) !== kindKey
+      ? faLabel(t.locale, kindKey, NODE_KIND_FA)
+      : t.locale === "fa"
+        ? faLabel(t.locale, kindLabel(kindKey), NODE_KIND_FA)
+        : kindLabel(kindKey);
+  const displayNodeName = (name: string) =>
+    faLabel(t.locale, name, INDUSTRY_NAME_FA);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
@@ -457,7 +471,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
                 onClick={() => void splitActive()}
               >
                 <GitBranch className="size-3.5" />
-                Split
+                {t("Split", "جداسازی")}
               </Button>
             </div>
           </div>
@@ -475,11 +489,13 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
                       : "border-transparent hover:border-white/10",
                   )}
                 >
-                  <p className="font-medium leading-snug">{n.name}</p>
+                  <p className="font-medium leading-snug">{displayNodeName(n.name)}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {kindLabel(n.kind)}
+                    {displayKind(n.kind)}
                     {n._count
-                      ? ` · ${n._count.fromRels + n._count.toRels} links`
+                      ? t.locale === "fa"
+                        ? ` · ${n._count.fromRels + n._count.toRels} لینک`
+                        : ` · ${n._count.fromRels + n._count.toRels} links`
                       : ""}
                   </p>
                 </button>
@@ -497,9 +513,9 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
           ) : (
             <div className="mx-auto max-w-3xl space-y-6">
               <div>
-                <Badge className="mb-2">{kindLabel(active.kind)}</Badge>
+                <Badge className="mb-2">{displayKind(active.kind)}</Badge>
                 <h2 className="text-3xl tracking-tight">
-                  {active.name}
+                  {displayNodeName(active.name)}
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">{active.key}</p>
                 {active.description ? (
@@ -524,7 +540,7 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
                       .filter((n) => n.id !== active.id)
                       .map((n) => (
                         <option key={n.id} value={n.id}>
-                          {n.name} ({kindLabel(n.kind)})
+                          {displayNodeName(n.name)} ({displayKind(n.kind)})
                         </option>
                       ))}
                   </select>
@@ -677,17 +693,20 @@ export function KnowledgeGraphWorkspace({ workspaceSlug, brandSlug }: Props) {
 
           {preview?.event ? (
             <div className="space-y-3 rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-3">
-              <p className="text-lg">{preview.event.name}</p>
+              <p className="text-lg">
+                {localizeEventishTitle(t.locale, preview.event.name)}
+              </p>
               <p className="text-xs text-muted-foreground">
-                {preview.links.length} knowledge links · {preview.relations.length}{" "}
-                node relations
+                {t.locale === "fa"
+                  ? `${preview.links.length} لینک دانش · ${preview.relations.length} رابطه گره`
+                  : `${preview.links.length} knowledge links · ${preview.relations.length} node relations`}
               </p>
               <ul className="space-y-1 text-sm">
                 {preview.links.map((l, i) => (
                   <li key={`${l.node.id}-${i}`}>
-                    {l.node.name}{" "}
+                    {displayNodeName(l.node.name)}{" "}
                     <span className="text-xs text-muted-foreground">
-                      ({kindLabel(l.node.kind)} · {l.strength})
+                      ({displayKind(l.node.kind)} · {l.strength})
                     </span>
                   </li>
                 ))}

@@ -102,24 +102,24 @@ async function ensureDemoInbox(brandId: string) {
 
   const samples = [
     {
-      name: "Sara M.",
-      body: "Hi! Do you ship internationally and how long does delivery usually take?",
-      subject: "Shipping question",
+      name: "سارا م.",
+      body: "سلام! ارسال بین‌المللی دارید و معمولاً تحویل چقدر طول می‌کشد؟",
+      subject: "سؤال درباره ارسال",
     },
     {
-      name: "Alex Chen",
-      body: "I'm interested in your premium plan for my team — can someone share pricing options?",
-      subject: "Pricing interest",
+      name: "الکساندر چن",
+      body: "به پلن پرمیوم برای تیمم علاقه‌مندم — می‌توانید گزینه‌های قیمت را بفرستید؟",
+      subject: "علاقه به قیمت‌گذاری",
     },
     {
-      name: "Jordan Lee",
-      body: "My last order arrived damaged. This is really disappointing — please help.",
-      subject: "Order issue",
+      name: "جردن لی",
+      body: "سفارش قبلی‌ام آسیب‌دیده رسید. خیلی ناامیدم — لطفاً کمک کنید.",
+      subject: "مشکل سفارش",
     },
     {
-      name: "VIP Patron",
-      body: "Love the new collection. Can I get early access to the next drop?",
-      subject: "VIP inquiry",
+      name: "مشتری VIP",
+      body: "کالکشن جدید عالی بود. می‌توانم دسترسی زودهنگام به دراپ بعدی داشته باشم؟",
+      subject: "درخواست VIP",
       tags: ["vip"],
     },
   ];

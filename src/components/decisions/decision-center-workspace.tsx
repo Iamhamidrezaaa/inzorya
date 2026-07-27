@@ -369,8 +369,10 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
               <Sunrise className="mb-3 size-8 text-amber-300/70" />
               <p className="text-2xl">{t("Start the morning review", "شروع مرور صبحگاهی")}</p>
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                Inzorya will analyze campaigns, content, community, and opportunities —
-                then tell you only what deserves a decision.
+                {t(
+                  "Inzorya will analyze campaigns, content, community, and opportunities — then tell you only what deserves a decision.",
+                  "اینزوریا کمپین‌ها، محتوا، جامعه و فرصت‌ها را تحلیل می‌کند — سپس فقط آنچه شایسته تصمیم است را می‌گوید.",
+                )}
               </p>
             </div>
           ) : (
@@ -383,7 +385,7 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
 
               <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-5">
                 <p className="text-xs uppercase tracking-wide text-amber-200/70">
-                  Recommended action
+                  {t("Recommended action", "اقدام پیشنهادی")}
                 </p>
                 <p className="mt-2 text-xl">{active.recommendedAction}</p>
                 <p className="mt-2 text-sm text-muted-foreground">{active.reason}</p>
@@ -392,13 +394,13 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                    What happened
+                    {t("What happened", "چه اتفاقی افتاد")}
                   </p>
                   <p className="text-sm leading-relaxed">{active.whatHappened}</p>
                 </div>
                 <div>
                   <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                    Why it matters
+                    {t("Why it matters", "چرا مهم است")}
                   </p>
                   <p className="text-sm leading-relaxed">{active.whyItMatters}</p>
                 </div>
@@ -505,18 +507,23 @@ export function DecisionCenterWorkspace({ workspaceSlug, brandSlug }: Props) {
             </p>
             {morning?.todaysFocus ? (
               <p className="text-sm leading-relaxed text-muted-foreground">
-                <span className="text-foreground">Today&apos;s Focus — </span>
+                <span className="text-foreground">
+                  {t("Today's Focus — ", "تمرکز امروز — ")}
+                </span>
                 {morning.todaysFocus}
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Generate the brief to unlock today&apos;s focus.
+                {t(
+                  "Generate the brief to unlock today's focus.",
+                  "بریف را بسازید تا تمرکز امروز باز شود.",
+                )}
               </p>
             )}
             {asList(morning?.criticalNotifications).length ? (
               <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Critical
+                  {t("Critical", "بحرانی")}
                 </p>
                 {asList(morning?.criticalNotifications).map((n) => (
                   <p key={n} className="text-sm text-amber-100/90">
