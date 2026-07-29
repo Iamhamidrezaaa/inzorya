@@ -601,7 +601,7 @@ export function BusinessBrainWorkspace({
   const value = answersByKey[question.key] ?? "";
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div dir={locale === "fa" ? "rtl" : "ltr"} className="mx-auto w-full max-w-2xl">
       <div className="mb-8 flex items-center justify-between gap-3">
         <Button asChild variant="ghost" size="sm">
           <Link href={`${brandBase}/brain`}>

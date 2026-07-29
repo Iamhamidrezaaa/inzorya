@@ -36,6 +36,105 @@ import {
   RESPONSE_MODES,
 } from "@/lib/community";
 
+const COMMUNITY_FA: Record<string, string> = {
+  PROFESSIONAL: "حرفه‌ای",
+  FRIENDLY: "صمیمی",
+  LUXURY: "لوکس",
+  MINIMAL: "مینیمال",
+  CORPORATE: "سازمانی",
+  FUNNY: "طنز",
+  YOUTH: "جوان‌پسند",
+  PREMIUM: "پریمیوم",
+  EDUCATIONAL: "آموزشی",
+  Questions: "سؤال‌ها",
+  Complaints: "شکایت‌ها",
+  "Sales Leads": "سرنخ‌های فروش",
+  "Support Requests": "درخواست‌های پشتیبانی",
+  Compliments: "تعریف‌ها",
+  Spam: "اسپم",
+  "VIP Customers": "مشتریان VIP",
+  "Returning Customers": "مشتریان بازگشتی",
+  "Potential Influencers": "اینفلوئنسرهای بالقوه",
+  Other: "سایر",
+  "Brand Consistency": "هماهنگی با برند",
+  Clarity: "شفافیت",
+  Professionalism: "حرفه‌ای‌بودن",
+  Empathy: "همدلی",
+  Actionability: "قابلیت اقدام",
+  Confidence: "اطمینان",
+  "FAQ assist": "کمک FAQ",
+  "Lead capture": "جمع‌آوری سرنخ",
+  "Complaint escalate": "ارجاع شکایت",
+  "VIP notify": "اطلاع VIP",
+  "VIP inquiry": "درخواست VIP",
+  "Order issue": "مشکل سفارش",
+  "Pricing interest": "علاقه به قیمت‌گذاری",
+  "Shipping question": "سؤال ارسال",
+  // Mock contact names & subjects
+  "VIP Patron": "مشتری ویژه",
+  "Jordan Lee": "جردن لی",
+  "Alex Chen": "الکس چن",
+  "Sara M": "سارا م.",
+  "Sara M.": "سارا م.",
+  "Sara Mohammadi": "سارا محمدی",
+  "Mina Far": "مینا فر",
+  "Omar Khalid": "عمر خالد",
+  "Nora Aziz": "نورا عزیز",
+  "Spam Bot": "ربات اسپم",
+  // Mock conversation subjects
+  "Chat with Sara Mohammadi": "گفتگو با سارا محمدی",
+  "Chat with Alex Chen": "گفتگو با الکس چن",
+  "Chat with Jordan Lee": "گفتگو با جردن لی",
+  "Chat with Mina Far": "گفتگو با مینا فر",
+  "Chat with Omar Khalid": "گفتگو با عمر خالد",
+  "Chat with Nora Aziz": "گفتگو با نورا عزیز",
+  "Chat with Spam Bot": "گفتگو با ربات اسپم",
+  "Chat with VIP Patron": "گفتگو با مشتری ویژه",
+  // Mock message bodies for display-time localization
+  "Love the new collection. Can I get early access to the next drop?":
+    "مجموعه جدید عالیه. میشه زودتر از بقیه به محصول بعدی دسترسی داشته باشم؟",
+  "My last order arrived damaged. This is really disappointing — please help":
+    "سفارش آخرم آسیب‌دیده رسید. واقعاً ناامیدکننده‌ست — لطفاً کمکم کنید",
+  "I'm interested in your premium plan for my team — can someone share pricing options?":
+    "به پلن ویژه برای تیمم علاقه‌مندم — کسی میتونه گزینه‌های قیمتی رو بفرسته؟",
+  "Hi! Do you ship internationally and how long does delivery usually take?":
+    "سلام! ارسال بین‌المللی دارید و معمولاً چقدر طول می‌کشه؟",
+  "Hi! Do you ship to Tehran?": "سلام! به تهران ارسال دارید؟",
+  "Yes we do — usually 2–3 days.": "بله — معمولاً ۲ تا ۳ روز.",
+  "Perfect. Can I get the price list?": "عالی. لیست قیمت رو میشه برام بفرستید؟",
+  "Also interested in the spring collection 👀": "مجموعه بهاری هم جالبه 👀",
+  "Order #4821 still processing?": "سفارش #۴۸۲۱ هنوز در حال پردازشه؟",
+  "Checking with ops — one moment.": "دارم با بخش عملیات چک می‌کنم — لحظه‌ای.",
+  "Thanks, waiting here.": "ممنون، منتظرم.",
+  "Saw your ad. Is this available in Dubai?": "تبلیغتون رو دیدم. در دبی موجوده؟",
+  "Collab rates for next month?": "نرخ همکاری ماه بعد؟",
+  "Sending a deck shortly.": "به‌زودی ارسال می‌کنم.",
+  "Received, looks good!": "دریافت شد، عالیه!",
+  "Can we book a demo for Friday?": "برای جمعه یک دمو رزرو کنیم؟",
+  "Friday 11am works. Calendar invite sent.": "جمعه ساعت ۱۱ اوکیه. دعوت‌نامه تقویم ارسال شد.",
+  "Buy followers cheap!!!": "فالوور ارزان بخرید!!!",
+  "Loved the last reel 🔥": "آخرین ریلز فوق‌العاده بود 🔥",
+  "Do you have a size guide?": "راهنمای سایز دارید؟",
+  "Also need gift wrapping": "بسته‌بندی هدیه هم لازمه",
+  "Shared a lookbook image": "تصویر لوک‌بوک به اشتراک گذاشته شد",
+  "VIP customer — answer first.": "مشتری VIP — اول پاسخ بدید.",
+  "Negative sentiment and urgency elevate priority.":
+    "احساس منفی و فوریت اولویت را بالا می‌برد.",
+  "High revenue potential lead.": "سرنخ با پتانسیل درآمد بالا.",
+  "Unanswered inbound needs a timely reply.":
+    "پیام ورودی بدون پاسخ نیاز به پاسخ به‌موقع دارد.",
+  REPLY: "پاسخ",
+  FOLLOW_UP: "پیگیری",
+  OFFER: "پیشنهاد",
+  DISCOUNT: "تخفیف",
+  CTA: "دعوت به اقدام",
+  KNOWLEDGE: "دانش",
+  ESCALATE: "ارجاع",
+  negative: "منفی",
+  neutral: "خنثی",
+  positive: "مثبت",
+};
+
 type SuggestedReply = {
   id: string;
   kind: string;
@@ -93,6 +192,7 @@ export function CommunityManagerWorkspace({
   const page = usePageCopy("community");
   const t = useT();
   const locale = t.locale;
+  const tr = useCallback((value: string) => faLabel(locale, value, COMMUNITY_FA), [locale]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -152,7 +252,7 @@ export function CommunityManagerWorkspace({
       if (!res.ok) throw new Error(data.error || "Failed");
       apply(data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Unable to load");
+      toast.error(e instanceof Error ? e.message : t("Unable to load", "بارگذاری ممکن نشد"));
     } finally {
       setLoading(false);
     }
@@ -179,9 +279,9 @@ export function CommunityManagerWorkspace({
     try {
       const data = await post({ intent: "scan", language: locale });
       apply(data.dashboard);
-      toast.success("Inbox intelligence updated");
+      toast.success(t("Inbox intelligence updated", "هوش اینباکس به‌روزرسانی شد"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Scan failed");
+      toast.error(e instanceof Error ? e.message : t("Scan failed", "اسکن ناموفق بود"));
     } finally {
       setBusy(false);
     }
@@ -195,9 +295,9 @@ export function CommunityManagerWorkspace({
         tone,
         autoCategories,
       });
-      toast.success("Community settings saved");
+      toast.success(t("Community settings saved", "تنظیمات مدیریت جامعه ذخیره شد"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Save failed");
+      toast.error(e instanceof Error ? e.message : t("Save failed", "ذخیره ناموفق بود"));
     }
   };
 
@@ -227,7 +327,10 @@ export function CommunityManagerWorkspace({
   }
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/8 bg-[radial-gradient(ellipse_at_top,_rgba(20,184,166,0.08),_transparent_44%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)]">
+    <div
+      dir={locale === "fa" ? "rtl" : "ltr"}
+      className="flex h-[calc(100vh-7rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/8 bg-[radial-gradient(ellipse_at_top,_rgba(20,184,166,0.08),_transparent_44%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)]"
+    >
       <div className="flex items-center justify-between border-b border-white/6 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300">
@@ -302,7 +405,7 @@ export function CommunityManagerWorkspace({
                   type="button"
                   onClick={() => setResponseMode(m.key)}
                   className={cn(
-                    "w-full rounded-xl border px-3 py-2 text-left",
+                    "w-full rounded-xl border px-3 py-2",
                     responseMode === m.key
                       ? "border-teal-500/40 bg-teal-500/10"
                       : "border-white/8 hover:bg-white/4",
@@ -343,7 +446,7 @@ export function CommunityManagerWorkspace({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs">Tone engine</Label>
+              <Label className="text-xs">{t("Tone engine", "موتور لحن")}</Label>
               <select
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
                 value={tone}
@@ -351,14 +454,14 @@ export function CommunityManagerWorkspace({
               >
                 {COMMUNITY_TONES.map((t) => (
                   <option key={t} value={t}>
-                    {t}
+                    {tr(t)}
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs">Semi-auto categories</Label>
+              <Label className="text-xs">{t("Semi-auto categories", "دسته‌های نیمه‌خودکار")}</Label>
               <div className="flex flex-wrap gap-1">
                 {INTENT_TYPES.filter((i) => i.key !== "OTHER").map((i) => {
                   const on = autoCategories.includes(i.key);
@@ -378,22 +481,25 @@ export function CommunityManagerWorkspace({
                           : "border-white/10 text-muted-foreground",
                       )}
                     >
-                      {i.label}
+                      {tr(i.label)}
                     </button>
                   );
                 })}
               </div>
               <Button size="sm" className="w-full" onClick={() => void saveSettings()}>
-                Save settings
+                {t("Save settings", "ذخیره تنظیمات")}
               </Button>
             </div>
 
             <div className="space-y-1.5">
               <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Auto-reply rules
+                {t("Auto-reply rules", "قوانین پاسخ خودکار")}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Auto-send stays off unless you explicitly enable it — never outside approved rules.
+                {t(
+                  "Auto-send stays off unless you explicitly enable it — never outside approved rules.",
+                  "ارسال خودکار خاموش می‌ماند مگر اینکه خودتان صریحاً فعالش کنید — هرگز خارج از قوانین تأییدشده.",
+                )}
               </p>
               {autoRules.map((r) => (
                 <div
@@ -401,7 +507,7 @@ export function CommunityManagerWorkspace({
                   className="rounded-lg border border-white/8 px-2 py-1.5 text-xs"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">{r.name}</span>
+                    <span className="font-medium">{tr(r.name)}</span>
                     <button
                       type="button"
                       className="text-muted-foreground hover:text-foreground"
@@ -413,10 +519,12 @@ export function CommunityManagerWorkspace({
                         }).then(() => load())
                       }
                     >
-                      {r.enabled ? "On" : "Off"}
+                      {r.enabled ? t("On", "روشن") : t("Off", "خاموش")}
                     </button>
                   </div>
-                  <p className="text-muted-foreground">{r.intentType}</p>
+                  <p className="text-muted-foreground">
+                    {faLabel(locale, r.intentType, INTENT_TYPE_FA)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -480,7 +588,7 @@ export function CommunityManagerWorkspace({
                   type="button"
                   onClick={() => setActiveId(c.id)}
                   className={cn(
-                    "w-full rounded-2xl border px-4 py-3 text-left",
+                    "w-full rounded-2xl border px-4 py-3",
                     activeId === c.id
                       ? "border-teal-500/40 bg-teal-500/10"
                       : "border-white/8 bg-black/15 hover:bg-white/[0.03]",
@@ -500,7 +608,7 @@ export function CommunityManagerWorkspace({
                         )}
                         {c.priority?.vip ? (
                           <Badge variant="secondary" className="rounded-md text-[10px]">
-                            VIP
+                            {t("VIP", "وی‌آی‌پی")}
                           </Badge>
                         ) : null}
                         {c.priority?.urgent ? (
@@ -516,12 +624,12 @@ export function CommunityManagerWorkspace({
                         ) : null}
                       </div>
                       <p className="truncate text-sm font-medium">
-                        {c.contact.name || t("Unknown", "ناشناس")} ·{" "}
-                        {c.subject || t("Conversation", "گفتگو")}
+                        {tr(c.contact.name || "") || t("Unknown", "ناشناس")} ·{" "}
+                        {c.subject ? tr(c.subject) : t("Conversation", "گفتگو")}
                       </p>
                       <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                        {c.priority?.rankReason ||
-                          c.messages[0]?.body ||
+                        {tr(c.priority?.rankReason || "") ||
+                          tr(c.messages[0]?.body || "") ||
                           t("Awaiting intelligence scan", "در انتظار اسکن هوشمندی")}
                       </p>
                     </div>
@@ -554,10 +662,10 @@ export function CommunityManagerWorkspace({
               <>
                 <div>
                   <h2 className="text-xl tracking-tight">
-                    {active.contact.name || t("Customer", "مشتری")}
+                    {tr(active.contact.name || "") || t("Customer", "مشتری")}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    {active.subject || t("Conversation", "گفتگو")} ·{" "}
+                      {active.subject ? tr(active.subject) : t("Conversation", "گفتگو")} ·{" "}
                     {faLabel(locale, active.status, CONVERSATION_STATUS_FA)}
                   </p>
                 </div>
@@ -571,7 +679,7 @@ export function CommunityManagerWorkspace({
                       {t("confidence", "اطمینان")})
                     </p>
                     <p className="mt-1 text-muted-foreground">
-                      {active.intent.explanation}
+                      {tr(active.intent.explanation)}
                     </p>
                   </div>
                 ) : null}
@@ -582,7 +690,7 @@ export function CommunityManagerWorkspace({
                       {t("Conversation insights", "بینش گفتگو")}
                     </p>
                     <p>
-                      {t("Sentiment:", "احساس:")} {active.sentiment.label}
+                      {t("Sentiment:", "احساس:")} {tr(active.sentiment.label)}
                     </p>
                     <p>
                       {t("Buying intent:", "نیت خرید:")}{" "}
@@ -596,7 +704,7 @@ export function CommunityManagerWorkspace({
                       {t("Retention risk:", "ریسک نگهداشت:")}{" "}
                       {Math.round(active.sentiment.retentionRisk)}
                     </p>
-                    <p className="text-muted-foreground">{active.sentiment.explanation}</p>
+                    <p className="text-muted-foreground">{tr(active.sentiment.explanation)}</p>
                   </div>
                 ) : null}
 
@@ -617,7 +725,7 @@ export function CommunityManagerWorkspace({
                       <span className="text-[10px] text-muted-foreground">
                         {faLabel(locale, m.direction, MESSAGE_DIR_FA)}
                       </span>
-                      <p>{m.body}</p>
+                      <p>{tr(m.body)}</p>
                     </div>
                   ))}
                 </div>
@@ -627,7 +735,7 @@ export function CommunityManagerWorkspace({
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                         {t("Suggested", "پیشنهادی")}{" "}
-                        {primaryReply.kind.replaceAll("_", " ")}
+                        {tr(primaryReply.kind.replaceAll("_", " "))}
                       </p>
                       <Badge variant="outline" className="rounded-md text-[10px]">
                         {Math.round(primaryReply.confidence * 100)}%{" "}
@@ -649,7 +757,7 @@ export function CommunityManagerWorkspace({
                           return (
                             <div key={d.key}>
                               <div className="mb-0.5 flex justify-between text-[10px] text-muted-foreground">
-                                <span>{d.label}</span>
+                                <span>{tr(d.label)}</span>
                                 <span>{Math.round(v)}</span>
                               </div>
                               <div className="h-1 overflow-hidden rounded-full bg-white/5">
@@ -682,13 +790,13 @@ export function CommunityManagerWorkspace({
                                 : "approve",
                             editedBody: editBody,
                           }).then(() => {
-                            toast.success("Reply sent to conversation");
+                            toast.success(t("Reply sent to conversation", "پاسخ به گفتگو ارسال شد"));
                             return load();
                           })
                         }
                       >
                         <Check className="size-3.5" />
-                        Approve & send
+                        {t("Approve & send", "تأیید و ارسال")}
                       </Button>
                       <Button
                         size="sm"
@@ -700,25 +808,27 @@ export function CommunityManagerWorkspace({
                             replyId: primaryReply.id,
                             action: "reject",
                           }).then(() => {
-                            toast.success("Rejected — learning updated");
+                            toast.success(t("Rejected — learning updated", "رد شد — یادگیری به‌روزرسانی شد"));
                             return load();
                           })
                         }
                       >
                         <X className="size-3.5" />
-                        Reject
+                        {t("Reject", "رد")}
                       </Button>
                     </div>
                     {active.suggestedReplies.length > 1 ? (
                       <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground">More suggestions</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {t("More suggestions", "پیشنهادهای بیشتر")}
+                        </p>
                         {active.suggestedReplies.slice(1).map((s) => (
                           <p
                             key={s.id}
                             className="rounded-lg border border-white/8 px-2 py-1.5 text-[11px] text-muted-foreground"
                           >
                             <span className="font-medium text-foreground/80">
-                              {s.kind}:{" "}
+                              {tr(s.kind)}:{" "}
                             </span>
                             {s.body}
                           </p>
@@ -738,7 +848,7 @@ export function CommunityManagerWorkspace({
 
                 <div className="space-y-2 border-t border-white/6 pt-3">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    Team collaboration
+                    {t("Team collaboration", "همکاری تیمی")}
                   </p>
                   <select
                     className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-xs"
@@ -759,7 +869,7 @@ export function CommunityManagerWorkspace({
                     ))}
                   </select>
                   <div className="flex gap-1">
-                    {([t("OPEN", "باز"), t("WAITING", "در انتظار"), t("RESOLVED", "حل‌شده")] as const).map((s) => (
+                    {(["OPEN", "WAITING", "RESOLVED"] as const).map((s) => (
                       <Button
                         key={s}
                         size="sm"
@@ -773,7 +883,7 @@ export function CommunityManagerWorkspace({
                           }).then(() => load())
                         }
                       >
-                        {s}
+                        {faLabel(locale, s, CONVERSATION_STATUS_FA)}
                       </Button>
                     ))}
                   </div>
@@ -794,12 +904,12 @@ export function CommunityManagerWorkspace({
                         note,
                       }).then(() => {
                         setNote("");
-                        toast.success("Note added");
+                        toast.success(t("Note added", "یادداشت اضافه شد"));
                         return load();
                       })
                     }
                   >
-                    Add note
+                    {t("Add note", "افزودن یادداشت")}
                   </Button>
                 </div>
               </>

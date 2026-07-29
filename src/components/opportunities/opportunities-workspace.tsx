@@ -2,6 +2,7 @@
 
 import { usePageCopy } from "@/i18n/use-page-copy";
 import { useI18n } from "@/i18n/client";
+import { faLabel, localizeEventishTitle } from "@/i18n/display-labels";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -65,8 +66,8 @@ type Props = {
 
 type TabKey = "upcoming" | "high" | "industry" | "seasonal" | "missed";
 
-function dayLabel(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
+function dayLabel(locale: string, iso: string) {
+  return new Date(iso).toLocaleDateString(locale === "fa" ? "fa-IR" : undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -130,10 +131,27 @@ const PLANNING_MODE_DESCRIPTIONS_FA: Record<string, string> = {
   MANUAL: "شما نیازمندی‌های دقیق را تعیین می‌کنید؛ هوش مصنوعی فقط کیفیت را بهینه می‌کند.",
 };
 
+const OPPORTUNITIES_FA: Record<string, string> = {
+  high: "بالا",
+  medium: "متوسط",
+  low: "کم",
+  INTERNATIONAL_DAY: "روز بین‌المللی",
+  FOOD_CALENDAR: "تقویم غذایی",
+  INDUSTRY_CONFERENCE: "کنفرانس صنعتی",
+};
+
 export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("opportunities");
   const { locale } = useI18n();
   const t = (en: string, fa: string) => (locale === "fa" ? fa : en);
+  const trOpportunity = useCallback(
+    (value: string) => localizeEventishTitle(locale, value),
+    [locale],
+  );
+  const trTag = useCallback(
+    (value: string) => faLabel(locale, value, OPPORTUNITIES_FA),
+    [locale],
+  );
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -276,7 +294,10 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/8 bg-[radial-gradient(ellipse_at_top,_rgba(45,212,191,0.08),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)]">
+    <div
+      dir={locale === "fa" ? "rtl" : "ltr"}
+      className="flex h-[calc(100vh-7rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/8 bg-[radial-gradient(ellipse_at_top,_rgba(45,212,191,0.08),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)]"
+    >
       <div className="flex items-center justify-between border-b border-white/6 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300">
@@ -337,7 +358,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                     setPlanningMode(m.key as "AUTO" | "GUIDED" | "MANUAL")
                   }
                   className={cn(
-                    "w-full rounded-xl border px-3 py-2 text-left",
+                    "w-full rounded-xl border px-3 py-2",
                     planningMode === m.key
                       ? "border-teal-500/40 bg-teal-500/10"
                       : "border-white/8 hover:bg-white/4",
@@ -405,11 +426,11 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                     key={a.id}
                     type="button"
                     onClick={() => setActiveId(a.opportunity.id)}
-                    className="w-full rounded-lg border border-amber-500/20 bg-amber-500/5 px-2 py-1.5 text-left text-xs"
+                    className="w-full rounded-lg border border-amber-500/20 bg-amber-500/5 px-2 py-1.5 text-xs"
                   >
-                    <p className="font-medium">{a.opportunity.title}</p>
+                    <p className="font-medium">{trOpportunity(a.opportunity.title)}</p>
                     <p className="text-muted-foreground">
-                      {a.offset.replaceAll("_", " ")} · {dayLabel(a.notifyAt)}
+                      {a.offset.replaceAll("_", " ")} · {dayLabel(locale, a.notifyAt)}
                     </p>
                   </button>
                 ))}
@@ -473,7 +494,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                   type="button"
                   onClick={() => setActiveId(o.id)}
                   className={cn(
-                    "w-full rounded-2xl border px-4 py-3 text-left transition",
+                    "w-full rounded-2xl border px-4 py-3 transition",
                     activeId === o.id
                       ? "border-teal-500/40 bg-teal-500/10"
                       : "border-white/8 bg-black/15 hover:bg-white/[0.03]",
@@ -483,7 +504,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                     <div className="min-w-0">
                       <div className="mb-1 flex flex-wrap items-center gap-1.5">
                         <Badge variant="outline" className="rounded-md text-[10px]">
-                          {o.event.source.replaceAll("_", " ")}
+                          {trTag(o.event.source)}
                         </Badge>
                         <Badge
                           variant="secondary"
@@ -492,15 +513,17 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                             o.impactTier === "high" && "bg-teal-500/20",
                           )}
                         >
-                          {o.impactTier}
+                          {trTag(o.impactTier)}
                         </Badge>
                         <span className="text-[11px] text-muted-foreground">
-                          {dayLabel(o.eventDate)}
+                          {dayLabel(locale, o.eventDate)}
                         </span>
                       </div>
-                      <p className="truncate text-sm font-medium">{o.title}</p>
+                      <p className="truncate text-sm font-medium">
+                        {trOpportunity(o.title)}
+                      </p>
                       <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                        {o.matchReason}
+                        {trOpportunity(o.matchReason)}
                       </p>
                     </div>
                     <p className="text-xl tracking-tight">
@@ -531,18 +554,18 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
             ) : (
               <>
                 <div>
-                  <h2 className="text-xl tracking-tight">{active.title}</h2>
+                  <h2 className="text-xl tracking-tight">{trOpportunity(active.title)}</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {active.event.name} · {dayLabel(active.eventDate)}
+                    {trOpportunity(active.event.name)} · {dayLabel(locale, active.eventDate)}
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-foreground/85">
-                    {active.summary}
+                    {trOpportunity(active.summary)}
                   </p>
                   <p className="mt-3 rounded-xl border border-white/8 bg-black/20 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
                     <span className="font-medium text-foreground/80">
                       {t("Why this fits:", "چرا این مناسب است:")}{" "}
                     </span>
-                    {active.matchReason}
+                    {trOpportunity(active.matchReason)}
                   </p>
                 </div>
 
@@ -559,11 +582,11 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                     >
                       <p className="font-medium">
                         <span className="text-muted-foreground">
-                          {r.kind.replaceAll("_", " ")} ·{" "}
+                        {r.kind.replaceAll("_", " ")} ·{" "}
                         </span>
-                        {r.title}
+                        {trOpportunity(r.title)}
                       </p>
-                      <p className="mt-0.5 text-muted-foreground">{r.detail}</p>
+                      <p className="mt-0.5 text-muted-foreground">{trOpportunity(r.detail)}</p>
                     </div>
                   ))}
                 </div>
@@ -651,7 +674,7 @@ export function OpportunitiesWorkspace({ workspaceSlug, brandSlug }: Props) {
                     </p>
                     {active.alerts.map((a) => (
                       <p key={a.id} className="text-[11px] text-muted-foreground">
-                        {a.offset.replaceAll("_", " ")} · {dayLabel(a.notifyAt)}
+                        {a.offset.replaceAll("_", " ")} · {dayLabel(locale, a.notifyAt)}
                       </p>
                     ))}
                   </div>

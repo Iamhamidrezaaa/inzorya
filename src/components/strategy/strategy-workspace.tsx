@@ -193,6 +193,14 @@ const ROADMAP_FA: Record<string, { label: string; hint: string }> = {
   },
 };
 
+const ROADMAP_TASK_FA: Record<string, string> = {
+  "Complete business overview": "تکمیل نمای کلی کسب‌وکار",
+  "Finish business overview": "تکمیل نمای کلی کسب‌وکار",
+  "Select marketing goals": "انتخاب اهداف بازاریابی",
+  "Add at least one persona": "افزودن حداقل یک پرسونا",
+  "Review content pillars": "بازبینی ستون‌های محتوا",
+};
+
 export function StrategyWorkspace({
   workspaceSlug,
   brandSlug,
@@ -222,6 +230,10 @@ export function StrategyWorkspace({
             hint: stage.hint,
           })
         : { label: stage.label, hint: stage.hint },
+    [locale],
+  );
+  const roadmapTaskLabel = useCallback(
+    (label: string) => faLabel(locale, label, ROADMAP_TASK_FA),
     [locale],
   );
   const [loading, setLoading] = useState(true);
@@ -391,7 +403,7 @@ export function StrategyWorkspace({
   }
 
   return (
-    <div className="space-y-6">
+    <div dir={locale === "fa" ? "rtl" : "ltr"} className="space-y-6">
       <PageHeader
         title={page.title}
         description={page.description}
@@ -1262,7 +1274,7 @@ export function StrategyWorkspace({
         <div className="mt-6 space-y-2">
           <Label>{t("Next step", "قدم بعدی")}</Label>
           <Input
-            value={nextStep}
+            value={roadmapTaskLabel(nextStep)}
             onChange={(e) => setNextStep(e.target.value)}
             placeholder={t("What should happen next?", "چه اتفاقی باید بعد بیفتد؟")}
           />
@@ -1328,7 +1340,7 @@ export function StrategyWorkspace({
                       "h-8 border-0 bg-transparent shadow-none focus-visible:ring-0",
                       task.done && "text-muted-foreground line-through",
                     )}
-                    value={task.title}
+                    value={roadmapTaskLabel(task.title)}
                     onChange={(e) =>
                       setTasks((list) =>
                         list.map((t) =>

@@ -2,6 +2,7 @@
 
 import { usePageCopy } from "@/i18n/use-page-copy";
 import { useI18n } from "@/i18n/client";
+import { faLabel } from "@/i18n/display-labels";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -130,6 +131,78 @@ type Props = {
   brandSlug: string;
 };
 
+const STRATEGIST_FA: Record<string, string> = {
+  "Marketing Strategy": "استراتژی بازاریابی",
+  "Growth Strategy": "استراتژی رشد",
+  "Campaign Planning": "برنامه‌ریزی کمپین",
+  "Competitor Analysis": "تحلیل رقبا",
+  "Audience Analysis": "تحلیل مخاطب",
+  "Brand Positioning": "جایگاه‌یابی برند",
+  "Content Direction": "جهت‌گیری محتوا",
+  SWOT: "سوات",
+  "Go-To-Market": "ورود به بازار",
+  "Launch Plan": "برنامه لانچ",
+  Retention: "نگهداشت",
+  "Community Growth": "رشد جامعه",
+  "Business Brain": "مغز کسب‌وکار",
+  "Interviewed business knowledge": "دانش کسب‌وکارِ مصاحبه‌شده",
+  "Brand Voice": "لحن برند",
+  "Tone and brand identity": "لحن و هویت برند",
+  "Goals, pillars, and roadmap": "اهداف، ستون‌ها و نقشه راه",
+  Campaigns: "کمپین‌ها",
+  "Recent campaign shells": "پوسته‌های اخیر کمپین",
+  Analytics: "تحلیل‌ها",
+  "KPI snapshot": "نمای KPI",
+  "Knowledge Base": "پایگاه دانش",
+  "Document corpus size and availability": "حجم و دسترس‌پذیری اسناد",
+  "Customer Data": "داده مشتری",
+  "Contact volume signals": "نشانه‌های حجم مخاطب",
+  "Connected Channels": "کانال‌های متصل",
+  "Live channel connections": "اتصال‌های زنده کانال",
+  "Content History": "تاریخچه محتوا",
+  "Recent studio content": "محتوای اخیر استودیو",
+  Conversations: "گفتگوها",
+  "Inbox conversation volume": "حجم گفتگوهای اینباکس",
+  "How can I increase engagement?": "چطور می‌توانم تعامل را افزایش دهم؟",
+  "Plan my next campaign.": "کمپین بعدی من را برنامه‌ریزی کن.",
+  "Analyze my competitors.": "رقبای من را تحلیل کن.",
+  "Find weaknesses in my content strategy.": "نقاط ضعف استراتژی محتوای من را پیدا کن.",
+  "Suggest new audience segments.": "بخش‌های جدید مخاطب را پیشنهاد بده.",
+  "Explain further": "بیشتر توضیح بده",
+  Compare: "مقایسه کن",
+  Improve: "بهبود بده",
+  Expand: "گسترش بده",
+  Simplify: "ساده‌سازی کن",
+  Translate: "ترجمه کن",
+  "Turn into checklist": "به چک‌لیست تبدیل کن",
+  "Turn into roadmap": "به نقشه راه تبدیل کن",
+  "Turn into campaign": "به کمپین تبدیل کن",
+  "Turn into content brief": "به بریف محتوا تبدیل کن",
+  "Executive Summary": "خلاصه اجرایی",
+  Findings: "یافته‌ها",
+  Reasoning: "استدلال",
+  Recommendations: "توصیه‌ها",
+  Risks: "ریسک‌ها",
+  "Expected Impact": "تأثیر مورد انتظار",
+  "Action Items": "اقدام‌های پیشنهادی",
+  "Engagement Lift": "افزایش تعامل",
+  "Diagnose engagement and propose levers.": "تعامل را بررسی کن و اهرم‌های بهبود را پیشنهاد بده.",
+  "How can I increase engagement with my current audience?":
+    "چطور می‌توانم تعامل را با مخاطب فعلی‌ام بیشتر کنم؟",
+  "Next Campaign": "کمپین بعدی",
+  "Plan the next campaign around current goals.": "کمپین بعدی را بر اساس اهداف فعلی برنامه‌ریزی کن.",
+  "Plan my next campaign using current goals and channels.":
+    "کمپین بعدی من را با توجه به اهداف و کانال‌های فعلی برنامه‌ریزی کن.",
+  "Competitor Scan": "اسکن رقبا",
+  "Map competitor angles and gaps.": "زاویه‌ها و شکاف‌های رقبا را مشخص کن.",
+  "Analyze my competitors and find white-space opportunities.":
+    "رقبای من را تحلیل کن و فرصت‌های خالی بازار را پیدا کن.",
+  "SWOT Pass": "مرور SWOT",
+  "Structured SWOT for the brand.": "تحلیل SWOT ساخت‌یافته برای برند.",
+  "Run a SWOT analysis for my brand based on current context.":
+    "بر اساس زمینه فعلی، برای برند من تحلیل SWOT انجام بده.",
+};
+
 function useT() {
   const { locale } = useI18n();
   return useCallback(
@@ -216,7 +289,7 @@ function AdviceCard({
         if (!value) return null;
         if (section.key === "recommendations") {
           return (
-            <ExpandSection key={section.key} title={section.label}>
+            <ExpandSection key={section.key} title={tr(section.label)}>
               <div className="space-y-3">
                 {(Array.isArray(value) ? value : []).map((raw, idx) => {
                   const r = raw as NonNullable<StructuredAdvice["recommendations"]>[number];
@@ -287,7 +360,7 @@ function AdviceCard({
         }
         if (Array.isArray(value)) {
           return (
-            <ExpandSection key={section.key} title={section.label}>
+            <ExpandSection key={section.key} title={tr(section.label)}>
               <ul className="list-disc space-y-1 pl-5">
                 {value.map((item, i) => (
                   <li key={i}>{String(item)}</li>
@@ -297,7 +370,7 @@ function AdviceCard({
           );
         }
         return (
-          <ExpandSection key={section.key} title={section.label}>
+          <ExpandSection key={section.key} title={tr(section.label)}>
             <p className="whitespace-pre-wrap text-foreground/85">{String(value)}</p>
           </ExpandSection>
         );
@@ -358,7 +431,7 @@ function AdviceCard({
             onClick={() => onFollowUp(f.key)}
             className="rounded-full border border-white/8 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:border-white/20 hover:text-foreground disabled:opacity-50"
           >
-            {f.label}
+            {tr(f.label)}
           </button>
         ))}
       </div>
@@ -370,6 +443,7 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("strategist");
   const { locale } = useI18n();
   const t = useT();
+  const tr = useCallback((value: string) => faLabel(locale, value, STRATEGIST_FA), [locale]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [conversations, setConversations] = useState<ConversationListItem[]>([]);
@@ -580,7 +654,10 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/8 bg-[radial-gradient(ellipse_at_top,_rgba(20,184,166,0.08),_transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)]">
+    <div
+      dir={locale === "fa" ? "rtl" : "ltr"}
+      className="flex h-[calc(100vh-7rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/8 bg-[radial-gradient(ellipse_at_top,_rgba(20,184,166,0.08),_transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)]"
+    >
       <div className="flex items-center justify-between border-b border-white/6 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300">
@@ -667,7 +744,10 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
                     >
                       <span className="line-clamp-2">{c.title}</span>
                       <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                        {STRATEGY_CONVERSATION_TYPES.find((ct) => ct.key === c.type)?.label}
+                        {tr(
+                          STRATEGY_CONVERSATION_TYPES.find((ct) => ct.key === c.type)?.label ||
+                            c.type,
+                        )}
                       </span>
                     </button>
                   ))}
@@ -689,15 +769,15 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
                       onClick={() =>
                         void startConversation({
                           type: tpl.conversationType,
-                          question: tpl.starterPrompt,
-                          title: tpl.name,
+                          question: tr(tpl.starterPrompt),
+                          title: tr(tpl.name),
                         })
                       }
                       className="mb-0.5 w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-white/4"
                     >
-                      <span className="font-medium">{tpl.name}</span>
+                      <span className="font-medium">{tr(tpl.name)}</span>
                       <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                        {tpl.description}
+                        {tpl.description ? tr(tpl.description) : null}
                       </span>
                     </button>
                   ))}
@@ -837,7 +917,10 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
               </p>
               {active ? (
                 <p className="text-[11px] text-muted-foreground">
-                  {STRATEGY_CONVERSATION_TYPES.find((ct) => ct.key === active.type)?.label}
+                  {tr(
+                    STRATEGY_CONVERSATION_TYPES.find((ct) => ct.key === active.type)?.label ||
+                      active.type,
+                  )}
                 </p>
               ) : null}
             </div>
@@ -898,11 +981,11 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
                       type="button"
                       disabled={busy}
                       onClick={() =>
-                        void startConversation({ type: s.type, question: s.label })
+                        void startConversation({ type: s.type, question: tr(s.label) })
                       }
                       className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-left text-xs text-muted-foreground transition hover:border-teal-500/40 hover:text-foreground"
                     >
-                      {s.label}
+                      {tr(s.label)}
                     </button>
                   ))}
                 </div>
@@ -915,7 +998,7 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
                       onClick={() => void startConversation({ type: ct.key })}
                       className="rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-white/5 hover:text-foreground"
                     >
-                      {ct.label}
+                      {tr(ct.label)}
                     </button>
                   ))}
                 </div>
@@ -936,7 +1019,7 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
                     busy={busy}
                     onFollowUp={(kind) => {
                       const label =
-                        FOLLOW_UP_ACTIONS.find((f) => f.key === kind)?.label || kind;
+                        tr(FOLLOW_UP_ACTIONS.find((f) => f.key === kind)?.label || kind);
                       void send(
                         t(
                           `${label} the previous advice.`,
@@ -1053,9 +1136,9 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
                       onChange={() => void toggleSource(s.key)}
                     />
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium">{s.label}</span>
+                      <span className="block text-sm font-medium">{tr(s.label)}</span>
                       <span className="block text-[11px] text-muted-foreground">
-                        {s.description}
+                        {tr(s.description)}
                       </span>
                       {enabled && preview != null ? (
                         <span className="mt-1 block truncate text-[10px] text-muted-foreground/80">

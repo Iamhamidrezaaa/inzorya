@@ -2,6 +2,7 @@
 
 import { usePageCopy } from "@/i18n/use-page-copy";
 import { useI18n } from "@/i18n/client";
+import { faLabel } from "@/i18n/display-labels";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -33,6 +34,74 @@ import {
   type PlanSettings,
   type PlanTypeKey,
 } from "@/lib/planner";
+
+const PLANNER_FA: Record<string, string> = {
+  "Weekly Plan": "برنامه هفتگی",
+  "Monthly Plan": "برنامه ماهانه",
+  "Quarterly Plan": "برنامه فصلی",
+  "Campaign Plan": "برنامه کمپین",
+  "Launch Plan": "برنامه لانچ",
+  "Holiday Plan": "برنامه مناسبتی",
+  "Seasonal Plan": "برنامه فصلیِ مناسبتی",
+  "Product Promotion Plan": "برنامه ترویج محصول",
+  Educational: "آموزشی",
+  Promotional: "پروموشن",
+  Community: "جامعه",
+  Entertainment: "سرگرمی",
+  "Social Proof": "اثبات اجتماعی",
+  "Behind The Scenes": "پشت صحنه",
+  News: "اخبار",
+  Offers: "پیشنهادها",
+  "User Generated Content": "محتوای تولیدشده توسط کاربر",
+  Instagram: "اینستاگرام",
+  INSTAGRAM: "اینستاگرام",
+  Facebook: "فیسبوک",
+  FACEBOOK: "فیسبوک",
+  LinkedIn: "لینکدین",
+  LINKEDIN: "لینکدین",
+  X: "ایکس",
+  TikTok: "تیک‌تاک",
+  TIKTOK: "تیک‌تاک",
+  YouTube: "یوتیوب",
+  YOUTUBE: "یوتیوب",
+  Blog: "بلاگ",
+  BLOG: "بلاگ",
+  Newsletter: "خبرنامه",
+  NEWSLETTER: "خبرنامه",
+  "Instagram Reel": "ریلز اینستاگرام",
+  INSTAGRAM_REEL: "ریلز اینستاگرام",
+  "Instagram Carousel": "کاروسل اینستاگرام",
+  INSTAGRAM_CAROUSEL: "کاروسل اینستاگرام",
+  "Instagram Story": "استوری اینستاگرام",
+  INSTAGRAM_STORY: "استوری اینستاگرام",
+  "Instagram Post": "پست اینستاگرام",
+  INSTAGRAM_POST: "پست اینستاگرام",
+  LINKEDIN_POST: "پست لینکدین",
+  FACEBOOK_POST: "پست فیسبوک",
+  Short: "ویدیوی کوتاه",
+  SHORT: "ویدیوی کوتاه",
+  professional: "حرفه‌ای",
+  friendly: "صمیمی",
+  luxury: "لوکس",
+  funny: "طنز",
+  emotional: "احساسی",
+  educational: "آموزشی",
+  storytelling: "داستان‌گو",
+  sales: "فروش‌محور",
+  fa: "فارسی",
+  en: "انگلیسی",
+};
+
+const TONE_OPTIONS = [
+  "professional",
+  "friendly",
+  "luxury",
+  "funny",
+  "emotional",
+  "educational",
+  "storytelling",
+  "sales",
+] as const;
 
 type PlanListItem = {
   id: string;
@@ -123,10 +192,155 @@ function buildMonthGrid(anchor: string) {
   return { year, month, cells };
 }
 
+type JalaliDateParts = { jy: number; jm: number; jd: number };
+
+const JALALI_MONTHS_FA = [
+  "فروردین",
+  "اردیبهشت",
+  "خرداد",
+  "تیر",
+  "مرداد",
+  "شهریور",
+  "مهر",
+  "آبان",
+  "آذر",
+  "دی",
+  "بهمن",
+  "اسفند",
+] as const;
+
+const GREGORIAN_MONTHS_EN = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+function div(a: number, b: number) {
+  return Math.floor(a / b);
+}
+
+function gregorianToJalali(gy: number, gm: number, gd: number): JalaliDateParts {
+  const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+  let jy = gy <= 1600 ? 0 : 979;
+  gy -= gy <= 1600 ? 621 : 1600;
+  const gy2 = gm > 2 ? gy + 1 : gy;
+  let days =
+    365 * gy +
+    div(gy2 + 3, 4) -
+    div(gy2 + 99, 100) +
+    div(gy2 + 399, 400) -
+    80 +
+    gd +
+    g_d_m[gm - 1]!;
+  jy += 33 * div(days, 12053);
+  days %= 12053;
+  jy += 4 * div(days, 1461);
+  days %= 1461;
+  if (days > 365) {
+    jy += div(days - 1, 365);
+    days = (days - 1) % 365;
+  }
+  const jm = days < 186 ? 1 + div(days, 31) : 7 + div(days - 186, 30);
+  const jd = 1 + (days < 186 ? (days % 31) : ((days - 186) % 30));
+  return { jy, jm, jd };
+}
+
+function jalaliToGregorian(jy: number, jm: number, jd: number) {
+  let gy = jy <= 979 ? 621 : 1600;
+  jy -= jy <= 979 ? 0 : 979;
+  let days =
+    365 * jy +
+    div(jy, 33) * 8 +
+    div((jy % 33) + 3, 4) +
+    78 +
+    jd +
+    (jm < 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186);
+  gy += 400 * div(days, 146097);
+  days %= 146097;
+  if (days > 36524) {
+    gy += 100 * div(--days, 36524);
+    days %= 36524;
+    if (days >= 365) days++;
+  }
+  gy += 4 * div(days, 1461);
+  days %= 1461;
+  if (days > 365) {
+    gy += div(days - 1, 365);
+    days = (days - 1) % 365;
+  }
+  let gd = days + 1;
+  const sal_a = [
+    0,
+    31,
+    (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0 ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+  let gm = 0;
+  for (gm = 1; gm <= 12 && gd > (sal_a[gm] ?? 0); gm++) {
+    gd -= sal_a[gm] ?? 0;
+  }
+  return { gy, gm, gd };
+}
+
+function jalaliMonthLength(jy: number, jm: number) {
+  if (jm <= 6) return 31;
+  if (jm <= 11) return 30;
+  const roundTrip = gregorianToJalali(
+    jalaliToGregorian(jy, 12, 30).gy,
+    jalaliToGregorian(jy, 12, 30).gm,
+    jalaliToGregorian(jy, 12, 30).gd,
+  );
+  return roundTrip.jy === jy && roundTrip.jm === 12 && roundTrip.jd === 30 ? 30 : 29;
+}
+
+function gregorianIsoToJalali(iso: string): JalaliDateParts {
+  const [gy, gm, gd] = iso.slice(0, 10).split("-").map(Number);
+  return gregorianToJalali(gy || 0, gm || 1, gd || 1);
+}
+
+function jalaliToGregorianIso(jy: number, jm: number, jd: number) {
+  const { gy, gm, gd } = jalaliToGregorian(jy, jm, jd);
+  return `${gy.toString().padStart(4, "0")}-${gm.toString().padStart(2, "0")}-${gd
+    .toString()
+    .padStart(2, "0")}`;
+}
+
+function gregorianIsoParts(iso: string) {
+  const [gy, gm, gd] = iso.slice(0, 10).split("-").map(Number);
+  return { gy: gy || 0, gm: gm || 1, gd: gd || 1 };
+}
+
+function gregorianMonthLength(gy: number, gm: number) {
+  return new Date(Date.UTC(gy, gm, 0)).getUTCDate();
+}
+
+function formatFaPlainNumber(value: number) {
+  return String(value).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]!);
+}
+
 export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("planner");
   const { locale } = useI18n();
   const t = (en: string, fa: string) => (locale === "fa" ? fa : en);
+  const tr = useCallback((value: string) => faLabel(locale, value, PLANNER_FA), [locale]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [plans, setPlans] = useState<PlanListItem[]>([]);
@@ -142,6 +356,16 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [dragItemId, setDragItemId] = useState<string | null>(null);
+  const jalaliStart = useMemo(() => gregorianIsoToJalali(startDate), [startDate]);
+  const gregorianStart = useMemo(() => gregorianIsoParts(startDate), [startDate]);
+  const jalaliYears = useMemo(
+    () => Array.from({ length: 6 }, (_, i) => jalaliStart.jy - 1 + i),
+    [jalaliStart.jy],
+  );
+  const gregorianYears = useMemo(
+    () => Array.from({ length: 6 }, (_, i) => gregorianStart.gy - 1 + i),
+    [gregorianStart.gy],
+  );
 
   const qs = useMemo(
     () => new URLSearchParams({ workspaceSlug, brandSlug }).toString(),
@@ -256,6 +480,37 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
     });
   };
 
+  const updateJalaliStartDate = useCallback(
+    (patch: Partial<JalaliDateParts>) => {
+      const next = {
+        jy: patch.jy ?? jalaliStart.jy,
+        jm: patch.jm ?? jalaliStart.jm,
+        jd: patch.jd ?? jalaliStart.jd,
+      };
+      const maxDay = jalaliMonthLength(next.jy, next.jm);
+      const safeDay = Math.min(next.jd, maxDay);
+      setStartDate(jalaliToGregorianIso(next.jy, next.jm, safeDay));
+    },
+    [jalaliStart],
+  );
+  const updateGregorianStartDate = useCallback(
+    (patch: Partial<{ gy: number; gm: number; gd: number }>) => {
+      const next = {
+        gy: patch.gy ?? gregorianStart.gy,
+        gm: patch.gm ?? gregorianStart.gm,
+        gd: patch.gd ?? gregorianStart.gd,
+      };
+      const maxDay = gregorianMonthLength(next.gy, next.gm);
+      const safeDay = Math.min(next.gd, maxDay);
+      setStartDate(
+        `${next.gy.toString().padStart(4, "0")}-${next.gm
+          .toString()
+          .padStart(2, "0")}-${safeDay.toString().padStart(2, "0")}`,
+      );
+    },
+    [gregorianStart],
+  );
+
   if (loading) {
     return (
       <div className="grid h-[calc(100vh-7rem)] grid-cols-1 gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
@@ -267,7 +522,10 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/8 bg-[radial-gradient(ellipse_at_top,_rgba(45,212,191,0.07),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)]">
+    <div
+      dir={locale === "fa" ? "rtl" : "ltr"}
+      className="flex h-[calc(100vh-7rem)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/8 bg-[radial-gradient(ellipse_at_top,_rgba(45,212,191,0.07),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent)]"
+    >
       <div className="flex items-center justify-between border-b border-white/6 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300">
@@ -380,16 +638,102 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                 >
                   {PLAN_TYPES.map((pt) => (
                     <option key={pt.key} value={pt.key}>
-                      {pt.label}
+                      {tr(pt.label)}
                     </option>
                   ))}
                 </select>
                 <Label className="text-xs">{t("Start date", "تاریخ شروع")}</Label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
+                {locale === "fa" ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    <select
+                      className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+                      value={jalaliStart.jd}
+                      onChange={(e) =>
+                        updateJalaliStartDate({ jd: Number(e.target.value) })
+                      }
+                    >
+                      {Array.from(
+                        { length: jalaliMonthLength(jalaliStart.jy, jalaliStart.jm) },
+                        (_, i) => i + 1,
+                      ).map((day) => (
+                        <option key={day} value={day}>
+                          {formatFaPlainNumber(day)}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+                      value={jalaliStart.jm}
+                      onChange={(e) =>
+                        updateJalaliStartDate({ jm: Number(e.target.value) })
+                      }
+                    >
+                      {JALALI_MONTHS_FA.map((month, index) => (
+                        <option key={month} value={index + 1}>
+                          {month}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+                      value={jalaliStart.jy}
+                      onChange={(e) =>
+                        updateJalaliStartDate({ jy: Number(e.target.value) })
+                      }
+                    >
+                      {jalaliYears.map((year) => (
+                        <option key={year} value={year}>
+                          {formatFaPlainNumber(year)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    <select
+                      className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+                      value={gregorianStart.gd}
+                      onChange={(e) =>
+                        updateGregorianStartDate({ gd: Number(e.target.value) })
+                      }
+                    >
+                      {Array.from(
+                        { length: gregorianMonthLength(gregorianStart.gy, gregorianStart.gm) },
+                        (_, i) => i + 1,
+                      ).map((day) => (
+                        <option key={day} value={day}>
+                          {day}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+                      value={gregorianStart.gm}
+                      onChange={(e) =>
+                        updateGregorianStartDate({ gm: Number(e.target.value) })
+                      }
+                    >
+                      {GREGORIAN_MONTHS_EN.map((month, index) => (
+                        <option key={month} value={index + 1}>
+                          {month}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+                      value={gregorianStart.gy}
+                      onChange={(e) =>
+                        updateGregorianStartDate({ gy: Number(e.target.value) })
+                      }
+                    >
+                      {gregorianYears.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <Label className="text-xs">{t("Business goal", "هدف کسب‌وکار")}</Label>
                 <Input
                   value={settings.businessGoal}
@@ -422,18 +766,29 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                 </select>
                 <Label className="text-xs">{t("Tone / Language", "لحن / زبان")}</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input
+                  <select
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
                     value={settings.tone}
                     onChange={(e) =>
                       setSettings((s) => ({ ...s, tone: e.target.value }))
                     }
-                  />
-                  <Input
+                  >
+                    {Array.from(new Set([settings.tone, ...TONE_OPTIONS])).map((tone) => (
+                      <option key={tone} value={tone}>
+                        {tr(tone)}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
                     value={settings.language}
                     onChange={(e) =>
                       setSettings((s) => ({ ...s, language: e.target.value }))
                     }
-                  />
+                  >
+                    <option value="fa">{tr("fa")}</option>
+                    <option value="en">{tr("en")}</option>
+                  </select>
                 </div>
                 <Label className="text-xs">{t("Platforms", "پلتفرم‌ها")}</Label>
                 <div className="flex flex-wrap gap-1">
@@ -458,7 +813,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                             : "border-white/10 text-muted-foreground",
                         )}
                       >
-                        {p}
+                        {tr(p)}
                       </button>
                     );
                   })}
@@ -486,7 +841,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                             : "border-white/10 text-muted-foreground",
                         )}
                       >
-                        {m.label}
+                        {tr(m.label)}
                       </button>
                     );
                   })}
@@ -694,7 +1049,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                 <div className="flex flex-wrap gap-1">
                   {Object.entries(plan.distribution).map(([k, v]) => (
                     <Badge key={k} variant="outline" className="rounded-md text-[10px]">
-                      {k.replaceAll("_", " ")} · {v}
+                      {tr(k)} · {v}
                     </Badge>
                   ))}
                 </div>
@@ -790,7 +1145,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                       >
                         {PLANNER_PLATFORMS.map((p) => (
                           <option key={p} value={p}>
-                            {p}
+                            {tr(p)}
                           </option>
                         ))}
                       </select>
@@ -810,7 +1165,7 @@ export function ContentPlannerWorkspace({ workspaceSlug, brandSlug }: Props) {
                       >
                         {PLANNER_FORMATS.map((f) => (
                           <option key={f} value={f}>
-                            {f}
+                            {tr(f)}
                           </option>
                         ))}
                       </select>
