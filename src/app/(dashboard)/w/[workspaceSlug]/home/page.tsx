@@ -16,6 +16,7 @@ import {
   completionFromBrain,
 } from "@/server/services/business-brain";
 import { localizeBrainCompletion } from "@/i18n/localize-brain";
+import { localizeActivityTitle } from "@/i18n/localize-activity";
 import { getI18n } from "@/i18n/server";
 import { PageHeader } from "@/components/shared/page";
 import { Button } from "@/components/ui/button";
@@ -216,7 +217,13 @@ export default async function HomePage({ params }: PageProps) {
             <ul className="mt-4 space-y-3">
               {recentActivities.map((a) => (
                 <li key={a.id} className="flex justify-between gap-3 text-sm">
-                  <span className="truncate">{a.title}</span>
+                  <span className="truncate">
+                    {localizeActivityTitle(
+                      a.title,
+                      locale,
+                      d.activityTitles,
+                    )}
+                  </span>
                   <span className="shrink-0 text-xs text-muted-foreground">
                     {formatDistanceToNow(a.createdAt, {
                       addSuffix: true,

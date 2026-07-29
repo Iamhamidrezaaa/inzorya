@@ -3,32 +3,32 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Design tokens ─── */
+/* ─── Design tokens (aligned with marketing cream / Later-like light) ─── */
 :root {
-  /* Color — light */
-  --background: oklch(0.985 0.004 250);
-  --foreground: oklch(0.17 0.02 255);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.17 0.02 255);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.17 0.02 255);
-  --primary: oklch(0.48 0.09 200);
-  --primary-foreground: oklch(0.99 0.005 200);
-  --secondary: oklch(0.955 0.008 255);
-  --secondary-foreground: oklch(0.28 0.02 255);
-  --muted: oklch(0.955 0.006 255);
-  --muted-foreground: oklch(0.48 0.02 255);
-  --accent: oklch(0.95 0.015 200);
-  --accent-foreground: oklch(0.28 0.04 200);
-  --destructive: oklch(0.52 0.18 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.9 0.008 255);
-  --input: oklch(0.9 0.008 255);
-  --ring: oklch(0.48 0.09 200);
-  --sidebar: oklch(0.978 0.004 255);
-  --sidebar-foreground: oklch(0.28 0.02 255);
-  --success: oklch(0.55 0.12 155);
-  --warning: oklch(0.7 0.12 75);
+  /* Color — light (matches .marketing-site cream surface) */
+  --background: #f9f7f2;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #ff4b12;
+  --primary-foreground: #ffffff;
+  --secondary: #f0ebe3;
+  --secondary-foreground: #1a1a1a;
+  --muted: #f0ebe3;
+  --muted-foreground: #5c574f;
+  --accent: #f3eefc;
+  --accent-foreground: #4a1a8a;
+  --destructive: #c62828;
+  --destructive-foreground: #ffffff;
+  --border: rgba(10, 10, 10, 0.1);
+  --input: rgba(10, 10, 10, 0.12);
+  --ring: #ff4b12;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0a0a0a;
+  --success: #2e7d4f;
+  --warning: #c47a00;
 
   /* Radius scale */
   --radius: 0.5rem;
@@ -51,29 +51,30 @@
 }
 
 .dark {
-  --background: oklch(0.13 0.012 255);
-  --foreground: oklch(0.94 0.008 255);
-  --card: oklch(0.16 0.012 255);
-  --card-foreground: oklch(0.94 0.008 255);
-  --popover: oklch(0.17 0.012 255);
-  --popover-foreground: oklch(0.94 0.008 255);
-  --primary: oklch(0.76 0.08 195);
-  --primary-foreground: oklch(0.14 0.02 195);
-  --secondary: oklch(0.2 0.012 255);
-  --secondary-foreground: oklch(0.9 0.008 255);
-  --muted: oklch(0.2 0.01 255);
-  --muted-foreground: oklch(0.62 0.015 255);
-  --accent: oklch(0.22 0.02 200);
-  --accent-foreground: oklch(0.92 0.015 200);
-  --destructive: oklch(0.6 0.16 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.26 0.012 255);
-  --input: oklch(0.24 0.012 255);
-  --ring: oklch(0.76 0.08 195);
-  --sidebar: oklch(0.11 0.012 255);
-  --sidebar-foreground: oklch(0.88 0.008 255);
-  --success: oklch(0.7 0.12 155);
-  --warning: oklch(0.78 0.1 75);
+  /* Dark remains available via toggle, but stays on marketing orange brand */
+  --background: #121212;
+  --foreground: #f5f5f5;
+  --card: #1a1a1a;
+  --card-foreground: #f5f5f5;
+  --popover: #1a1a1a;
+  --popover-foreground: #f5f5f5;
+  --primary: #ff4b12;
+  --primary-foreground: #ffffff;
+  --secondary: #2a2a2a;
+  --secondary-foreground: #f0f0f0;
+  --muted: #2a2a2a;
+  --muted-foreground: #a3a3a3;
+  --accent: #2a1a3d;
+  --accent-foreground: #e9d5ff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #ff4b12;
+  --sidebar: #0f0f0f;
+  --sidebar-foreground: #f5f5f5;
+  --success: #4ade80;
+  --warning: #fbbf24;
 
   --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.24);
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.28), 0 1px 3px oklch(0 0 0 / 0.2);
@@ -132,8 +133,12 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   scroll-behavior: smooth;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body {

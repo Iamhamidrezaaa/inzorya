@@ -210,6 +210,13 @@ const en = {
     activity: "Activity",
     settings: "Settings",
   },
+  activityTitles: {
+    aiContentGenerated: "AI content generated: {title}",
+    opportunityScanComplete: "Opportunity scan complete · {count} matched",
+    contentPlanGenerated: "Content plan generated: {title}",
+    communityInboxScanned: "Community inbox scanned · {count} threads",
+    pushedToStudio: "Pushed AI content to Studio: {title}",
+  },
 } as const;
 
 export type Dictionary = DeepStringify<typeof en>;
@@ -421,6 +428,13 @@ const fa: Dictionary = {
     media: "رسانه",
     activity: "فعالیت‌ها",
     settings: "تنظیمات",
+  },
+  activityTitles: {
+    aiContentGenerated: "محتوای هوش مصنوعی تولید شد: {title}",
+    opportunityScanComplete: "اسکن فرصت کامل شد · {count} مورد منطبق",
+    contentPlanGenerated: "برنامه محتوا تولید شد: {title}",
+    communityInboxScanned: "اینباکس جامعه اسکن شد · {count} گفتگو",
+    pushedToStudio: "محتوای AI به استودیو ارسال شد: {title}",
   },
 };
 

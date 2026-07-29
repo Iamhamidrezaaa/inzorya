@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Check } from "lucide-react";
-import { useI18n } from "@/i18n/client";
+import { useOptionalI18n } from "@/i18n/client";
 import type { Locale } from "@/i18n/config";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,7 +70,10 @@ export function LanguageSwitcher({
   className,
   showLabel = true,
 }: Props) {
-  const { locale, dictionary, setLocale, pending } = useI18n();
+  const i18n = useOptionalI18n();
+  if (!i18n) return null;
+
+  const { locale, dictionary, setLocale, pending } = i18n;
   const current = OPTIONS.find((o) => o.locale === locale) ?? OPTIONS[0];
 
   return (

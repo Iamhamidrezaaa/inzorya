@@ -2,6 +2,7 @@
 
 import { usePageCopy } from "@/i18n/use-page-copy";
 import { useI18n } from "@/i18n/client";
+import { faLabel } from "@/i18n/display-labels";
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -131,6 +132,67 @@ function ChipToggle({
   );
 }
 
+const GOAL_FA: Record<string, string> = {
+  "Increase Sales": "افزایش فروش",
+  "Generate Leads": "جذب سرنخ",
+  "Grow Followers": "افزایش دنبال‌کننده",
+  "Increase Engagement": "افزایش تعامل",
+  "Brand Awareness": "آگاهی از برند",
+  "Customer Support": "پشتیبانی مشتری",
+  "Launch Product": "عرضه محصول",
+  "Website Traffic": "ترافیک وب‌سایت",
+  "Local Customers": "مشتریان محلی",
+  Recruitment: "استخدام",
+};
+
+const PILLAR_FA: Record<string, string> = {
+  Education: "آموزش",
+  "Behind the Scenes": "پشت صحنه",
+  Testimonials: "نظرات مشتریان",
+  Entertainment: "سرگرمی",
+  FAQ: "پرسش‌های پرتکرار",
+  Offers: "پیشنهادها",
+  Culture: "فرهنگ",
+  "Teach your audience something useful.": "چیزی مفید به مخاطب خود آموزش دهید.",
+  "Show how the work happens.": "نشان دهید کار چگونه انجام می‌شود.",
+  "Social proof and customer stories.": "اثبات اجتماعی و داستان‌های مشتریان.",
+  "Light, shareable moments.": "لحظه‌های سبک و قابل اشتراک‌گذاری.",
+  "Answer common questions.": "به سوالات رایج پاسخ دهید.",
+  "Promotions and calls to action.": "پروموشن‌ها و دعوت به اقدام.",
+  "Team, values, and brand personality.": "تیم، ارزش‌ها و شخصیت برند.",
+};
+
+const ROADMAP_FA: Record<string, { label: string; hint: string }> = {
+  understand: {
+    label: "شناخت کسب‌وکار",
+    hint: "نمای کلی کسب‌وکار و لحن برند را کامل کنید.",
+  },
+  goals: {
+    label: "تعیین اهداف بازاریابی",
+    hint: "مشخص کنید موفقیت چه شکلی است.",
+  },
+  audience: {
+    label: "تعریف مخاطب",
+    hint: "پرسوناها و نقاط درد را بسازید.",
+  },
+  competitors: {
+    label: "نقشه رقبا",
+    hint: "بدانید چه کسانی توجه بازار را گرفته‌اند.",
+  },
+  pillars: {
+    label: "شکل‌دهی ستون‌های محتوا",
+    hint: "تصمیم بگیرید درباره چه چیزهایی صحبت می‌کنید.",
+  },
+  preferences: {
+    label: "تنظیم ترجیحات",
+    hint: "ریتم، فرمت‌ها و لحن را مشخص کنید.",
+  },
+  ready: {
+    label: "آماده برنامه‌ریزی",
+    hint: "استراتژی برای هوش مصنوعی آینده ساختاربندی شده است.",
+  },
+};
+
 export function StrategyWorkspace({
   workspaceSlug,
   brandSlug,
@@ -142,6 +204,24 @@ export function StrategyWorkspace({
   const { locale } = useI18n();
   const t = useCallback(
     (en: string, fa: string) => (locale === "fa" ? fa : en),
+    [locale],
+  );
+  const goalLabel = useCallback(
+    (label: string) => faLabel(locale, label, GOAL_FA),
+    [locale],
+  );
+  const pillarLabel = useCallback(
+    (label: string) => faLabel(locale, label, PILLAR_FA),
+    [locale],
+  );
+  const roadmapText = useCallback(
+    (stage: (typeof ROADMAP_STAGES)[number]) =>
+      locale === "fa"
+        ? (ROADMAP_FA[stage.id as keyof typeof ROADMAP_FA] ?? {
+            label: stage.label,
+            hint: stage.hint,
+          })
+        : { label: stage.label, hint: stage.hint },
     [locale],
   );
   const [loading, setLoading] = useState(true);
@@ -449,7 +529,7 @@ export function StrategyWorkspace({
           {MARKETING_GOAL_OPTIONS.map((g) => (
             <ChipToggle
               key={g.key}
-              label={g.label}
+              label={goalLabel(g.label)}
               selected={goals.includes(g.key)}
               onClick={() => setGoals((prev) => toggleInList(prev, g.key))}
             />
@@ -945,7 +1025,7 @@ export function StrategyWorkspace({
                   <div className="space-y-1.5">
                     <Label>{t("Name", "نام")}</Label>
                     <Input
-                      value={pillar.name}
+                      value={pillarLabel(pillar.name)}
                       onChange={(e) =>
                         setPillars((list) =>
                           list.map((p) =>
@@ -960,7 +1040,7 @@ export function StrategyWorkspace({
                   <div className="space-y-1.5">
                     <Label>{t("Description", "توضیحات")}</Label>
                     <Input
-                      value={pillar.description}
+                      value={pillarLabel(pillar.description)}
                       onChange={(e) =>
                         setPillars((list) =>
                           list.map((p) =>
@@ -1137,6 +1217,7 @@ export function StrategyWorkspace({
         <ol className="relative space-y-0 border-l border-border/70 pl-6">
           {ROADMAP_STAGES.map((stage, index) => {
             const active = currentStage === stage.id;
+            const stageText = roadmapText(stage);
             const stageIndex = ROADMAP_STAGES.findIndex(
               (s) => s.id === currentStage,
             );
@@ -1162,7 +1243,7 @@ export function StrategyWorkspace({
                   )}
                 >
                   <div className="text-sm font-medium tracking-tight">
-                    {stage.label}
+                    {stageText.label}
                     {active ? (
                       <span className="ml-2 text-xs font-normal text-primary">
                         {t("Current", "فعلی")}
@@ -1170,7 +1251,7 @@ export function StrategyWorkspace({
                     ) : null}
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {stage.hint}
+                    {stageText.hint}
                   </p>
                 </button>
               </li>

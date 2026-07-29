@@ -1,10 +1,13 @@
 "use client";
 
 import { usePageCopy } from "@/i18n/use-page-copy";
+import { useI18n } from "@/i18n/client";
+import { localizeActivityTitle } from "@/i18n/localize-activity";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { faIR } from "date-fns/locale";
 import { PageHeader, EmptyState } from "@/components/shared/page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +24,8 @@ type ActivityItem = {
 
 export function ActivityFeed({ workspaceSlug }: { workspaceSlug: string }) {
   const page = usePageCopy("activity");
+  const { locale, dictionary } = useI18n();
+  const dateLocale = locale === "fa" ? faIR : undefined;
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,6 +73,7 @@ export function ActivityFeed({ workspaceSlug }: { workspaceSlug: string }) {
                   <span className="text-[11px] text-muted-foreground">
                     {formatDistanceToNow(new Date(item.createdAt), {
                       addSuffix: true,
+                      locale: dateLocale,
                     })}
                   </span>
                   {item.user?.name || item.user?.email ? (
@@ -79,10 +85,18 @@ export function ActivityFeed({ workspaceSlug }: { workspaceSlug: string }) {
                 <div className="mt-1.5 text-sm font-medium tracking-tight">
                   {item.href ? (
                     <Link href={item.href} className="hover:underline">
-                      {item.title}
+                      {localizeActivityTitle(
+                        item.title,
+                        locale,
+                        dictionary.activityTitles,
+                      )}
                     </Link>
                   ) : (
-                    item.title
+                    localizeActivityTitle(
+                      item.title,
+                      locale,
+                      dictionary.activityTitles,
+                    )
                   )}
                 </div>
                 {item.description ? (

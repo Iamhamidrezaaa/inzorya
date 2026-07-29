@@ -66,3 +66,8 @@ export function useI18n() {
   }
   return ctx;
 }
+
+/** Safe for chrome that may remount outside providers during error recovery. */
+export function useOptionalI18n() {
+  return useContext(I18nContext);
+}

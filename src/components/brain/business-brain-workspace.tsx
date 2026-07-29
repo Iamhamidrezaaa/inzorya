@@ -22,6 +22,7 @@ import { PageHeader } from "@/components/shared/page";
 import { useI18n } from "@/i18n/client";
 import { localizeBrainCompletion } from "@/i18n/localize-brain";
 import { usePageCopy } from "@/i18n/use-page-copy";
+import { faLabel } from "@/i18n/display-labels";
 import { cn } from "@/lib/utils";
 import {
   BRAIN_DEFAULT_PILLARS,
@@ -50,6 +51,63 @@ type AssetRow = {
   url: string;
   label: string | null;
   originalName: string | null;
+};
+
+const BRAIN_FA: Record<string, string> = {
+  Friendly: "دوستانه",
+  Luxury: "لوکس",
+  Professional: "حرفه‌ای",
+  Minimal: "مینیمال",
+  Playful: "بازیگوش",
+  Premium: "پریمیوم",
+  Bold: "جسور",
+  Modern: "مدرن",
+  Traditional: "سنتی",
+  Reels: "ریلز",
+  Carousel: "کاروسل",
+  Stories: "استوری",
+  Blog: "وبلاگ",
+  Newsletter: "خبرنامه",
+  "Behind The Scenes": "پشت صحنه",
+  Testimonials: "نظرات مشتریان",
+  "Case Studies": "مطالعات موردی",
+  Offers: "پیشنهادها",
+  Community: "جامعه",
+  News: "اخبار",
+  Culture: "فرهنگ",
+  Name: "نام",
+  Website: "وب‌سایت",
+  Instagram: "اینستاگرام",
+  Strengths: "نقاط قوت",
+  Weaknesses: "نقاط ضعف",
+  Notes: "یادداشت‌ها",
+};
+
+const BRAIN_Q_FA: Record<string, { prompt: string; help: string }> = {
+  "brand.name": {
+    prompt: "نام برند شما چیست؟",
+    help: "نامی که مشتریان شما را با آن می‌شناسند.",
+  },
+  "brand.website": {
+    prompt: "وب‌سایت دارید؟",
+    help: "اگر دارید، لینک کامل را وارد کنید.",
+  },
+  "brand.logo": {
+    prompt: "می‌خواهید لوگوی خود را آپلود کنید؟",
+    help: "فعلاً اختیاری است — بعداً هم می‌توانید در دارایی‌ها اضافه کنید.",
+  },
+  "brand.industry": {
+    prompt: "در چه صنعتی فعالیت می‌کنید؟",
+    help: "مثلاً قهوه، SaaS، مد، کلینیک.",
+  },
+  "brand.description": {
+    prompt: "در چند جمله کسب‌وکار شما چه کاری انجام می‌دهد؟",
+    help: "انگار دارید برای یک دوست باهوش توضیح می‌دهید.",
+  },
+  "brand.years": {
+    prompt: "چند سال است که فعالیت می‌کنید؟",
+    help: "تقریبی هم باشد کافی است.",
+  },
 };
 
 function parseList(value: string) {
@@ -96,7 +154,7 @@ export function BusinessBrainWorkspace({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { dictionary: d } = useI18n();
+  const { dictionary: d, locale } = useI18n();
   const page = usePageCopy("brain");
   const brandBase = `/w/${workspaceSlug}/b/${brandSlug}`;
 
@@ -117,6 +175,23 @@ export function BusinessBrainWorkspace({
     BRAIN_QUESTIONS.findIndex((q) => q.key === currentKey),
   );
   const question = BRAIN_QUESTIONS[index] as BrainQuestionDef | undefined;
+  const localizedQuestion = question
+    ? {
+        prompt:
+          locale === "fa"
+            ? (BRAIN_Q_FA[question.key]?.prompt ?? question.prompt)
+            : question.prompt,
+        helpText:
+          locale === "fa"
+            ? (BRAIN_Q_FA[question.key]?.help ?? question.helpText)
+            : question.helpText,
+      }
+    : null;
+  const remainingLabel =
+    locale === "fa"
+      ? `${remaining} باقی‌مانده`
+      : `${formatMinutes(remaining)} left`;
+  const localizeBrainLabel = (value: string) => faLabel(locale, value, BRAIN_FA);
 
   const answeredKeys = useMemo(
     () => new Set(Object.keys(answersByKey).filter((k) => answersByKey[k]?.trim())),
@@ -535,7 +610,7 @@ export function BusinessBrainWorkspace({
           </Link>
         </Button>
         <div className="text-xs text-muted-foreground">
-          {saving ? "Saving…" : `${remaining} left`}
+          {saving ? (locale === "fa" ? "در حال ذخیره…" : "Saving…") : remainingLabel}
         </div>
       </div>
 
@@ -562,10 +637,10 @@ export function BusinessBrainWorkspace({
             question.groupLabel}
         </p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight md:text-[1.75rem]">
-          {question.prompt}
+          {localizedQuestion?.prompt}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          {question.helpText}
+          {localizedQuestion?.helpText}
         </p>
 
         <div className="mt-8 space-y-4">
@@ -576,7 +651,7 @@ export function BusinessBrainWorkspace({
               onChange={(e) =>
                 setAnswersByKey((a) => ({ ...a, [question.key]: e.target.value }))
               }
-              placeholder="Type your answer…"
+              placeholder={locale === "fa" ? "پاسخ خود را بنویسید…" : "Type your answer…"}
               autoFocus
             />
           ) : null}
@@ -594,10 +669,14 @@ export function BusinessBrainWorkspace({
               }
               placeholder={
                 question.inputType === "chips"
-                  ? "Comma separated"
+                  ? locale === "fa"
+                    ? "با ویرگول جدا کنید"
+                    : "Comma separated"
                   : question.inputType === "url"
                     ? "https://"
-                    : "Your answer"
+                    : locale === "fa"
+                      ? "پاسخ شما"
+                      : "Your answer"
               }
               autoFocus
             />
@@ -613,7 +692,7 @@ export function BusinessBrainWorkspace({
                 return (
                   <ChipToggle
                     key={opt}
-                    label={opt}
+                    label={localizeBrainLabel(opt)}
                     selected={selected}
                     onClick={() => {
                       if (question.key === "personality.traits") {
@@ -648,7 +727,7 @@ export function BusinessBrainWorkspace({
                 >
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Input
-                      placeholder="Name"
+                      placeholder={localizeBrainLabel("Name")}
                       value={c.name}
                       onChange={(e) =>
                         setCompetitors((list) =>
@@ -659,7 +738,7 @@ export function BusinessBrainWorkspace({
                       }
                     />
                     <Input
-                      placeholder="Website"
+                      placeholder={localizeBrainLabel("Website")}
                       value={c.website}
                       onChange={(e) =>
                         setCompetitors((list) =>
@@ -672,7 +751,7 @@ export function BusinessBrainWorkspace({
                       }
                     />
                     <Input
-                      placeholder="Instagram"
+                      placeholder={localizeBrainLabel("Instagram")}
                       value={c.instagram}
                       onChange={(e) =>
                         setCompetitors((list) =>
@@ -685,7 +764,7 @@ export function BusinessBrainWorkspace({
                       }
                     />
                     <Input
-                      placeholder="Strengths"
+                      placeholder={localizeBrainLabel("Strengths")}
                       value={c.strengths}
                       onChange={(e) =>
                         setCompetitors((list) =>
@@ -698,7 +777,7 @@ export function BusinessBrainWorkspace({
                       }
                     />
                     <Input
-                      placeholder="Weaknesses"
+                      placeholder={localizeBrainLabel("Weaknesses")}
                       value={c.weaknesses}
                       onChange={(e) =>
                         setCompetitors((list) =>
@@ -713,7 +792,7 @@ export function BusinessBrainWorkspace({
                   </div>
                   <Textarea
                     rows={2}
-                    placeholder="Notes"
+                    placeholder={localizeBrainLabel("Notes")}
                     value={c.notes}
                     onChange={(e) =>
                       setCompetitors((list) =>
@@ -733,7 +812,7 @@ export function BusinessBrainWorkspace({
                     }
                   >
                     <Trash2 className="h-4 w-4" />
-                    Remove
+                    {locale === "fa" ? "حذف" : "Remove"}
                   </Button>
                 </div>
               ))}
@@ -756,7 +835,7 @@ export function BusinessBrainWorkspace({
                 }
               >
                 <Plus className="h-4 w-4" />
-                Add competitor
+                {locale === "fa" ? "افزودن رقیب" : "Add competitor"}
               </Button>
             </div>
           ) : null}
@@ -767,7 +846,7 @@ export function BusinessBrainWorkspace({
                 {BRAIN_DEFAULT_PILLARS.map((name) => (
                   <ChipToggle
                     key={name}
-                    label={name}
+                    label={localizeBrainLabel(name)}
                     selected={pillars.some((p) => p.name === name)}
                     onClick={() =>
                       setPillars((list) =>
@@ -810,12 +889,12 @@ export function BusinessBrainWorkspace({
                 onClick={() =>
                   setPillars((list) => [
                     ...list,
-                    { name: "New pillar", description: "" },
+                    { name: locale === "fa" ? "ستون جدید" : "New pillar", description: "" },
                   ])
                 }
               >
                 <Plus className="h-4 w-4" />
-                Add custom pillar
+                {locale === "fa" ? "افزودن ستون سفارشی" : "Add custom pillar"}
               </Button>
             </div>
           ) : null}
@@ -823,7 +902,7 @@ export function BusinessBrainWorkspace({
           {question.inputType === "assets" ? (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="brain-upload">Upload file</Label>
+                <Label htmlFor="brain-upload">{locale === "fa" ? "آپلود فایل" : "Upload file"}</Label>
                 <Input
                   id="brain-upload"
                   type="file"
@@ -861,7 +940,9 @@ export function BusinessBrainWorkspace({
                 </ul>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No assets yet — you can skip and add later.
+                  {locale === "fa"
+                    ? "هنوز دارایی‌ای اضافه نشده — می‌توانید فعلاً رد کنید و بعداً اضافه کنید."
+                    : "No assets yet — you can skip and add later."}
                 </p>
               )}
             </div>
@@ -876,7 +957,7 @@ export function BusinessBrainWorkspace({
             onClick={() => void saveCurrent("prev")}
           >
             <ArrowLeft className="h-4 w-4" />
-            Previous
+            {locale === "fa" ? "قبلی" : "Previous"}
           </Button>
           <Button
             type="button"
@@ -884,7 +965,7 @@ export function BusinessBrainWorkspace({
             disabled={saving}
             onClick={() => void saveCurrent("stay")}
           >
-            Save progress
+            {locale === "fa" ? "ذخیره پیشرفت" : "Save progress"}
           </Button>
           <Button
             type="button"
@@ -892,7 +973,13 @@ export function BusinessBrainWorkspace({
             disabled={saving}
             onClick={() => void saveCurrent("next")}
           >
-            {index === BRAIN_QUESTIONS.length - 1 ? "Finish" : "Next"}
+            {index === BRAIN_QUESTIONS.length - 1
+              ? locale === "fa"
+                ? "پایان"
+                : "Finish"
+              : locale === "fa"
+                ? "بعدی"
+                : "Next"}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

@@ -2,10 +2,10 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
-import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { LocaleProvider } from "@/i18n/client";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -34,25 +34,20 @@ export function AppProviders({
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          forcedTheme={undefined}
-        >
-          <LocaleProvider locale={locale} dictionary={dictionary}>
+        <LocaleProvider locale={locale} dictionary={dictionary}>
+          <ThemeProvider defaultTheme="light">
             <TooltipProvider delayDuration={200}>
               {children}
               <Toaster
-                theme="system"
+                theme="light"
                 position={locale === "fa" ? "bottom-left" : "bottom-right"}
                 richColors
                 closeButton
                 dir={locale === "fa" ? "rtl" : "ltr"}
               />
             </TooltipProvider>
-          </LocaleProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </LocaleProvider>
       </QueryClientProvider>
     </SessionProvider>
   );

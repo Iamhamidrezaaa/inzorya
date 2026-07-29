@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/providers/theme-provider";
 import { landingCopy } from "@/components/marketing/copy";
 import { NotchButton } from "@/components/marketing/notch-button";
 import { ProductTabs } from "@/components/marketing/product-tabs";
@@ -34,7 +34,6 @@ export function LandingPage({ loggedIn, dashboardLabel }: Props) {
     document.documentElement.classList.add("marketing-light");
     return () => {
       document.documentElement.classList.remove("marketing-light");
-      setTheme("dark");
     };
   }, [setTheme]);
 
