@@ -35,11 +35,11 @@ const faPages: Record<keyof typeof pageCopy, PageMeta> = {
       "قبل از تولید محتوا، اهداف، مخاطب، رقبا و ستون‌ها را ثبت کنید.",
   },
   strategist: {
-    title: "استراتژیست هوش مصنوعی",
-    description: "استراتژیست ارشد بازاریابی بر پایه زمینه کسب‌وکار شما.",
-    emptyTitle: "از استراتژیست بپرسید",
+    title: "دستیار هوش مصنوعی",
+    description: "همکار بازاریابی هوش مصنوعی — بر پایه کسب‌وکار شما.",
+    emptyTitle: "هر چیزی بپرسید",
     emptyDescription:
-      "بدون مهندسی پرامپت — به زبان ساده بپرسید و با پیشنهاد ساخت‌یافته تصمیم بگیرید.",
+      "هدفتان را به زبان ساده بگویید. اینزوریا قدم‌های بعدی را با شما می‌چیند.",
   },
   planner: {
     title: "برنامه‌ریز محتوا",
@@ -129,6 +129,12 @@ const faPages: Record<keyof typeof pageCopy, PageMeta> = {
     emptyTitle: "مصاحبه را شروع کنید",
     emptyDescription: "به اینزوریا بیاموزید کی هستید — یک سؤال در هر بار.",
   },
+  business: {
+    title: "کسب‌وکار",
+    description: "پروفایل اصلی کسب‌وکار این برند.",
+    emptyTitle: "جزئیات کسب‌وکار را اضافه کنید",
+    emptyDescription: "فیلدهای پروفایل به هر پیشنهاد AI قدرت می‌دهند.",
+  },
   knowledge: {
     title: "دانش",
     description: "منبع حقیقت برای تیم (و هوش مصنوعی آینده).",
@@ -149,9 +155,9 @@ const faPages: Record<keyof typeof pageCopy, PageMeta> = {
   },
   content: {
     title: "محتوا",
-    description: "هدایت به استودیو محتوا.",
-    emptyTitle: "استودیو محتوا را باز کنید",
-    emptyDescription: "کل خط لوله محتوا را در استودیو مدیریت کنید.",
+    description: "برنامه‌ریزی، ساخت و انتشار محتوا از یک جا.",
+    emptyTitle: "با یک هدف شروع کنید",
+    emptyDescription: "هفته را برنامه‌ریزی کنید، پست بسازید یا استودیو را باز کنید.",
   },
   studio: {
     title: "استودیو محتوا",
@@ -216,9 +222,9 @@ const faPages: Record<keyof typeof pageCopy, PageMeta> = {
   },
   workspace: {
     title: "ورک‌اسپیس",
-    description: "نمای کلی ورک‌اسپیس.",
-    emptyTitle: "ورک‌اسپیس آماده است",
-    emptyDescription: "برای پیکربندی از تنظیمات استفاده کنید.",
+    description: "ابزارهای روزمره و کنترل‌های پیشرفته.",
+    emptyTitle: "ورک‌اسپیس",
+    emptyDescription: "کانال‌ها، اینباکس و تنظیمات عمیق‌تر اینجا هستند.",
   },
   team: {
     title: "تیم",

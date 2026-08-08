@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { StrategistWorkspace } from "@/components/strategist/strategist-workspace";
 
 type PageProps = {
@@ -7,6 +8,8 @@ type PageProps = {
 export default async function StrategistPage({ params }: PageProps) {
   const { workspaceSlug, brandSlug } = await params;
   return (
-    <StrategistWorkspace workspaceSlug={workspaceSlug} brandSlug={brandSlug} />
+    <Suspense fallback={null}>
+      <StrategistWorkspace workspaceSlug={workspaceSlug} brandSlug={brandSlug} />
+    </Suspense>
   );
 }

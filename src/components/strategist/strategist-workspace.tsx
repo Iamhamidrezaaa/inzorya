@@ -5,6 +5,7 @@ import { useI18n } from "@/i18n/client";
 import { faLabel } from "@/i18n/display-labels";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   Archive,
@@ -268,6 +269,8 @@ function AdviceCard({
   onDecide: (id: string, status: "ACCEPTED" | "REJECTED") => void;
 }) {
   const t = useT();
+  const { locale } = useI18n();
+  const tr = (value: string) => faLabel(locale, value, STRATEGIST_FA);
   const structured = message.structured || {};
   const recsForMessage = recommendations.filter((r) => true);
 
@@ -442,6 +445,7 @@ function AdviceCard({
 export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
   const page = usePageCopy("strategist");
   const { locale } = useI18n();
+  const searchParams = useSearchParams();
   const t = useT();
   const tr = useCallback((value: string) => faLabel(locale, value, STRATEGIST_FA), [locale]);
   const [loading, setLoading] = useState(true);
@@ -461,6 +465,11 @@ export function StrategistWorkspace({ workspaceSlug, brandSlug }: Props) {
   const [confidence, setConfidence] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
   const [leftTab, setLeftTab] = useState<"recent" | "library" | "decisions">("recent");
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q) setDraft(q);
+  }, [searchParams]);
 
   const qs = useMemo(
     () =>

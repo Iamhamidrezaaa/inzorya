@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BUSINESS_ONBOARDING_STEPS } from "@/lib/business";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/client";
 
 type FormState = {
   name: string;
@@ -54,11 +55,130 @@ const emptyForm: FormState = {
   teamSize: "",
 };
 
+const INDUSTRIES = [
+  { en: "Restaurant", fa: "رستوران" },
+  { en: "Coffee Shop", fa: "کافه" },
+  { en: "SaaS", fa: "نرم‌افزار SaaS" },
+  { en: "E-commerce", fa: "فروشگاه آنلاین" },
+  { en: "Agency", fa: "آژانس" },
+  { en: "Beauty", fa: "زیبایی" },
+  { en: "Real Estate", fa: "املاک" },
+];
+
+const TONES = [
+  { en: "Friendly", fa: "صمیمی" },
+  { en: "Professional", fa: "حرفه‌ای" },
+  { en: "Luxury", fa: "لوکس" },
+  { en: "Funny", fa: "شاد و بامزه" },
+  { en: "Minimal", fa: "مینیمال" },
+  { en: "Educational", fa: "آموزشی" },
+  { en: "Premium", fa: "پریمیوم" },
+];
+
+const AUDIENCES = [
+  { en: "Parents", fa: "والدین" },
+  { en: "Students", fa: "دانشجویان" },
+  { en: "Business Owners", fa: "صاحبان کسب‌وکار" },
+  { en: "Developers", fa: "توسعه‌دهندگان" },
+  { en: "Doctors", fa: "پزشکان" },
+  { en: "Restaurant Customers", fa: "مشتریان رستوران" },
+  { en: "Gym Members", fa: "اعضای باشگاه" },
+  { en: "Tourists", fa: "گردشگران" },
+];
+
+const GOALS = [
+  { en: "Increase Sales", fa: "افزایش فروش" },
+  { en: "Brand Awareness", fa: "آگاهی از برند" },
+  { en: "More Leads", fa: "سرنخ بیشتر" },
+  { en: "Community Growth", fa: "رشد جامعه" },
+  { en: "Customer Retention", fa: "حفظ مشتری" },
+  { en: "Launch New Product", fa: "لانچ محصول جدید" },
+];
+
+const LANGUAGES = [
+  { en: "English", fa: "انگلیسی", value: "English" },
+  { en: "Persian", fa: "فارسی", value: "Persian" },
+  { en: "Arabic", fa: "عربی", value: "Arabic" },
+  { en: "Turkish", fa: "ترکی", value: "Turkish" },
+  { en: "French", fa: "فرانسوی", value: "French" },
+  { en: "German", fa: "آلمانی", value: "German" },
+];
+
+const PLATFORMS = [
+  "Instagram",
+  "LinkedIn",
+  "TikTok",
+  "YouTube",
+  "X",
+  "Facebook",
+];
+
 function splitList(value: string) {
   return value
     .split(",")
     .map((v) => v.trim())
     .filter(Boolean);
+}
+
+function toggleCsv(current: string, item: string) {
+  const set = new Set(splitList(current));
+  if (set.has(item)) set.delete(item);
+  else set.add(item);
+  return Array.from(set).join(", ");
+}
+
+function hasCsv(current: string, item: string) {
+  return splitList(current).includes(item);
+}
+
+function ChoiceCard({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-xl border px-3 py-2.5 text-sm transition-colors",
+        active
+          ? "border-primary bg-primary/10 text-foreground"
+          : "border-border/70 text-muted-foreground hover:bg-accent/40 hover:text-foreground",
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function Chip({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-3 py-1 text-xs transition-colors",
+        active
+          ? "border-primary bg-primary/10 text-foreground"
+          : "border-border/70 text-muted-foreground hover:bg-accent/40",
+      )}
+    >
+      {label}
+    </button>
+  );
 }
 
 export function BusinessOnboardingWizard({
@@ -73,28 +193,38 @@ export function BusinessOnboardingWizard({
   initialForm?: Partial<FormState>;
 }) {
   const router = useRouter();
+  const { locale, dictionary: d } = useI18n();
+  const ui = d.onboardingUi;
+  const fa = locale === "fa";
   const [step, setStep] = useState(initialStep);
   const [brandSlug, setBrandSlug] = useState(initialBrandSlug ?? "");
   const [form, setForm] = useState<FormState>({ ...emptyForm, ...initialForm });
   const [pending, setPending] = useState(false);
+  const [industrySearch, setIndustrySearch] = useState("");
+  const [customAudience, setCustomAudience] = useState("");
 
-  const total = BUSINESS_ONBOARDING_STEPS.length + 1; // + identity name step 0
+  const total = BUSINESS_ONBOARDING_STEPS.length + 1;
   const progress = Math.round(((step + 1) / total) * 100);
 
   const title = useMemo(() => {
-    if (step === 0) return "Name your business";
+    if (step === 0) return ui.nameTitle;
     return BUSINESS_ONBOARDING_STEPS[step - 1]?.title ?? "Business";
-  }, [step]);
+  }, [step, ui.nameTitle]);
 
   const description = useMemo(() => {
-    if (step === 0) {
-      return "Inzorya uses this profile as the business brain for future AI planning.";
-    }
+    if (step === 0) return ui.nameDesc;
     return BUSINESS_ONBOARDING_STEPS[step - 1]?.description ?? "";
-  }, [step]);
+  }, [step, ui.nameDesc]);
 
   function setField(key: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function fill(template: string, vars: Record<string, string | number>) {
+    return Object.entries(vars).reduce(
+      (s, [k, v]) => s.replaceAll(`{${k}}`, String(v)),
+      template,
+    );
   }
 
   async function ensureBrand() {
@@ -121,7 +251,7 @@ export function BusinessOnboardingWizard({
 
   async function save(opts: { nextStep?: number; complete?: boolean }) {
     if (step === 0 && form.name.trim().length < 2) {
-      toast.error("Business name is required.");
+      toast.error(ui.nameRequired);
       return;
     }
 
@@ -163,13 +293,13 @@ export function BusinessOnboardingWizard({
       }
 
       if (opts.complete) {
-        toast.success("Business profile ready.");
+        toast.success(fa ? "پروفایل کسب‌وکار آماده است." : "Business profile ready.");
         router.push(`/w/${workspaceSlug}/home`);
         router.refresh();
         return;
       }
 
-      toast.success("Progress saved.");
+      toast.success(fa ? "پیشرفت ذخیره شد." : "Progress saved.");
       if (typeof opts.nextStep === "number") {
         setStep(opts.nextStep);
       }
@@ -181,13 +311,17 @@ export function BusinessOnboardingWizard({
     }
   }
 
+  const filteredIndustries = INDUSTRIES.filter((i) => {
+    const q = industrySearch.trim().toLowerCase();
+    if (!q) return true;
+    return i.en.toLowerCase().includes(q) || i.fa.includes(q);
+  });
+
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="mx-auto w-full max-w-2xl" dir={fa ? "rtl" : "ltr"}>
       <div className="mb-10">
         <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            Step {step + 1} of {total}
-          </span>
+          <span>{fill(ui.stepOf, { step: step + 1, total })}</span>
           <span className="tabular-nums">{progress}%</span>
         </div>
         <div className="h-1 overflow-hidden rounded-full bg-muted">
@@ -199,69 +333,179 @@ export function BusinessOnboardingWizard({
       </div>
 
       <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-md md:p-9">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {step === 0
+            ? title
+            : fa
+              ? (
+                  {
+                    identity: "هویت کسب‌وکار",
+                    market: "بازار و پیشنهاد",
+                    voice: "صدای برند",
+                    ops: "عملیات بازاریابی",
+                  } as Record<string, string>
+                )[BUSINESS_ONBOARDING_STEPS[step - 1]?.id ?? ""] ?? title
+              : title}
+        </h1>
         <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
-          {description}
+          {step === 0
+            ? description
+            : fa
+              ? (
+                  {
+                    identity: "کیستید و کجا فعالیت می‌کنید.",
+                    market: "چه می‌فروشید و به چه کسانی.",
+                    voice: "اینزوریا بعداً با چه لحنی کمک کند.",
+                    ops: "ریتم، پلتفرم‌ها و محدودیت‌ها.",
+                  } as Record<string, string>
+                )[BUSINESS_ONBOARDING_STEPS[step - 1]?.id ?? ""] ?? description
+              : description}
         </p>
 
         <div className="mt-8 space-y-5">
           {step === 0 ? (
             <>
               <Field
-                label="Business / brand name"
+                label={ui.businessName}
                 value={form.name}
                 onChange={(v) => setField("name", v)}
                 required
               />
               <Field
-                label="Website"
+                label={ui.website}
                 value={form.website}
                 onChange={(v) => setField("website", v)}
                 placeholder="https://"
               />
               <Area
-                label="What does your business do?"
+                label={ui.summary}
                 value={form.businessSummary}
                 onChange={(v) => setField("businessSummary", v)}
               />
+
+              <div className="space-y-2">
+                <Label>{ui.industry}</Label>
+                <Input
+                  value={industrySearch}
+                  onChange={(e) => setIndustrySearch(e.target.value)}
+                  placeholder={ui.industrySearch}
+                />
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {filteredIndustries.map((i) => (
+                    <ChoiceCard
+                      key={i.en}
+                      label={fa ? i.fa : i.en}
+                      active={form.industry === i.en}
+                      onClick={() => setField("industry", i.en)}
+                    />
+                  ))}
+                </div>
+                {industrySearch.trim() &&
+                !INDUSTRIES.some(
+                  (i) => i.en.toLowerCase() === industrySearch.trim().toLowerCase(),
+                ) ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setField("industry", industrySearch.trim())}
+                  >
+                    {industrySearch.trim()}
+                  </Button>
+                ) : null}
+              </div>
+
               <Field
-                label="Industry"
-                value={form.industry}
-                onChange={(v) => setField("industry", v)}
-              />
-              <Field
-                label="Country"
+                label={ui.country}
                 value={form.country}
                 onChange={(v) => setField("country", v)}
               />
-              <Field
-                label="Languages (comma separated)"
-                value={form.languages}
-                onChange={(v) => setField("languages", v)}
-                placeholder="English, Persian"
-              />
+
+              <div className="space-y-2">
+                <Label>{ui.languages}</Label>
+                <p className="text-xs text-muted-foreground">{ui.languagesHint}</p>
+                <div className="flex flex-wrap gap-2">
+                  {LANGUAGES.map((l) => (
+                    <Chip
+                      key={l.value}
+                      label={fa ? l.fa : l.en}
+                      active={hasCsv(form.languages, l.value)}
+                      onClick={() =>
+                        setField("languages", toggleCsv(form.languages, l.value))
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
             </>
           ) : null}
 
           {step === 1 ? (
             <>
+              <div className="space-y-2">
+                <Label>{ui.goalsTitle}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {GOALS.map((g) => (
+                    <ChoiceCard
+                      key={g.en}
+                      label={fa ? g.fa : g.en}
+                      active={hasCsv(form.businessGoals, g.en)}
+                      onClick={() =>
+                        setField(
+                          "businessGoals",
+                          toggleCsv(form.businessGoals, g.en),
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
               <Area
-                label="Business goals"
-                value={form.businessGoals}
-                onChange={(v) => setField("businessGoals", v)}
-              />
-              <Area
-                label="Main products / services"
+                label={ui.products}
                 value={form.mainProducts}
                 onChange={(v) => setField("mainProducts", v)}
               />
+              <div className="space-y-2">
+                <Label>{ui.audienceTitle}</Label>
+                <div className="flex flex-wrap gap-2">
+                  {AUDIENCES.map((a) => (
+                    <Chip
+                      key={a.en}
+                      label={fa ? a.fa : a.en}
+                      active={hasCsv(form.targetAudience, a.en)}
+                      onClick={() =>
+                        setField(
+                          "targetAudience",
+                          toggleCsv(form.targetAudience, a.en),
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={customAudience}
+                    onChange={(e) => setCustomAudience(e.target.value)}
+                    placeholder={ui.audienceCustom}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!customAudience.trim()}
+                    onClick={() => {
+                      setField(
+                        "targetAudience",
+                        toggleCsv(form.targetAudience, customAudience.trim()),
+                      );
+                      setCustomAudience("");
+                    }}
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
               <Area
-                label="Target audience"
-                value={form.targetAudience}
-                onChange={(v) => setField("targetAudience", v)}
-              />
-              <Area
-                label="Competitors"
+                label={ui.competitors}
                 value={form.competitors}
                 onChange={(v) => setField("competitors", v)}
               />
@@ -270,27 +514,33 @@ export function BusinessOnboardingWizard({
 
           {step === 2 ? (
             <>
+              <div className="space-y-2">
+                <Label>{ui.toneTitle}</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {TONES.map((t) => (
+                    <ChoiceCard
+                      key={t.en}
+                      label={fa ? t.fa : t.en}
+                      active={form.preferredTone === t.en}
+                      onClick={() => setField("preferredTone", t.en)}
+                    />
+                  ))}
+                </div>
+              </div>
               <Area
-                label="Brand personality"
+                label={ui.personality}
                 value={form.brandPersonality}
                 onChange={(v) => setField("brandPersonality", v)}
               />
-              <Field
-                label="Preferred tone"
-                value={form.preferredTone}
-                onChange={(v) => setField("preferredTone", v)}
-                placeholder="Warm, expert, playful…"
-              />
               <Area
-                label="Content style"
+                label={ui.contentStyle}
                 value={form.contentStyle}
                 onChange={(v) => setField("contentStyle", v)}
               />
               <Field
-                label="Main CTA"
+                label={ui.mainCta}
                 value={form.mainCta}
                 onChange={(v) => setField("mainCta", v)}
-                placeholder="Book a demo, Shop now…"
               />
             </>
           ) : null}
@@ -298,29 +548,41 @@ export function BusinessOnboardingWizard({
           {step === 3 ? (
             <>
               <Field
-                label="Posting frequency"
+                label={ui.frequency}
                 value={form.postingFrequency}
                 onChange={(v) => setField("postingFrequency", v)}
-                placeholder="3x / week"
+                placeholder={fa ? "۳ بار در هفته" : "3x / week"}
               />
-              <Field
-                label="Preferred platforms (comma separated)"
-                value={form.preferredPlatforms}
-                onChange={(v) => setField("preferredPlatforms", v)}
-                placeholder="Instagram, LinkedIn"
-              />
+              <div className="space-y-2">
+                <Label>{ui.platforms}</Label>
+                <div className="flex flex-wrap gap-2">
+                  {PLATFORMS.map((p) => (
+                    <Chip
+                      key={p}
+                      label={p}
+                      active={hasCsv(form.preferredPlatforms, p)}
+                      onClick={() =>
+                        setField(
+                          "preferredPlatforms",
+                          toggleCsv(form.preferredPlatforms, p),
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
               <Area
-                label="Marketing challenges"
+                label={ui.challenges}
                 value={form.marketingChallenges}
                 onChange={(v) => setField("marketingChallenges", v)}
               />
               <Field
-                label="Monthly marketing budget (optional)"
+                label={ui.budget}
                 value={form.monthlyBudget}
                 onChange={(v) => setField("monthlyBudget", v)}
               />
               <Field
-                label="Current team size"
+                label={ui.teamSize}
                 value={form.teamSize}
                 onChange={(v) => setField("teamSize", v)}
               />
@@ -336,34 +598,26 @@ export function BusinessOnboardingWizard({
               disabled={pending}
               onClick={() => setStep((s) => Math.max(0, s - 1))}
             >
-              Back
+              {ui.back}
             </Button>
           ) : null}
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={pending}
-            onClick={() => void save({ nextStep: step })}
-          >
-            Save & continue later
-          </Button>
           {step < total - 1 ? (
             <Button
               type="button"
               disabled={pending}
-              className="ml-auto"
+              className="ms-auto"
               onClick={() => void save({ nextStep: step + 1 })}
             >
-              {pending ? "Saving…" : "Save & continue"}
+              {pending ? ui.saving : ui.continue}
             </Button>
           ) : (
             <Button
               type="button"
               disabled={pending}
-              className="ml-auto"
+              className="ms-auto"
               onClick={() => void save({ complete: true, nextStep: step })}
             >
-              {pending ? "Finishing…" : "Finish & open dashboard"}
+              {pending ? ui.saving : ui.finish}
             </Button>
           )}
         </div>

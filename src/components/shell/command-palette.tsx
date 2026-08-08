@@ -39,7 +39,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
-import { getNavGroups } from "@/lib/navigation";
+import { getAdvancedNavItems, getNavGroups } from "@/lib/navigation";
 import { useShellStore } from "@/hooks/use-shell-store";
 import { useI18n } from "@/i18n/client";
 
@@ -74,6 +74,12 @@ export function CommandPalette({
   const brandFromPath = pathname.match(/\/b\/([^/]+)/)?.[1] ?? null;
   const activeBrand = brandFromPath ?? brandSlug;
   const groups = getNavGroups(
+    workspaceSlug,
+    activeBrand,
+    {},
+    dictionary.nav,
+  );
+  const advanced = getAdvancedNavItems(
     workspaceSlug,
     activeBrand,
     {},
@@ -180,96 +186,36 @@ export function CommandPalette({
         ) : null}
 
         {!searching ? (
-          <CommandGroup heading="Quick actions">
+          <CommandGroup heading={dictionary.nav.home}>
+            {groups.flatMap((g) => g.items).map((item) => (
+              <CommandItem
+                key={item.href + item.title}
+                value={item.title}
+                onSelect={() => go(item.href)}
+              >
+                <item.icon />
+                {item.title}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ) : null}
+
+        {!searching ? (
+          <CommandGroup heading={dictionary.nav.advanced}>
             <CommandItem onSelect={() => go(`${b}/contacts`)}>
               <Plus />
-              New Contact
+              {dictionary.nav.contacts}
             </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/knowledge`)}>
-              <Library />
-              New Knowledge Document
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/studio`)}>
-              <FileText />
-              New Content Draft
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/inbox`)}>
-              <Inbox />
-              Open Inbox
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/strategy`)}>
-              <Compass />
-              Go to Strategy
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/strategist`)}>
-              <Sparkles />
-              Open AI Strategist
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/planner`)}>
-              <CalendarDays />
-              Open AI Content Planner
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/creator`)}>
-              <PenLine />
-              Open AI Content Creator
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/opportunities`)}>
-              <Radar />
-              Open Opportunities
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/community`)}>
-              <Headphones />
-              Open Community Manager
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/decisions`)}>
-              <BriefcaseBusiness />
-              Open Decision Center
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/work`)}>
-              <ListTodo />
-              Open Task Engine
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/calendar`)}>
-              <Globe2 />
-              Open Calendar Intelligence
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/knowledge-graph`)}>
-              <Network />
-              Open Knowledge Graph
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/matching`)}>
-              <Crosshair />
-              Open Matching Engine
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/recommendations`)}>
-              <Layers3 />
-              Open Campaign Recommendations
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/pipeline`)}>
-              <GitBranch />
-              Open Execution Pipeline
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/business`)}>
-              <Briefcase />
-              Open Business Profile
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/channels`)}>
-              <Radio />
-              Open Channels
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/automations`)}>
-              <Workflow />
-              Open Automations
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${b}/analytics`)}>
-              <LineChart />
-              Open Analytics
-            </CommandItem>
-            <CommandItem onSelect={() => go(`${base}/settings`)}>
-              <Settings />
-              Open Settings
-              <CommandShortcut>⌘K</CommandShortcut>
-            </CommandItem>
+            {advanced.map((item) => (
+              <CommandItem
+                key={`adv-${item.href}-${item.title}`}
+                value={`advanced ${item.title}`}
+                onSelect={() => go(item.href)}
+              >
+                <item.icon />
+                {item.title}
+              </CommandItem>
+            ))}
           </CommandGroup>
         ) : null}
 

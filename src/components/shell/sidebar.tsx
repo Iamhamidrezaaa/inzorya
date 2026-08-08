@@ -118,7 +118,7 @@ export function Sidebar({
 
           {groups.map((group) => (
             <div key={group.label}>
-              {!sidebarCollapsed ? (
+              {!sidebarCollapsed && group.label ? (
                 <div className="mb-2 px-2.5 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/80">
                   {group.label}
                 </div>

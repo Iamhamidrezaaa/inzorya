@@ -187,10 +187,6 @@ export function BusinessBrainWorkspace({
             : question.helpText,
       }
     : null;
-  const remainingLabel =
-    locale === "fa"
-      ? `${remaining} باقی‌مانده`
-      : `${formatMinutes(remaining)} left`;
   const localizeBrainLabel = (value: string) => faLabel(locale, value, BRAIN_FA);
 
   const answeredKeys = useMemo(
@@ -201,6 +197,8 @@ export function BusinessBrainWorkspace({
   const remaining = formatMinutes(
     estimateRemainingSeconds(index, answeredKeys),
   );
+  const remainingLabel =
+    locale === "fa" ? `${remaining} باقی‌مانده` : `${remaining} left`;
 
   const displayCompletion = useMemo(
     () =>

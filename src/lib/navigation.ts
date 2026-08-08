@@ -7,12 +7,12 @@ import {
   Clapperboard,
   Compass,
   FolderKanban,
-  Globe2,
   Headphones,
   History,
   Home,
   ImageIcon,
   Inbox,
+  LayoutGrid,
   Library,
   LineChart,
   ListTodo,
@@ -48,177 +48,162 @@ export type NavBadges = {
   media?: number;
 };
 
+export type PrimaryNavLabels = {
+  home: string;
+  aiAssistant: string;
+  calendar: string;
+  content: string;
+  analytics: string;
+  workspace: string;
+  settings: string;
+};
+
+export type AdvancedNavLabels = {
+  businessBrain: string;
+  strategy: string;
+  aiContentPlanner: string;
+  aiContentCreator: string;
+  opportunities: string;
+  communityManager: string;
+  decisionCenter: string;
+  taskEngine: string;
+  knowledgeGraph: string;
+  matchingEngine: string;
+  campaignRecommendations: string;
+  executionPipeline: string;
+  inbox: string;
+  contacts: string;
+  channels: string;
+  automations: string;
+  business: string;
+  knowledge: string;
+  contentStudio: string;
+  campaigns: string;
+  media: string;
+  activity: string;
+};
+
+/** Primary AI-first sidebar — 7 items max. */
 export function getNavGroups(
   workspaceSlug: string,
   brandSlug?: string | null,
   badges: NavBadges = {},
-  labels?: {
-    operate: string;
-    brand: string;
-    system: string;
-    home: string;
-    businessBrain: string;
-    strategy: string;
-    aiStrategist: string;
-    aiContentPlanner: string;
-    aiContentCreator: string;
-    opportunities: string;
-    communityManager: string;
-    decisionCenter: string;
-    taskEngine: string;
-    calendarIntelligence: string;
-    knowledgeGraph: string;
-    matchingEngine: string;
-    campaignRecommendations: string;
-    executionPipeline: string;
-    inbox: string;
-    contacts: string;
-    channels: string;
-    automations: string;
-    analytics: string;
-    business: string;
-    knowledge: string;
-    contentStudio: string;
-    campaigns: string;
-    media: string;
-    activity: string;
-    settings: string;
-  },
+  labels?: PrimaryNavLabels & Partial<AdvancedNavLabels> & Record<string, string>,
 ): NavGroup[] {
   const base = `/w/${workspaceSlug}`;
   const b = brandSlug ? `${base}/b/${brandSlug}` : base;
-  const t = labels ?? {
-    operate: "Operate",
-    brand: "Brand",
-    system: "System",
-    home: "Home",
-    businessBrain: "Business Brain",
-    strategy: "Strategy",
-    aiStrategist: "AI Strategist",
-    aiContentPlanner: "AI Content Planner",
-    aiContentCreator: "AI Content Creator",
-    opportunities: "Opportunities",
-    communityManager: "Community Manager",
-    decisionCenter: "Decision Center",
-    taskEngine: "Task Engine",
-    calendarIntelligence: "Calendar Intelligence",
-    knowledgeGraph: "Knowledge Graph",
-    matchingEngine: "Matching Engine",
-    campaignRecommendations: "Campaign Recommendations",
-    executionPipeline: "Execution Pipeline",
-    inbox: "Inbox",
-    contacts: "Contacts",
-    channels: "Channels",
-    automations: "Automations",
-    analytics: "Analytics",
-    business: "Business",
-    knowledge: "Knowledge",
-    contentStudio: "Content Studio",
-    campaigns: "Campaigns",
-    media: "Media",
-    activity: "Activity",
-    settings: "Settings",
+  const t = {
+    home: labels?.home ?? "Home",
+    aiAssistant: labels?.aiAssistant ?? labels?.aiStrategist ?? "AI Assistant",
+    calendar: labels?.calendar ?? labels?.calendarIntelligence ?? "Calendar",
+    content: labels?.content ?? "Content",
+    analytics: labels?.analytics ?? "Analytics",
+    workspace: labels?.workspace ?? "Workspace",
+    settings: labels?.settings ?? "Settings",
   };
 
   return [
     {
-      label: t.operate,
+      label: "",
       items: [
         { title: t.home, href: `${base}/home`, icon: Home },
-        { title: t.businessBrain, href: `${b}/brain`, icon: Brain },
-        { title: t.strategy, href: `${b}/strategy`, icon: Compass },
-        { title: t.aiStrategist, href: `${b}/strategist`, icon: Sparkles },
+        { title: t.aiAssistant, href: `${b}/strategist`, icon: Sparkles },
+        { title: t.calendar, href: `${b}/calendar`, icon: CalendarDays },
         {
-          title: t.aiContentPlanner,
-          href: `${b}/planner`,
-          icon: CalendarDays,
-        },
-        {
-          title: t.aiContentCreator,
-          href: `${b}/creator`,
-          icon: PenLine,
-        },
-        { title: t.opportunities, href: `${b}/opportunities`, icon: Radar },
-        {
-          title: t.communityManager,
-          href: `${b}/community`,
-          icon: Headphones,
-        },
-        {
-          title: t.decisionCenter,
-          href: `${b}/decisions`,
-          icon: BriefcaseBusiness,
-        },
-        { title: t.taskEngine, href: `${b}/work`, icon: ListTodo },
-        {
-          title: t.calendarIntelligence,
-          href: `${b}/calendar`,
-          icon: Globe2,
-        },
-        {
-          title: t.knowledgeGraph,
-          href: `${b}/knowledge-graph`,
-          icon: Network,
-        },
-        {
-          title: t.matchingEngine,
-          href: `${b}/matching`,
-          icon: Crosshair,
-        },
-        {
-          title: t.campaignRecommendations,
-          href: `${b}/recommendations`,
-          icon: Layers3,
-        },
-        {
-          title: t.executionPipeline,
-          href: `${b}/pipeline`,
-          icon: GitBranch,
-        },
-        {
-          title: t.inbox,
-          href: `${b}/inbox`,
-          icon: Inbox,
-          badge: badges.inbox,
-        },
-        { title: t.contacts, href: `${b}/contacts`, icon: Users },
-        { title: t.channels, href: `${b}/channels`, icon: Radio },
-        { title: t.automations, href: `${b}/automations`, icon: Workflow },
-        { title: t.analytics, href: `${b}/analytics`, icon: LineChart },
-      ],
-    },
-    {
-      label: t.brand,
-      items: [
-        { title: t.business, href: `${b}/business`, icon: Briefcase },
-        {
-          title: t.knowledge,
-          href: `${b}/knowledge`,
-          icon: Library,
-          badge: badges.knowledge,
-        },
-        {
-          title: t.contentStudio,
-          href: `${b}/studio`,
-          icon: Clapperboard,
+          title: t.content,
+          href: `${b}/content`,
+          icon: LayoutGrid,
           badge: badges.content,
         },
-        { title: t.campaigns, href: `${b}/campaigns`, icon: FolderKanban },
-        {
-          title: t.media,
-          href: `${b}/media`,
-          icon: ImageIcon,
-          badge: badges.media,
-        },
-      ],
-    },
-    {
-      label: t.system,
-      items: [
-        { title: t.activity, href: `${base}/activity`, icon: History },
+        { title: t.analytics, href: `${b}/analytics`, icon: LineChart },
+        { title: t.workspace, href: `${b}/workspace`, icon: Briefcase },
         { title: t.settings, href: `${base}/settings`, icon: Settings },
       ],
     },
+  ];
+}
+
+/** Hidden architecture modules — command palette / Workspace Advanced. */
+export function getAdvancedNavItems(
+  workspaceSlug: string,
+  brandSlug?: string | null,
+  badges: NavBadges = {},
+  labels?: Partial<AdvancedNavLabels> & Record<string, string>,
+): NavItem[] {
+  const base = `/w/${workspaceSlug}`;
+  const b = brandSlug ? `${base}/b/${brandSlug}` : base;
+  const t = {
+    businessBrain: labels?.businessBrain ?? "Business profile depth",
+    strategy: labels?.strategy ?? "Strategy",
+    aiContentPlanner: labels?.aiContentPlanner ?? "Content planner",
+    aiContentCreator: labels?.aiContentCreator ?? "Content creator",
+    opportunities: labels?.opportunities ?? "Opportunities",
+    communityManager: labels?.communityManager ?? "Community",
+    decisionCenter: labels?.decisionCenter ?? "Decisions",
+    taskEngine: labels?.taskEngine ?? "Tasks",
+    knowledgeGraph: labels?.knowledgeGraph ?? "Knowledge graph",
+    matchingEngine: labels?.matchingEngine ?? "Matching",
+    campaignRecommendations: labels?.campaignRecommendations ?? "Campaign ideas",
+    executionPipeline: labels?.executionPipeline ?? "Pipeline",
+    inbox: labels?.inbox ?? "Inbox",
+    contacts: labels?.contacts ?? "Contacts",
+    channels: labels?.channels ?? "Channels",
+    automations: labels?.automations ?? "Automations",
+    business: labels?.business ?? "Business",
+    knowledge: labels?.knowledge ?? "Knowledge",
+    contentStudio: labels?.contentStudio ?? "Studio",
+    campaigns: labels?.campaigns ?? "Campaigns",
+    media: labels?.media ?? "Media",
+    activity: labels?.activity ?? "Activity",
+  };
+
+  return [
+    { title: t.business, href: `${b}/business`, icon: Briefcase },
+    { title: t.channels, href: `${b}/channels`, icon: Radio },
+    {
+      title: t.inbox,
+      href: `${b}/inbox`,
+      icon: Inbox,
+      badge: badges.inbox,
+    },
+    { title: t.communityManager, href: `${b}/community`, icon: Headphones },
+    { title: t.businessBrain, href: `${b}/brain`, icon: Brain },
+    { title: t.strategy, href: `${b}/strategy`, icon: Compass },
+    { title: t.aiContentPlanner, href: `${b}/planner`, icon: CalendarDays },
+    { title: t.aiContentCreator, href: `${b}/creator`, icon: PenLine },
+    {
+      title: t.contentStudio,
+      href: `${b}/studio`,
+      icon: Clapperboard,
+      badge: badges.content,
+    },
+    { title: t.opportunities, href: `${b}/opportunities`, icon: Radar },
+    { title: t.decisionCenter, href: `${b}/decisions`, icon: BriefcaseBusiness },
+    { title: t.taskEngine, href: `${b}/work`, icon: ListTodo },
+    { title: t.knowledgeGraph, href: `${b}/knowledge-graph`, icon: Network },
+    { title: t.matchingEngine, href: `${b}/matching`, icon: Crosshair },
+    {
+      title: t.campaignRecommendations,
+      href: `${b}/recommendations`,
+      icon: Layers3,
+    },
+    { title: t.executionPipeline, href: `${b}/pipeline`, icon: GitBranch },
+    { title: t.contacts, href: `${b}/contacts`, icon: Users },
+    { title: t.automations, href: `${b}/automations`, icon: Workflow },
+    {
+      title: t.knowledge,
+      href: `${b}/knowledge`,
+      icon: Library,
+      badge: badges.knowledge,
+    },
+    { title: t.campaigns, href: `${b}/campaigns`, icon: FolderKanban },
+    {
+      title: t.media,
+      href: `${b}/media`,
+      icon: ImageIcon,
+      badge: badges.media,
+    },
+    { title: t.activity, href: `${base}/activity`, icon: History },
   ];
 }
 
@@ -233,9 +218,9 @@ export type PageMeta = {
 export const pageCopy = {
   home: {
     title: "Home",
-    description: "Conversation overview for this workspace.",
-    emptyTitle: "Your inbox is ready",
-    emptyDescription: "Connect a channel and conversations will land here.",
+    description: "Your AI marketing coworker — start with a goal.",
+    emptyTitle: "Ready when you are",
+    emptyDescription: "Tell Inzorya what you want to accomplish today.",
   },
   inbox: {
     title: "Inbox",
@@ -264,167 +249,216 @@ export const pageCopy = {
       "Capture goals, audience, competitors, and pillars before any content is generated.",
   },
   strategist: {
-    title: "AI Strategist",
-    description: "Senior marketing strategist grounded in your business context.",
-    emptyTitle: "Ask your strategist",
+    title: "AI Assistant",
+    description: "Your AI marketing coworker — grounded in your business.",
+    emptyTitle: "Ask anything",
     emptyDescription:
-      "Skip prompt engineering — ask in plain language and decide with structured advice.",
+      "Describe a goal in plain language. Inzorya plans the next steps with you.",
   },
   planner: {
-    title: "AI Content Planner",
-    description: "Strategic publishing plans from business intelligence.",
-    emptyTitle: "Generate a plan",
+    title: "Content planner",
+    description: "Strategic publishing plans from your business context.",
+    emptyTitle: "Build a plan",
     emptyDescription:
-      "Build calendar-ready content plans — titles and slots only, never captions.",
+      "Calendar-ready content plans — slots and titles, not captions yet.",
   },
   creator: {
-    title: "AI Content Creator",
-    description: "Context-aware content production with scored variations.",
-    emptyTitle: "Generate content",
-    emptyDescription:
-      "Choose platform, objective, campaign and type — business context does the rest.",
+    title: "Content creator",
+    description: "Generate posts, captions, and creatives from your plan.",
+    emptyTitle: "Create content",
+    emptyDescription: "Turn plans into publish-ready drafts.",
   },
   opportunities: {
-    title: "Opportunity Intelligence",
-    description: "Proactive marketing opportunities matched to your business.",
-    emptyTitle: "Scan for opportunities",
-    emptyDescription:
-      "Discover high-signal moments before they arrive — never a raw holiday dump.",
+    title: "Opportunities",
+    description: "Seasonal moments and campaign openings matched to you.",
+    emptyTitle: "No opportunities yet",
+    emptyDescription: "Scan the calendar for moments worth acting on.",
   },
   community: {
-    title: "AI Community Manager",
-    description: "Prioritized conversations with brand-safe reply assistance.",
-    emptyTitle: "Scan your inbox",
-    emptyDescription:
-      "Classify intent, rank urgency, and draft replies — never blind auto-send.",
+    title: "Community",
+    description: "Reply intelligence for inbox conversations.",
+    emptyTitle: "Inbox is quiet",
+    emptyDescription: "When messages arrive, assist drafts appear here.",
   },
   decisions: {
-    title: "AI Marketing Decision Center",
-    description: "Morning executive brain — only the decisions that matter today.",
-    emptyTitle: "Generate today's brief",
-    emptyDescription:
-      "Surface priorities, risks, and recommended actions — not another metrics dump.",
+    title: "Decisions",
+    description: "Prioritized marketing decisions and trade-offs.",
+    emptyTitle: "No open decisions",
+    emptyDescription: "Ask the AI Assistant when you need a call.",
   },
   work: {
-    title: "AI Marketing Workspace",
-    description: "Execution layer — turn AI recommendations into finished work.",
-    emptyTitle: "Create your first task",
-    emptyDescription:
-      "Convert decisions, campaigns, and ideas into actionable work in one click.",
+    title: "Tasks",
+    description: "Execution checklist derived from plans and decisions.",
+    emptyTitle: "No tasks yet",
+    emptyDescription: "Tasks appear when you approve plans and campaigns.",
   },
   calendar: {
-    title: "Calendar Intelligence",
-    description:
-      "Global marketing event database — countries, seasons, localization, imports.",
-    emptyTitle: "Seed the calendar",
-    emptyDescription:
-      "Build the worldwide event catalog. No AI — structured data only.",
+    title: "Calendar",
+    description: "Seasonal and cultural moments for your markets.",
+    emptyTitle: "Calendar ready",
+    emptyDescription: "Moments and planned content land here.",
   },
   "knowledge-graph": {
-    title: "Marketing Knowledge Graph",
-    description:
-      "Structured business meaning for every event — industries, audiences, CTAs.",
-    emptyTitle: "Ensure the graph",
-    emptyDescription:
-      "Connect events to industries, products, objectives and channels — no AI.",
+    title: "Knowledge graph",
+    description: "Connected facts about your brand and market.",
+    emptyTitle: "Graph is empty",
+    emptyDescription: "Knowledge grows as you teach Inzorya.",
   },
   matching: {
-    title: "Opportunity Matching Engine",
-    description:
-      "Deterministic relevance scoring — no LLM, no content, reproducible rules.",
-    emptyTitle: "Run matching",
-    emptyDescription:
-      "Score every marketing event against this brand using weighted business rules.",
+    title: "Matching",
+    description: "Match moments and offers to your brand.",
+    emptyTitle: "No matches yet",
+    emptyDescription: "Run matching after calendar and brain are ready.",
   },
   recommendations: {
-    title: "Campaign Recommendation Engine",
-    description:
-      "Turn high-value opportunities into campaign blueprints for human approval.",
-    emptyTitle: "Generate proposals",
-    emptyDescription:
-      "Eligible opportunities become structured campaign plans — never auto-launched.",
+    title: "Campaign ideas",
+    description: "Recommended campaigns from your context.",
+    emptyTitle: "No ideas yet",
+    emptyDescription: "Ask the AI Assistant for campaign directions.",
   },
   pipeline: {
-    title: "Execution Pipeline",
-    description:
-      "Connect approved campaigns into planner, tasks, calendar sync, and publishing.",
-    emptyTitle: "Approve a recommendation",
-    emptyDescription:
-      "Workflow starts when a campaign blueprint is approved — context never lost.",
+    title: "Pipeline",
+    description: "From idea to publish in one flow.",
+    emptyTitle: "Pipeline empty",
+    emptyDescription: "Approved work appears here as it moves.",
   },
-  brain: {
-    title: "Business Brain",
-    description: "Structured business knowledge captured through interview.",
-    emptyTitle: "Start the interview",
-    emptyDescription:
-      "Teach Inzorya who you are — one question at a time.",
+  analytics: {
+    title: "Analytics",
+    description: "Performance signals across channels and content.",
+    emptyTitle: "No analytics yet",
+    emptyDescription: "Connect channels and publish to see trends.",
+  },
+  business: {
+    title: "Business",
+    description: "Core business profile for this brand.",
+    emptyTitle: "Add business details",
+    emptyDescription: "Profile fields power every AI recommendation.",
   },
   knowledge: {
     title: "Knowledge",
-    description: "The source of truth your team (and future AI) will use.",
+    description: "Documents and facts Inzorya can cite.",
     emptyTitle: "No knowledge yet",
-    emptyDescription: "Add documents so replies stay on-brand.",
+    emptyDescription: "Upload docs or notes to ground answers.",
   },
-  "knowledge-sources": {
-    title: "Sources",
-    description: "Imported knowledge sources.",
-    emptyTitle: "No sources",
-    emptyDescription: "Sources can expand later.",
+  studio: {
+    title: "Studio",
+    description: "Drafts and assets ready to refine.",
+    emptyTitle: "Studio is empty",
+    emptyDescription: "Generated content lands here for editing.",
   },
-  "knowledge-ask": {
-    title: "Ask Knowledge",
-    description: "Reserved for later AI retrieval.",
-    emptyTitle: "Coming later",
-    emptyDescription: "No AI in this sprint.",
+  campaigns: {
+    title: "Campaigns",
+    description: "Campaign briefs and status.",
+    emptyTitle: "No campaigns yet",
+    emptyDescription: "Start from the AI Assistant or Content hub.",
+  },
+  media: {
+    title: "Media",
+    description: "Brand assets and creative library.",
+    emptyTitle: "No media yet",
+    emptyDescription: "Upload logos and product shots.",
+  },
+  automations: {
+    title: "Automations",
+    description: "Rules that run without you watching.",
+    emptyTitle: "No automations",
+    emptyDescription: "Add rules when you trust a repeatable flow.",
+  },
+  activity: {
+    title: "Activity",
+    description: "Recent workspace events.",
+    emptyTitle: "No activity yet",
+    emptyDescription: "Actions across the workspace show up here.",
+  },
+  settings: {
+    title: "Settings",
+    description: "Workspace preferences and members.",
+    emptyTitle: "Settings",
+    emptyDescription: "Manage how this workspace runs.",
+  },
+  brain: {
+    title: "Business depth",
+    description: "Deep interview Inzorya uses behind the scenes.",
+    emptyTitle: "Add more context",
+    emptyDescription: "Optional depth — AI already uses what you shared.",
   },
   content: {
     title: "Content",
-    description: "Redirects to Content Studio.",
-    emptyTitle: "Open Content Studio",
-    emptyDescription: "Manage the full content pipeline in Studio.",
-  },
-  studio: {
-    title: "Content Studio",
-    description: "Ideas to published — production workflow for content.",
-    emptyTitle: "Capture your first idea",
-    emptyDescription:
-      "Move content through research, brief, draft, review, and publish.",
+    description: "Plan, create, and ship content from one place.",
+    emptyTitle: "Start with a goal",
+    emptyDescription: "Plan the week, generate posts, or open the studio.",
   },
   "content-approvals": {
     title: "Approvals",
     description: "Content waiting for review.",
     emptyTitle: "Nothing to approve",
-    emptyDescription: "Approvals stay secondary to inbox.",
+    emptyDescription: "Approvals stay secondary to the inbox.",
   },
-  campaigns: {
-    title: "Campaigns",
-    description: "Campaign shells for later outreach work.",
-    emptyTitle: "No campaigns yet",
-    emptyDescription: "Campaigns are secondary. Conversations are the product.",
+  workspace: {
+    title: "Workspace",
+    description: "Everyday tools and advanced controls.",
+    emptyTitle: "Workspace",
+    emptyDescription: "Channels, inbox, and deeper setup live here.",
   },
-  media: {
-    title: "Media",
-    description: "Images for replies and content.",
-    emptyTitle: "Media library is empty",
-    emptyDescription: "Upload images to reuse in conversations and content.",
+  brand: {
+    title: "Brand",
+    description: "Brand identity for this workspace.",
+    emptyTitle: "Brand",
+    emptyDescription: "Edit brand details from settings.",
   },
-  analytics: {
-    title: "Analytics",
-    description: "KPIs, engagement, audience, content, and campaign performance.",
-    emptyTitle: "No analytics yet",
-    emptyDescription: "Connect channels later — mock analytics are available today.",
+  "settings-workspace": {
+    title: "Workspace settings",
+    description: "Workspace name and preferences.",
+    emptyTitle: "Workspace",
+    emptyDescription: "Edit workspace details.",
   },
-  automations: {
-    title: "Automations",
-    description: "Visual marketing workflows — triggers, conditions, and actions.",
-    emptyTitle: "No automations yet",
-    emptyDescription: "Create a workflow or start from a template.",
+  "settings-brands": {
+    title: "Brands",
+    description: "Brand management.",
+    emptyTitle: "Brands",
+    emptyDescription: "Manage brands from brand settings.",
+  },
+  "settings-billing": {
+    title: "Billing",
+    description: "Billing comes later.",
+    emptyTitle: "Not configured",
+    emptyDescription: "Billing ships later.",
+  },
+  "settings-notifications": {
+    title: "Notifications",
+    description: "Notification preferences.",
+    emptyTitle: "Defaults on",
+    emptyDescription: "More toggles later.",
+  },
+  "settings-security": {
+    title: "Security",
+    description: "Security controls.",
+    emptyTitle: "Security",
+    emptyDescription: "Expands later.",
+  },
+  "settings-api": {
+    title: "API",
+    description: "API keys later.",
+    emptyTitle: "No keys",
+    emptyDescription: "API access ships later.",
+  },
+  "knowledge-sources": {
+    title: "Sources",
+    description: "Imported knowledge sources.",
+    emptyTitle: "No sources",
+    emptyDescription: "Sources expand later.",
+  },
+  "knowledge-ask": {
+    title: "Ask knowledge",
+    description: "Retrieval with AI later.",
+    emptyTitle: "Coming soon",
+    emptyDescription: "Not in this sprint.",
   },
   "automation-runs": {
     title: "Runs",
-    description: "Mocked execution history for designed workflows.",
+    description: "Execution history for workflows.",
     emptyTitle: "No runs yet",
-    emptyDescription: "Execution engine ships later — design flows today.",
+    emptyDescription: "Design flows today — execution comes later.",
   },
   agents: {
     title: "AI Agents",
@@ -437,18 +471,6 @@ export const pageCopy = {
     description: "Reserved.",
     emptyTitle: "Not available yet",
     emptyDescription: "Inbox is the priority.",
-  },
-  brand: {
-    title: "Brand",
-    description: "Identity and voice for this brand.",
-    emptyTitle: "Define brand",
-    emptyDescription: "Complete brand profile.",
-  },
-  workspace: {
-    title: "Workspace",
-    description: "Workspace overview.",
-    emptyTitle: "Workspace ready",
-    emptyDescription: "Use Settings for workspace configuration.",
   },
   team: {
     title: "Team",
@@ -480,52 +502,4 @@ export const pageCopy = {
     emptyTitle: "Use Channels",
     emptyDescription: "Channel cards live under Channels.",
   },
-  settings: {
-    title: "Settings",
-    description: "Profile, workspace, and brand.",
-    emptyTitle: "Settings",
-    emptyDescription: "Manage how Inzorya is configured for your team.",
-  },
-  activity: {
-    title: "Activity",
-    description: "Workspace timeline of meaningful changes.",
-    emptyTitle: "No activity yet",
-    emptyDescription: "Updates across business, channels, and strategy appear here.",
-  },
-  "settings-workspace": {
-    title: "Workspace settings",
-    description: "Workspace name and preferences.",
-    emptyTitle: "Workspace",
-    emptyDescription: "Edit workspace details.",
-  },
-  "settings-brands": {
-    title: "Brands",
-    description: "Brand management.",
-    emptyTitle: "Brands",
-    emptyDescription: "Manage brands from Brand settings.",
-  },
-  "settings-billing": {
-    title: "Billing",
-    description: "Billing comes later.",
-    emptyTitle: "Not configured",
-    emptyDescription: "Billing ships later.",
-  },
-  "settings-notifications": {
-    title: "Notifications",
-    description: "Notification preferences.",
-    emptyTitle: "Defaults on",
-    emptyDescription: "More toggles later.",
-  },
-  "settings-security": {
-    title: "Security",
-    description: "Security controls.",
-    emptyTitle: "Security",
-    emptyDescription: "Expand later.",
-  },
-  "settings-api": {
-    title: "API",
-    description: "API keys later.",
-    emptyTitle: "No keys",
-    emptyDescription: "API access ships later.",
-  },
-} as const satisfies Record<string, PageMeta>;
+} as const;

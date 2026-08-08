@@ -40,14 +40,6 @@ export default async function RootLayout({
       className="light"
       suppressHydrationWarning
     >
-      <head>
-        {/* Force light before paint — clears legacy dark localStorage */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{localStorage.removeItem('inzorya-theme');localStorage.removeItem('inzorya-theme-v2');if(!localStorage.getItem('inzorya-light-migrate-1')){localStorage.setItem('inzorya-theme-v3','light');localStorage.setItem('inzorya-light-migrate-1','1');}var t=localStorage.getItem('inzorya-theme-v3');if(t!=='dark')t='light';localStorage.setItem('inzorya-theme-v3',t);var d=document.documentElement;d.classList.remove('dark','light');d.classList.add(t);d.style.colorScheme=t;}catch(e){}})();`,
-          }}
-        />
-      </head>
       <body
         className={`${sans.variable} min-h-svh antialiased ${
           locale === "fa" ? "font-fa" : "font-sans"

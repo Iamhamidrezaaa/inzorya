@@ -679,7 +679,7 @@ export function CommunityManagerWorkspace({
                       {t("confidence", "اطمینان")})
                     </p>
                     <p className="mt-1 text-muted-foreground">
-                      {tr(active.intent.explanation)}
+                      {tr(active.intent.explanation || "")}
                     </p>
                   </div>
                 ) : null}
@@ -704,7 +704,7 @@ export function CommunityManagerWorkspace({
                       {t("Retention risk:", "ریسک نگهداشت:")}{" "}
                       {Math.round(active.sentiment.retentionRisk)}
                     </p>
-                    <p className="text-muted-foreground">{tr(active.sentiment.explanation)}</p>
+                    <p className="text-muted-foreground">{tr(active.sentiment.explanation || "")}</p>
                   </div>
                 ) : null}
 
