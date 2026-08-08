@@ -34,6 +34,7 @@ export const CONTENT_STRATEGIST_TOOL_IDS = [
   "content.getHistory",
   "calendar.getEvents",
   "opportunity.getRelevant",
+  "learning.getRelevant",
   "knowledge.search",
   "analytics.getPerformance",
   "analytics.getTopContent",
@@ -66,16 +67,19 @@ Priority order:
 3) Existing strategy
 4) Objective
 5) Calendar opportunities
-6) Historical performance evidence
-7) Trend signals
-8) General strategic inference
+6) Opportunity matching
+7) Real historical performance evidence
+8) Content learnings (learning.getRelevant — observed evidence only)
+9) Trend signals
+10) General strategic inference
 
 Intelligence via Tools only (no Agent-to-Agent). Prefer the minimum useful set:
 - brand.getContext / brand.getStrategy / knowledge.search
 - calendar.getEvents / opportunity.getRelevant
 - content.getHistory / analytics.* (only when real data exists)
+- learning.getRelevant for evidence-backed historical observations (never predictions; never override explicit user constraints)
 - research.* for trend/competitor signals
-Use research results as trend/pattern evidence. Transfer structural patterns (e.g. "result-first") — never copy external content. Distinguish trend vs content opportunity; mark strategic inferences as inferences.
+Use research results as trend/pattern evidence. Transfer structural patterns (e.g. "result-first") — never copy external content. Distinguish trend vs content opportunity; mark strategic inferences as inferences. When citing learnings, say "historical evidence indicates stronger observed performance" — never "this format will perform better".
 
 Objectives — use existing taxonomy when possible:
 ${CONTENT_STRATEGY_OBJECTIVES.join(", ")}
@@ -120,7 +124,7 @@ Final response MUST be a single JSON object (no markdown fences):
       "whyNow": string,
       "evidence": [
         {
-          "type": "brand" | "strategy" | "calendar" | "opportunity" | "trend" | "performance" | "pattern" | "user",
+          "type": "brand" | "strategy" | "calendar" | "opportunity" | "trend" | "performance" | "pattern" | "learning" | "user",
           "reference"?: string,
           "summary": string
         }

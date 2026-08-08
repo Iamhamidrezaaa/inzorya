@@ -15,6 +15,7 @@ export const evidenceTypeSchema = z.enum([
   "trend",
   "performance",
   "pattern",
+  "learning",
   "user",
 ]);
 

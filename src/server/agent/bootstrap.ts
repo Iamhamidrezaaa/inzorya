@@ -12,6 +12,7 @@ import { calendarGetEventsTool } from "@/server/agent/tools/calendar-get-events"
 import { contentGetHistoryTool } from "@/server/agent/tools/content-get-history";
 import { knowledgeSearchTool } from "@/server/agent/tools/knowledge-search";
 import { opportunityGetRelevantTool } from "@/server/agent/tools/opportunity-get-relevant";
+import { learningGetRelevantTool } from "@/server/agent/tools/learning-get-relevant";
 import { researchCrawlUrlTool } from "@/server/agent/tools/research-crawl-url";
 import { researchFindTrendingTopicsTool } from "@/server/agent/tools/research-find-trending-topics";
 import { researchSearchCompetitorsTool } from "@/server/agent/tools/research-search-competitors";
@@ -28,6 +29,7 @@ export const MARKETING_READ_TOOLS = [
   contentGetHistoryTool,
   calendarGetEventsTool,
   opportunityGetRelevantTool,
+  learningGetRelevantTool,
   knowledgeSearchTool,
 ] as const;
 

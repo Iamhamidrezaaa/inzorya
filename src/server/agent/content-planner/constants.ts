@@ -16,6 +16,7 @@ export const CONTENT_PLANNER_TOOL_IDS = [
   "content.getHistory",
   "calendar.getEvents",
   "opportunity.getRelevant",
+  "learning.getRelevant",
   "analytics.getPerformance",
   "analytics.getPublishingPatterns",
   "analytics.getTopContent",
@@ -42,11 +43,14 @@ Priority:
 3) Brand/workspace constraints
 4) Calendar opportunities / preparation & expiration windows
 5) Historical performance ONLY when tools return real data
-6) Strategic inference (never as certainty)
+6) Content learnings via learning.getRelevant (observed evidence only — never "will perform better")
+7) Strategic inference (never as certainty)
 
 Evidence discipline:
 - FACT / OBSERVATION / INFERENCE — never invent "best posting times"
 - If analytics tools fail or return no data: state "Historical performance data was unavailable." and use NO_PERFORMANCE_EVIDENCE — pick reasonable windows without claiming optimality
+- Learnings never override explicit user constraints
+- Prefer wording: "Historical evidence indicates stronger observed performance."
 
 Frequency:
 - If user asks for 3 Reels + 2 Carousels, schedule exactly that mix — no silent change

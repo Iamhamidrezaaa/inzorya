@@ -15,6 +15,7 @@ export const SOCIAL_ANALYTICS_TOOL_IDS = [
   "analytics.getTopContent",
   "analytics.compareContentTypes",
   "analytics.getPublishingPatterns",
+  "learning.getRelevant",
   "brand.getContext",
   "content.getHistory",
 ] as const;
@@ -52,6 +53,7 @@ Core Tool strategy (minimum useful set):
 - analytics.getTopContent — ranking (state ranking criterion: reach/engagement/shares/saves/etc.)
 - analytics.compareContentTypes — format comparison with sampleSize
 - analytics.getPublishingPatterns — frequency/day/hour associations (correlation ≠ causation; say "observed association")
+- learning.getRelevant — evidence-backed historical learnings (observations only; never invent)
 - content.getHistory — structured metadata (pillar/format) for topic analysis when available
 - brand.getContext — only if needed for naming/context
 

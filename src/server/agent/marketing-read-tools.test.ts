@@ -68,13 +68,14 @@ describe("EPIC AGENT-002 — read-only marketing tools", () => {
     mockedPrisma.brand.findFirst.mockResolvedValue({ id: "brand_1" });
   });
 
-  it("registers all six tools with READ permission", () => {
+  it("registers marketing read tools with READ permission", () => {
     const ids = [
       "brand.getContext",
       "brand.getStrategy",
       "content.getHistory",
       "calendar.getEvents",
       "opportunity.getRelevant",
+      "learning.getRelevant",
       "knowledge.search",
     ];
     for (const id of ids) {

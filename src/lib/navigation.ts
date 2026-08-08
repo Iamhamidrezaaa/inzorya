@@ -30,6 +30,7 @@ import {
   ClipboardCheck,
   Share2,
   CalendarRange,
+  Lightbulb,
 } from "lucide-react";
 
 export type NavItem = {
@@ -134,6 +135,11 @@ export function getNavGroups(
           icon: CalendarRange,
         },
         { title: t.analytics, href: `${b}/analytics`, icon: LineChart },
+        {
+          title: "Performance Learnings",
+          href: `${b}/learnings`,
+          icon: Lightbulb,
+        },
         { title: t.workspace, href: `${b}/workspace`, icon: Briefcase },
         { title: t.settings, href: `${base}/settings`, icon: Settings },
       ],
@@ -345,6 +351,14 @@ export const pageCopy = {
     description: "Performance signals across channels and content.",
     emptyTitle: "No analytics yet",
     emptyDescription: "Connect channels and publish to see trends.",
+  },
+  learnings: {
+    title: "Performance Learnings",
+    description:
+      "Evidence-backed observations from real published content performance.",
+    emptyTitle: "No learnings yet",
+    emptyDescription:
+      "Ingest real metrics, then run analysis to extract observed patterns.",
   },
   business: {
     title: "Business",

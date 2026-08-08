@@ -190,6 +190,14 @@ const faPages: Record<keyof typeof pageCopy, PageMeta> = {
     emptyTitle: "هنوز تحلیلی نیست",
     emptyDescription: "کانال‌ها را بعداً وصل کنید — تحلیل آزمایشی امروز در دسترس است.",
   },
+  learnings: {
+    title: "یادگیری عملکرد",
+    description:
+      "مشاهدات مبتنی بر شواهد از عملکرد واقعی محتوای منتشرشده.",
+    emptyTitle: "هنوز یافته‌ای نیست",
+    emptyDescription:
+      "متریک واقعی را ingest کنید، سپس تحلیل را اجرا کنید تا الگوهای مشاهده‌شده استخراج شود.",
+  },
   automations: {
     title: "اتوماسیون‌ها",
     description: "گردش‌کارهای بصری بازاریابی — محرک، شرط و اقدام.",

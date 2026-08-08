@@ -41,6 +41,7 @@ export { brandGetStrategyTool } from "@/server/agent/tools/brand-get-strategy";
 export { contentGetHistoryTool } from "@/server/agent/tools/content-get-history";
 export { calendarGetEventsTool } from "@/server/agent/tools/calendar-get-events";
 export { opportunityGetRelevantTool } from "@/server/agent/tools/opportunity-get-relevant";
+export { learningGetRelevantTool } from "@/server/agent/tools/learning-get-relevant";
 export { knowledgeSearchTool } from "@/server/agent/tools/knowledge-search";
 export { analyticsGetPerformanceTool } from "@/server/agent/tools/analytics-get-performance";
 export { analyticsGetTopContentTool } from "@/server/agent/tools/analytics-get-top-content";

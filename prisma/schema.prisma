@@ -325,6 +325,7 @@ model Workspace {
   socialAccounts SocialAccount[]
   contentSchedules ContentSchedule[]
   socialPublications SocialPublication[]
+  contentLearnings   ContentLearning[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -427,6 +428,7 @@ model Brand {
   socialAccounts        SocialAccount[]
   contentSchedules      ContentSchedule[]
   socialPublications    SocialPublication[]
+  contentLearnings      ContentLearning[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -1632,6 +1634,99 @@ model ContentMetric {
   @@index([brandId, metricDate])
   @@index([brandId, source])
   @@index([socialPublicationId])
+}
+
+/// EPIC-018 — Content Learning & Performance Intelligence
+/// Evidence-backed OBSERVATIONS from real ContentMetric data only.
+
+enum ContentLearningType {
+  FACT
+  OBSERVATION
+  INFERENCE
+}
+
+enum ContentLearningConfidence {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ContentLearningStatus {
+  ACTIVE
+  STALE
+  ARCHIVED
+}
+
+model ContentLearning {
+  id              String                     @id @default(cuid())
+  workspaceId     String
+  brandId         String
+  platform        String?
+  dimension       String
+  type            ContentLearningType        @default(OBSERVATION)
+  statement       String                     @db.Text
+  rationale       String                     @db.Text
+  confidence      ContentLearningConfidence
+  sampleSize      Int
+  metric          String
+  periodFrom      DateTime?
+  periodTo        DateTime?
+  lastObservedAt  DateTime
+  status          ContentLearningStatus      @default(ACTIVE)
+  fingerprint     String
+  outlierPresent  Boolean                    @default(false)
+  limitations     String[]                   @default([])
+  usefulFeedback  Boolean?
+  workspace       Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand           Brand                      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  evidence        ContentLearningEvidence[]
+  versions        ContentLearningVersion[]
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@unique([brandId, fingerprint])
+  @@index([workspaceId, brandId, status])
+  @@index([brandId, dimension])
+  @@index([brandId, platform])
+  @@index([brandId, lastObservedAt])
+}
+
+model ContentLearningEvidence {
+  id                  String   @id @default(cuid())
+  learningId          String
+  contentDraftId      String?
+  socialPublicationId String?
+  contentMetricId     String?
+  evidenceType        String   @default("metric")
+  metric              String
+  value               Float?
+  summary             String
+  period              String?
+  learning            ContentLearning @relation(fields: [learningId], references: [id], onDelete: Cascade)
+  createdAt           DateTime @default(now())
+
+  @@index([learningId])
+  @@index([contentDraftId])
+  @@index([socialPublicationId])
+  @@index([contentMetricId])
+}
+
+model ContentLearningVersion {
+  id             String   @id @default(cuid())
+  learningId     String
+  version        Int
+  statement      String   @db.Text
+  rationale      String   @db.Text
+  confidence     ContentLearningConfidence
+  sampleSize     Int
+  metric         String
+  outlierPresent Boolean  @default(false)
+  snapshot       Json?
+  learning       ContentLearning @relation(fields: [learningId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@unique([learningId, version])
+  @@index([learningId])
 }
 
 model CampaignMetric {
