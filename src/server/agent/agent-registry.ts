@@ -49,6 +49,13 @@ export const FOUNDATION_AGENTS: AgentDefinition[] = [
       "Transforms an approved Content Blueprint into production-ready creative assets — no strategy replacement, publishing, or business-record persistence.",
   },
   {
+    id: "content.planner",
+    name: "Content Planner",
+    version: "1.0.0",
+    description:
+      "Proposes an internal schedule for READY content using constraints, calendar intelligence, and real analytics when available — never publishes.",
+  },
+  {
     id: "social.analytics",
     name: "Social Analytics",
     version: "1.0.0",

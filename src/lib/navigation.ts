@@ -29,6 +29,7 @@ import {
   Workflow,
   ClipboardCheck,
   Share2,
+  CalendarRange,
 } from "lucide-react";
 
 export type NavItem = {
@@ -126,6 +127,11 @@ export function getNavGroups(
           title: "Social Accounts",
           href: `${b}/social-accounts`,
           icon: Share2,
+        },
+        {
+          title: "Content Calendar",
+          href: `${b}/content-calendar`,
+          icon: CalendarRange,
         },
         { title: t.analytics, href: `${b}/analytics`, icon: LineChart },
         { title: t.workspace, href: `${b}/workspace`, icon: Briefcase },

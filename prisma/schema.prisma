@@ -243,6 +243,8 @@ model User {
   contentDraftVersions ContentDraftVersion[] @relation("ContentDraftVersionAuthor")
   contentDraftReviews ContentReview[] @relation("ContentDraftReviewer")
   socialOAuthStates SocialOAuthState[]
+  contentSchedulesCreated ContentSchedule[] @relation("ContentScheduleCreator")
+  contentScheduleHistory ContentScheduleHistory[] @relation("ContentScheduleHistoryAuthor")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -321,6 +323,7 @@ model Workspace {
   agentExecutions AgentExecution[]
   contentDrafts ContentDraft[]
   socialAccounts SocialAccount[]
+  contentSchedules ContentSchedule[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -421,6 +424,7 @@ model Brand {
   agentExecutions       AgentExecution[]
   contentDrafts         ContentDraft[]
   socialAccounts        SocialAccount[]
+  contentSchedules      ContentSchedule[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -2063,6 +2067,7 @@ model ContentDraft {
   sourceAgentExecution   AgentExecution?     @relation(fields: [sourceAgentExecutionId], references: [id], onDelete: SetNull)
   versions               ContentDraftVersion[]
   reviews                ContentReview[]
+  schedules              ContentSchedule[]
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
 
@@ -2146,6 +2151,7 @@ model SocialAccount {
   workspace         Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   brand             Brand               @relation(fields: [brandId], references: [id], onDelete: Cascade)
   credential        SocialAccountCredential?
+  schedules         ContentSchedule[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
@@ -2195,6 +2201,73 @@ model SocialOAuthState {
 
   @@index([brandId, status])
   @@index([expiresAt])
+}
+
+/// EPIC-015 — Intelligent Content Planner & Scheduling Foundation
+/// (Named ContentSchedule — Prisma ContentPlan already used by strategic planner.)
+/// PUBLISHED is intentionally absent.
+
+enum ContentScheduleStatus {
+  PLANNED
+  SCHEDULED
+  CANCELLED
+}
+
+enum ContentSchedulePlanningSource {
+  AI
+  HUMAN
+}
+
+model ContentSchedule {
+  id              String                        @id @default(cuid())
+  workspaceId     String
+  brandId         String
+  contentDraftId  String
+  channel         String
+  socialAccountId String?
+  plannedDate     DateTime                      @db.Date
+  /// HH:mm local time in timezone
+  plannedTime     String
+  timezone        String
+  status          ContentScheduleStatus         @default(PLANNED)
+  planningSource  ContentSchedulePlanningSource @default(AI)
+  rationale       String?                       @db.Text
+  evidence        Json?
+  confidence      String?
+  publishable     Boolean                       @default(false)
+  publishabilityReason String?
+  createdById     String?
+  workspace       Workspace                     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand           Brand                         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  contentDraft    ContentDraft                  @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
+  socialAccount   SocialAccount?                @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
+  createdBy       User?                         @relation("ContentScheduleCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  history         ContentScheduleHistory[]
+  createdAt       DateTime                      @default(now())
+  updatedAt       DateTime                      @updatedAt
+
+  @@index([brandId, plannedDate, status])
+  @@index([workspaceId, plannedDate])
+  @@index([contentDraftId, status])
+  @@index([socialAccountId])
+}
+
+model ContentScheduleHistory {
+  id              String                        @id @default(cuid())
+  scheduleId      String
+  plannedDate     DateTime                      @db.Date
+  plannedTime     String
+  timezone        String
+  channel         String
+  status          ContentScheduleStatus
+  planningSource  ContentSchedulePlanningSource
+  changeSummary   String?
+  changedById     String?
+  schedule        ContentSchedule               @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  changedBy       User?                         @relation("ContentScheduleHistoryAuthor", fields: [changedById], references: [id], onDelete: SetNull)
+  createdAt       DateTime                      @default(now())
+
+  @@index([scheduleId, createdAt])
 }
 
 /// EPIC-014b — AI Marketing Strategist

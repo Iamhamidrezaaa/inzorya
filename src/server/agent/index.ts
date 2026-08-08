@@ -149,6 +149,19 @@ export type {
   RunContentCreatorResult,
 } from "@/server/agent/content-creator";
 export {
+  CONTENT_PLANNER_AGENT,
+  CONTENT_PLANNER_AGENT_ID,
+  CONTENT_PLANNER_TOOL_IDS,
+  runContentPlannerAgent,
+  parseContentScheduleProposal,
+  contentScheduleProposalSchema,
+} from "@/server/agent/content-planner";
+export type {
+  ContentScheduleProposal,
+  RunContentPlannerResult,
+  PlanningMode as SchedulePlanningMode,
+} from "@/server/agent/content-planner";
+export {
   SOCIAL_ANALYTICS_AGENT,
   SOCIAL_ANALYTICS_AGENT_ID,
   SOCIAL_ANALYTICS_TOOL_IDS,

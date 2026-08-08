@@ -7,6 +7,7 @@ import {
   getDefaultToolRegistry,
   runAgentExecution,
   runContentCreatorAgent,
+  runContentPlannerAgent,
   runContentStrategistAgent,
   runMarketingDirectorAgent,
   runMarketingReadonlyAgent,
@@ -40,6 +41,7 @@ const debugBodySchema = z.object({
       "viral.content.analyst",
       "content.strategist",
       "content.creator",
+      "content.planner",
       "social.analytics",
       "marketing.director",
     ])
@@ -258,6 +260,16 @@ export async function POST(request: Request) {
             ? blueprintParsed.data
             : undefined,
           blueprintItem: itemParsed?.success ? itemParsed.data : undefined,
+        });
+        return NextResponse.json({ result });
+      }
+
+      if (agentId === "content.planner") {
+        const result = await runContentPlannerAgent({
+          message:
+            body.message ||
+            "برای محتوای READY هفته آینده یک برنامه زمانی داخلی پیشنهاد بده.",
+          ...scope,
         });
         return NextResponse.json({ result });
       }

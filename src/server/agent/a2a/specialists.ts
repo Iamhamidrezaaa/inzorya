@@ -8,6 +8,7 @@ export const DIRECTOR_ALLOWED_SPECIALISTS = [
   "viral.content.analyst",
   "content.strategist",
   "content.creator",
+  "content.planner",
   "social.analytics",
 ] as const;
 
@@ -20,6 +21,7 @@ export type DirectorIntent =
   | "CONTENT_ANALYSIS"
   | "CONTENT_PLANNING"
   | "CONTENT_CREATION"
+  | "CONTENT_SCHEDULING"
   | "PERFORMANCE_ANALYSIS"
   | "STRATEGIC_ANALYSIS"
   | "CALENDAR_OPPORTUNITY"
@@ -112,6 +114,24 @@ export const SPECIALIST_CATALOG: SpecialistCapabilityMeta[] = [
     permissionCeiling: "READ",
     description:
       "Turns an approved Content Blueprint into production-ready creative assets. Requires Blueprint. Cannot publish.",
+  },
+  {
+    id: "content.planner",
+    name: "Content Planner",
+    capabilities: [
+      "schedule_proposal",
+      "calendar_aware_scheduling",
+      "constraint_respect",
+      "conflict_detection",
+    ],
+    intents: [
+      "CONTENT_SCHEDULING",
+      "CALENDAR_OPPORTUNITY",
+      "MULTI_STEP_MARKETING_TASK",
+    ],
+    permissionCeiling: "READ",
+    description:
+      "Proposes internal dates/times for READY content using calendar, constraints, and available analytics. Never publishes or auto-confirms SCHEDULED.",
   },
   {
     id: "social.analytics",

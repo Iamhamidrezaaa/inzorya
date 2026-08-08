@@ -243,12 +243,39 @@ async function defaultInvokeSocialAnalytics(
   };
 }
 
+async function defaultInvokePlanner(
+  ctx: SpecialistInvokeContext,
+): Promise<SpecialistInvokeResult> {
+  const { runContentPlannerAgent } = await import(
+    "@/server/agent/content-planner"
+  );
+  const result = await runContentPlannerAgent({
+    message: buildSpecialistMessage(ctx),
+    userId: ctx.userId,
+    workspaceId: ctx.workspaceId,
+    brandId: ctx.brandId,
+    llm: ctx.llm,
+    toolRegistry: ctx.toolRegistry,
+    store: ctx.store,
+  });
+  return {
+    success: result.success,
+    agentId: "content.planner",
+    executionId: result.executionId,
+    status: result.status,
+    response: result.response,
+    payload: { ...result },
+    error: result.error,
+  };
+}
+
 const DEFAULT_INVOKERS: Record<DirectorSpecialistId, SpecialistInvoker> = {
   "marketing.readonly": defaultInvokeMarketingReadonly,
   "trend.intelligence": defaultInvokeTrend,
   "viral.content.analyst": defaultInvokeViral,
   "content.strategist": defaultInvokeStrategist,
   "content.creator": defaultInvokeCreator,
+  "content.planner": defaultInvokePlanner,
   "social.analytics": defaultInvokeSocialAnalytics,
 };
 
