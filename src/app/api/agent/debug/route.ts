@@ -188,6 +188,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ result });
       }
 
+      if (agentId === "social.analytics") {
+        const result = await runSocialAnalyticsAgent({
+          message:
+            body.message ||
+            "پیج من این ماه چطور عمل کرده؟",
+          ...scope,
+        });
+        return NextResponse.json({ result });
+      }
+
       const result = await runMarketingReadonlyAgent({
         message: body.message || "اطلاعات برند من چیست؟",
         ...scope,
