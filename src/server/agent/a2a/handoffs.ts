@@ -107,6 +107,46 @@ export function compactFromSpecialistResult(
     };
   }
 
+  if (agentId === "marketing.analyst") {
+    const analysis = result.analysis as Record<string, unknown> | undefined;
+    const executive = analysis?.executiveSummary as
+      | { status?: string; summary?: string }
+      | undefined;
+    if (Array.isArray(analysis?.limitations)) {
+      limitations.push(...(analysis!.limitations as string[]).map(String));
+    }
+    return {
+      sourceAgent: agentId,
+      summary:
+        executive?.summary ||
+        (executive?.status === "insufficient_data"
+          ? "Marketing analysis: insufficient data."
+          : "Marketing analysis completed."),
+      evidence: Array.isArray(analysis?.insights)
+        ? (analysis!.insights as unknown[]).slice(0, 8)
+        : [],
+      insights: Array.isArray(analysis?.insights)
+        ? (analysis!.insights as unknown[]).slice(0, 8)
+        : [],
+      limitations,
+      metricsAvailable:
+        (analysis?.performance as { available?: boolean } | undefined)
+          ?.available === true,
+      constraints,
+      extras: sanitizeHandoff({
+        scope: analysis?.scope,
+        executiveSummary: analysis?.executiveSummary,
+        learnings: Array.isArray(analysis?.learnings)
+          ? (analysis!.learnings as unknown[]).slice(0, 5)
+          : [],
+        suggestedNextSteps: Array.isArray(analysis?.suggestedNextSteps)
+          ? (analysis!.suggestedNextSteps as unknown[]).slice(0, 5)
+          : [],
+        areasToInvestigate: analysis?.areasToInvestigate,
+      }) as Record<string, unknown>,
+    };
+  }
+
   if (agentId === "trend.intelligence") {
     const intelligence = result.intelligence as
       | Record<string, unknown>

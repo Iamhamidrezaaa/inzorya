@@ -12,6 +12,7 @@ import {
   runMarketingDirectorAgent,
   runMarketingReadonlyAgent,
   runSocialAnalyticsAgent,
+  runMarketingAnalystAgent,
   runTrendIntelligenceAgent,
   runViralContentAnalystAgent,
 } from "@/server/agent";
@@ -43,6 +44,7 @@ const debugBodySchema = z.object({
       "content.creator",
       "content.planner",
       "social.analytics",
+      "marketing.analyst",
       "marketing.director",
     ])
     .optional()
@@ -279,6 +281,16 @@ export async function POST(request: Request) {
           message:
             body.message ||
             "پیج من این ماه چطور عمل کرده؟",
+          ...scope,
+        });
+        return NextResponse.json({ result });
+      }
+
+      if (agentId === "marketing.analyst") {
+        const result = await runMarketingAnalystAgent({
+          message:
+            body.message ||
+            "این ماه مارکتینگم چطور بود؟",
           ...scope,
         });
         return NextResponse.json({ result });

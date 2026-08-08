@@ -269,6 +269,36 @@ async function defaultInvokePlanner(
   };
 }
 
+async function defaultInvokeMarketingAnalyst(
+  ctx: SpecialistInvokeContext,
+): Promise<SpecialistInvokeResult> {
+  const { runMarketingAnalystAgent } = await import(
+    "@/server/agent/marketing-analyst"
+  );
+  let message = buildSpecialistMessage(ctx);
+  if (ctx.period?.from || ctx.period?.to) {
+    message += `\n[Normalized period]: from=${ctx.period.from || "?"} to=${ctx.period.to || "?"}`;
+  }
+  const result = await runMarketingAnalystAgent({
+    message,
+    userId: ctx.userId,
+    workspaceId: ctx.workspaceId,
+    brandId: ctx.brandId,
+    llm: ctx.llm,
+    toolRegistry: ctx.toolRegistry,
+    store: ctx.store,
+  });
+  return {
+    success: result.success,
+    agentId: "marketing.analyst",
+    executionId: result.executionId,
+    status: result.status,
+    response: result.response,
+    payload: { ...result },
+    error: result.error,
+  };
+}
+
 const DEFAULT_INVOKERS: Record<DirectorSpecialistId, SpecialistInvoker> = {
   "marketing.readonly": defaultInvokeMarketingReadonly,
   "trend.intelligence": defaultInvokeTrend,
@@ -277,6 +307,7 @@ const DEFAULT_INVOKERS: Record<DirectorSpecialistId, SpecialistInvoker> = {
   "content.creator": defaultInvokeCreator,
   "content.planner": defaultInvokePlanner,
   "social.analytics": defaultInvokeSocialAnalytics,
+  "marketing.analyst": defaultInvokeMarketingAnalyst,
 };
 
 export function getSpecialistInvoker(

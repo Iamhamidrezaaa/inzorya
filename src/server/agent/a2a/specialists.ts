@@ -10,6 +10,7 @@ export const DIRECTOR_ALLOWED_SPECIALISTS = [
   "content.creator",
   "content.planner",
   "social.analytics",
+  "marketing.analyst",
 ] as const;
 
 export type DirectorSpecialistId =
@@ -23,6 +24,9 @@ export type DirectorIntent =
   | "CONTENT_CREATION"
   | "CONTENT_SCHEDULING"
   | "PERFORMANCE_ANALYSIS"
+  | "MARKETING_ANALYSIS"
+  | "EXECUTIVE_REPORT"
+  | "DIAGNOSTIC_ANALYSIS"
   | "STRATEGIC_ANALYSIS"
   | "CALENDAR_OPPORTUNITY"
   | "MULTI_STEP_MARKETING_TASK"
@@ -146,7 +150,32 @@ export const SPECIALIST_CATALOG: SpecialistCapabilityMeta[] = [
     intents: ["PERFORMANCE_ANALYSIS", "MULTI_STEP_MARKETING_TASK"],
     permissionCeiling: "READ",
     description:
-      "Analyzes REAL connected social performance. Never invents metrics.",
+      "Analyzes REAL connected social performance metrics in depth. Never invents metrics. Prefer marketing.analyst for cross-domain managerial reports.",
+  },
+  {
+    id: "marketing.analyst",
+    name: "Marketing Analyst",
+    capabilities: [
+      "marketing_analysis",
+      "executive_report",
+      "diagnostic_analysis",
+      "performance_synthesis",
+      "learning_integration",
+      "strategy_alignment_read",
+      "calendar_impact_read",
+      "opportunity_context",
+    ],
+    intents: [
+      "MARKETING_ANALYSIS",
+      "PERFORMANCE_ANALYSIS",
+      "EXECUTIVE_REPORT",
+      "DIAGNOSTIC_ANALYSIS",
+      "CALENDAR_OPPORTUNITY",
+      "MULTI_STEP_MARKETING_TASK",
+    ],
+    permissionCeiling: "READ",
+    description:
+      "Business/marketing intelligence across performance, content, learnings, strategy, calendar, opportunities, and trends via Tools. READ-only. Does not mutate strategy or publish.",
   },
 ];
 

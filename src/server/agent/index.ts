@@ -183,6 +183,19 @@ export type {
   PlatformConnectionStatus,
 } from "@/server/agent/social-analytics";
 export {
+  MARKETING_ANALYST_AGENT,
+  MARKETING_ANALYST_AGENT_ID,
+  MARKETING_ANALYST_TOOL_IDS,
+  runMarketingAnalystAgent,
+  parseMarketingAnalysis,
+  marketingAnalysisSchema,
+  isMarketingAnalystToolId,
+} from "@/server/agent/marketing-analyst";
+export type {
+  MarketingAnalysis,
+  RunMarketingAnalystResult,
+} from "@/server/agent/marketing-analyst";
+export {
   DIRECTOR_ALLOWED_SPECIALISTS,
   SPECIALIST_CATALOG,
   MAX_SPECIALIST_CALLS,

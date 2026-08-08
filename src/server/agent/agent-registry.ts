@@ -63,6 +63,13 @@ export const FOUNDATION_AGENTS: AgentDefinition[] = [
       "Read-only specialist that turns real connected social performance into evidence-based insights — never invents metrics or generates content.",
   },
   {
+    id: "marketing.analyst",
+    name: "Marketing Analyst",
+    version: "1.0.0",
+    description:
+      "Read-only business/marketing intelligence across performance, content, learnings, strategy, calendar, and opportunities — never mutates or predicts.",
+  },
+  {
     id: "marketing.director",
     name: "Marketing Director",
     version: "1.0.0",
