@@ -27,6 +27,14 @@ const ALLOWED_DEBUG_TOOLS = new Set([
   "calendar.getEvents",
   "opportunity.getRelevant",
   "knowledge.search",
+  "analytics.getPerformance",
+  "analytics.getTopContent",
+  "analytics.compareContentTypes",
+  "analytics.getPublishingPatterns",
+  "research.searchWeb",
+  "research.crawlUrl",
+  "research.searchCompetitors",
+  "research.findTrendingTopics",
 ]);
 
 /**

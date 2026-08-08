@@ -2,12 +2,20 @@ import {
   getDefaultToolRegistry,
   type ToolRegistry,
 } from "@/server/agent/tool-registry";
+import { analyticsCompareContentTypesTool } from "@/server/agent/tools/analytics-compare-content-types";
+import { analyticsGetPerformanceTool } from "@/server/agent/tools/analytics-get-performance";
+import { analyticsGetPublishingPatternsTool } from "@/server/agent/tools/analytics-get-publishing-patterns";
+import { analyticsGetTopContentTool } from "@/server/agent/tools/analytics-get-top-content";
 import { brandGetContextTool } from "@/server/agent/tools/brand-get-context";
 import { brandGetStrategyTool } from "@/server/agent/tools/brand-get-strategy";
 import { calendarGetEventsTool } from "@/server/agent/tools/calendar-get-events";
 import { contentGetHistoryTool } from "@/server/agent/tools/content-get-history";
 import { knowledgeSearchTool } from "@/server/agent/tools/knowledge-search";
 import { opportunityGetRelevantTool } from "@/server/agent/tools/opportunity-get-relevant";
+import { researchCrawlUrlTool } from "@/server/agent/tools/research-crawl-url";
+import { researchFindTrendingTopicsTool } from "@/server/agent/tools/research-find-trending-topics";
+import { researchSearchCompetitorsTool } from "@/server/agent/tools/research-search-competitors";
+import { researchSearchWebTool } from "@/server/agent/tools/research-search-web";
 import { systemEchoTool } from "@/server/agent/tools/system-echo";
 
 export const MARKETING_READ_TOOLS = [
@@ -19,11 +27,26 @@ export const MARKETING_READ_TOOLS = [
   knowledgeSearchTool,
 ] as const;
 
-const ALL_FOUNDATION_TOOLS = [systemEchoTool, ...MARKETING_READ_TOOLS];
+export const PERFORMANCE_RESEARCH_TOOLS = [
+  analyticsGetPerformanceTool,
+  analyticsGetTopContentTool,
+  analyticsCompareContentTypesTool,
+  analyticsGetPublishingPatternsTool,
+  researchSearchWebTool,
+  researchCrawlUrlTool,
+  researchSearchCompetitorsTool,
+  researchFindTrendingTopicsTool,
+] as const;
+
+const ALL_FOUNDATION_TOOLS = [
+  systemEchoTool,
+  ...MARKETING_READ_TOOLS,
+  ...PERFORMANCE_RESEARCH_TOOLS,
+];
 
 let bootstrapped = false;
 
-/** Registers foundation + read-only marketing tools once. */
+/** Registers foundation + marketing + performance/research tools once. */
 export function bootstrapAgentTools(registry?: ToolRegistry): ToolRegistry {
   const target = registry ?? getDefaultToolRegistry();
   if (!registry) {
