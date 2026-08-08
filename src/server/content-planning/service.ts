@@ -186,10 +186,19 @@ export async function resolvePublishability(input: {
     };
   }
 
-  // Even if capability flag true, no publisher execution in this EPIC
+  const { getSocialPublisherRegistry } = await import(
+    "@/server/publishing/registry"
+  );
+  if (!getSocialPublisherRegistry().has(account.platform)) {
+    return {
+      publishable: false,
+      reason: "SOCIAL_PUBLISHING_NOT_AVAILABLE",
+    };
+  }
+
   return {
-    publishable: false,
-    reason: "PUBLISHING_ENGINE_NOT_IMPLEMENTED",
+    publishable: true,
+    reason: "PUBLISHABLE",
   };
 }
 

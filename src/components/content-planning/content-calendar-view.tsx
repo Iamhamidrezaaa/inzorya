@@ -40,6 +40,7 @@ type PlanRow = {
     channel: string;
     contentPayload?: { primaryHook?: string; caption?: string };
   };
+  publicationStatus?: string | null;
 };
 
 type Conflict = {
@@ -120,6 +121,35 @@ export function ContentCalendarView({
       })),
     );
     setConflicts(data.conflicts || []);
+
+    try {
+      const pubParams = new URLSearchParams({ workspaceSlug, brandSlug });
+      const pubRes = await fetch(`/api/publishing?${pubParams}`);
+      if (pubRes.ok) {
+        const pubData = await pubRes.json();
+        const bySchedule = new Map<string, string>();
+        for (const pub of pubData.publications || []) {
+          if (pub.status === "PUBLISHED") {
+            bySchedule.set(pub.contentScheduleId, "PUBLISHED");
+          } else if (
+            !bySchedule.has(pub.contentScheduleId) &&
+            pub.status === "FAILED"
+          ) {
+            bySchedule.set(pub.contentScheduleId, "FAILED");
+          } else if (!bySchedule.has(pub.contentScheduleId)) {
+            bySchedule.set(pub.contentScheduleId, pub.status);
+          }
+        }
+        setPlans((prev) =>
+          prev.map((p) => ({
+            ...p,
+            publicationStatus: bySchedule.get(p.id) || null,
+          })),
+        );
+      }
+    } catch {
+      /* ignore */
+    }
   }, [workspaceSlug, brandSlug, range.from, range.to]);
 
   useEffect(() => {
@@ -356,6 +386,11 @@ export function ContentCalendarView({
                       <Badge variant="outline" className="mt-1">
                         {statusLabel(p.status)}
                       </Badge>
+                      {p.publicationStatus === "PUBLISHED" ? (
+                        <Badge variant="default" className="mt-1">
+                          PUBLISHED
+                        </Badge>
+                      ) : null}
                     </button>
                   ))}
                 </div>
@@ -433,6 +468,13 @@ function PlanCard({
               ? "قابل انتشار"
               : `انتشار: ${plan.publishabilityReason || "UNAVAILABLE"}`}
           </p>
+          {plan.publicationStatus ? (
+            <p className="text-[11px] font-medium">
+              {plan.publicationStatus === "PUBLISHED"
+                ? "منتشرشده"
+                : plan.publicationStatus}
+            </p>
+          ) : null}
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">

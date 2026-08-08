@@ -288,7 +288,12 @@ export function createSocialAccountsService(
         throw e;
       }
 
-      const caps = provider.declaredCapabilities();
+      const caps =
+        provider.platform === "linkedin"
+          ? (
+              await import("@/server/social/providers/linkedin")
+            ).linkedInCapabilitiesFromScopes(completed.tokens.scopes)
+          : provider.declaredCapabilities();
       const existing = await db.socialAccount.findFirst({
         where: {
           brandId: oauthState.brandId,

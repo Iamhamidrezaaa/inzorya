@@ -513,9 +513,10 @@ describe("EPIC-014 Social Account Integration", () => {
     expect(reviewed.status).toBe("IN_REVIEW");
   });
 
-  it("TEST 20: live LinkedIn provider declares no unverified publishing", () => {
+  it("TEST 20: live LinkedIn provider declares text publishing path", () => {
     const caps = linkedInProvider.declaredCapabilities();
-    expect(caps.publishing).toBe(false);
+    expect(caps.publishing).toBe(true);
+    expect(caps.mediaUpload).toBe(false);
     expect(caps.analytics).toBe(false);
     expect(caps.connect).toBe(true);
     expect(caps.accountInfo).toBe(true);

@@ -33,18 +33,34 @@ export type LinkedInHttpClient = {
   }>;
 };
 
-/** Declared capabilities — publishing NOT verified in this EPIC. */
+/** Declared capabilities — text publishing path implemented (MOCK_VERIFIED). */
 export const LINKEDIN_CAPABILITIES: SocialCapabilityFlags = {
   connect: true,
   accountInfo: true,
   profile: true,
-  publishing: false,
+  publishing: true,
   analytics: false,
   mediaUpload: false,
   deleteContent: false,
 };
 
-export const LINKEDIN_SCOPES = ["openid", "profile", "email"] as const;
+export const LINKEDIN_SCOPES = [
+  "openid",
+  "profile",
+  "email",
+  "w_member_social",
+] as const;
+
+export function linkedInCapabilitiesFromScopes(
+  scopes: string[],
+): SocialCapabilityFlags {
+  const normalized = scopes.map((s) => s.toLowerCase());
+  const canPublish = normalized.some((s) => s.includes("w_member_social"));
+  return {
+    ...LINKEDIN_CAPABILITIES,
+    publishing: canPublish,
+  };
+}
 
 export function getLinkedInConfig() {
   const clientId = (process.env.LINKEDIN_CLIENT_ID || "").trim();

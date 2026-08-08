@@ -92,6 +92,29 @@ export function ContentWorkspaceDetail({
   const [draft, setDraft] = useState<DraftDetail | null>(null);
   const [versions, setVersions] = useState<VersionRow[]>([]);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [pubStatus, setPubStatus] = useState<{
+    status: string;
+    publication?: {
+      id: string;
+      status: string;
+      externalPostId?: string | null;
+      failureMessageSafe?: string | null;
+    } | null;
+  } | null>(null);
+  const [publishPreview, setPublishPreview] = useState<{
+    ok: boolean;
+    preview?: {
+      platform: string;
+      accountName: string | null;
+      caption: string;
+      scheduledAt: string | null;
+      publishingCapability: boolean;
+      draftStatus: string;
+      scheduleStatus: string;
+    };
+    errors?: Array<{ code: string; message: string }>;
+    contentScheduleId?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -127,6 +150,37 @@ export function ContentWorkspaceDetail({
         productionNotes: (d.contentPayload.productionNotes || []).join("\n"),
         coverText: d.contentPayload.cover?.text || "",
       });
+
+      // Publishing status (derived from SocialPublication — separate from draft status)
+      try {
+        const pubRes = await fetch(
+          `/api/publishing?${params}&draftId=${draftId}`,
+        );
+        // fallback: list and filter
+        if (pubRes.ok) {
+          const pubData = await pubRes.json();
+          const pubs = (pubData.publications || []).filter(
+            (p: { contentDraftId: string }) => p.contentDraftId === draftId,
+          );
+          if (pubs.some((p: { status: string }) => p.status === "PUBLISHED")) {
+            setPubStatus({
+              status: "PUBLISHED",
+              publication: pubs.find(
+                (p: { status: string }) => p.status === "PUBLISHED",
+              ),
+            });
+          } else if (pubs[0]) {
+            setPubStatus({
+              status: pubs[0].status === "FAILED" ? "FAILED" : pubs[0].status,
+              publication: pubs[0],
+            });
+          } else {
+            setPubStatus({ status: "NOT_PUBLISHED", publication: null });
+          }
+        }
+      } catch {
+        setPubStatus({ status: "NOT_PUBLISHED", publication: null });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا");
     } finally {
@@ -216,6 +270,91 @@ export function ContentWorkspaceDetail({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Regenerate failed");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خطا");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadPublishPreview() {
+    setBusy(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        workspaceSlug,
+        brandSlug,
+        status: "SCHEDULED",
+      });
+      const plansRes = await fetch(`/api/content-plans?${params}`);
+      const plansData = await plansRes.json();
+      if (!plansRes.ok) throw new Error(plansData.error || "Failed");
+      const plan = (plansData.plans || []).find(
+        (p: { contentDraftId: string; status: string }) =>
+          p.contentDraftId === draftId && p.status === "SCHEDULED",
+      );
+      if (!plan) {
+        setPublishPreview({
+          ok: false,
+          errors: [
+            {
+              code: "INVALID_STATUS",
+              message: "No SCHEDULED plan found for this content.",
+            },
+          ],
+        });
+        return;
+      }
+      const res = await fetch("/api/publishing/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceSlug,
+          brandSlug,
+          contentScheduleId: plan.id,
+          socialAccountId: plan.socialAccountId || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Validate failed");
+      setPublishPreview({ ...data, contentScheduleId: plan.id });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خطا");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function publishNow() {
+    if (!publishPreview?.contentScheduleId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/publishing/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceSlug,
+          brandSlug,
+          contentScheduleId: publishPreview.contentScheduleId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Publish failed");
+      if (data.publication?.status === "PUBLISHED") {
+        setPubStatus({ status: "PUBLISHED", publication: data.publication });
+      } else if (data.error || data.publication?.status === "FAILED") {
+        setPubStatus({
+          status: "FAILED",
+          publication: data.publication,
+        });
+        setError(
+          data.error?.message ||
+            data.publication?.failureMessageSafe ||
+            "Publishing failed.",
+        );
+      }
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا");
@@ -482,6 +621,83 @@ export function ContentWorkspaceDetail({
           </div>
         </section>
       )}
+
+      <section className="space-y-3 rounded-xl border border-border/80 p-5">
+        <h2 className="text-sm font-medium text-muted-foreground">انتشار</h2>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span>وضعیت انتشار:</span>
+          <Badge variant="secondary">
+            {pubStatus?.status === "PUBLISHED"
+              ? "منتشرشده"
+              : pubStatus?.status === "FAILED"
+                ? "ناموفق"
+                : pubStatus?.status === "PUBLISHING"
+                  ? "در حال انتشار"
+                  : pubStatus?.status === "SCHEDULED"
+                    ? "زمان‌بندی‌شده"
+                    : "منتشرنشده"}
+          </Badge>
+          {pubStatus?.publication?.externalPostId ? (
+            <span className="text-xs text-muted-foreground">
+              Post ID: {pubStatus.publication.externalPostId}
+            </span>
+          ) : null}
+        </div>
+        {pubStatus?.publication?.failureMessageSafe ? (
+          <p className="text-sm text-destructive">
+            {pubStatus.publication.failureMessageSafe}
+          </p>
+        ) : null}
+        {status === "READY" ? (
+          <div className="space-y-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => void loadPublishPreview()}
+            >
+              پیش‌نمایش انتشار
+            </Button>
+            {publishPreview ? (
+              <div className="rounded-lg border border-border/60 p-3 text-sm space-y-1">
+                <p>
+                  پلتفرم: {publishPreview.preview?.platform || "—"} · حساب:{" "}
+                  {publishPreview.preview?.accountName || "—"}
+                </p>
+                <p className="line-clamp-3 text-muted-foreground">
+                  {publishPreview.preview?.caption || "—"}
+                </p>
+                <p>
+                  زمان: {publishPreview.preview?.scheduledAt || "—"} · قابلیت
+                  انتشار:{" "}
+                  {publishPreview.preview?.publishingCapability
+                    ? "فعال"
+                    : "غیرفعال"}
+                </p>
+                {!publishPreview.ok ? (
+                  <ul className="text-destructive text-xs">
+                    {(publishPreview.errors || []).map((e) => (
+                      <li key={e.code}>{e.message}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <Button
+                  size="sm"
+                  disabled={
+                    busy ||
+                    !publishPreview.ok ||
+                    !publishPreview.preview?.publishingCapability ||
+                    !publishPreview.contentScheduleId
+                  }
+                  onClick={() => void publishNow()}
+                >
+                  انتشار
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium text-muted-foreground">شواهد</h2>
