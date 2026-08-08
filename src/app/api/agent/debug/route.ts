@@ -11,12 +11,26 @@ import {
 const debugBodySchema = z.object({
   workspaceSlug: z.string().min(1),
   brandSlug: z.string().min(1),
-  action: z.enum(["echo", "list_tools", "list_agents"]).default("echo"),
+  action: z
+    .enum(["echo", "list_tools", "list_agents", "run_tool"])
+    .default("echo"),
   message: z.string().optional(),
+  toolId: z.string().optional(),
+  toolInput: z.record(z.string(), z.unknown()).optional(),
 });
 
+const ALLOWED_DEBUG_TOOLS = new Set([
+  "system.echo",
+  "brand.getContext",
+  "brand.getStrategy",
+  "content.getHistory",
+  "calendar.getEvents",
+  "opportunity.getRelevant",
+  "knowledge.search",
+]);
+
 /**
- * Authenticated debug/test endpoint for Agent Runtime foundation.
+ * Authenticated debug/test endpoint for Agent Runtime + read-only tools.
  * Not a public Agent API — requires session + workspace/brand access.
  */
 export async function POST(request: Request) {
@@ -52,6 +66,36 @@ export async function POST(request: Request) {
       return NextResponse.json({
         agents: getDefaultAgentRegistry().listAgents(),
       });
+    }
+
+    if (body.action === "run_tool") {
+      const toolId = body.toolId;
+      if (!toolId || !ALLOWED_DEBUG_TOOLS.has(toolId)) {
+        return NextResponse.json(
+          { error: "Tool not allowed for debug execution." },
+          { status: 400 },
+        );
+      }
+
+      const result = await runAgentExecution({
+        agentId: "system.test",
+        userId: user.id!,
+        workspaceId: access.workspace.id,
+        brandId: access.brand.id,
+        input: {
+          toolCalls: [
+            {
+              toolId,
+              input:
+                toolId === "system.echo"
+                  ? { message: body.message ?? "hello from Inzorya" }
+                  : (body.toolInput ?? {}),
+            },
+          ],
+        },
+      });
+
+      return NextResponse.json({ result });
     }
 
     const result = await runAgentExecution({

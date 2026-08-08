@@ -36,6 +36,13 @@ export {
   resetAgentBootstrap,
 } from "@/server/agent/bootstrap";
 export { systemEchoTool } from "@/server/agent/tools/system-echo";
+export { brandGetContextTool } from "@/server/agent/tools/brand-get-context";
+export { brandGetStrategyTool } from "@/server/agent/tools/brand-get-strategy";
+export { contentGetHistoryTool } from "@/server/agent/tools/content-get-history";
+export { calendarGetEventsTool } from "@/server/agent/tools/calendar-get-events";
+export { opportunityGetRelevantTool } from "@/server/agent/tools/opportunity-get-relevant";
+export { knowledgeSearchTool } from "@/server/agent/tools/knowledge-search";
+export { MARKETING_READ_TOOLS } from "@/server/agent/bootstrap";
 export {
   createMemoryAgentRuntimeStore,
   executeRegisteredTool,
