@@ -1,0 +1,1645 @@
+================================================================================
+INZORYA — CURRENT IMPLEMENTATION CONTEXT AUDIT
+Extracted from agent session 65c87c3f (2026-08-08)
+Read-only · grounded in actual codebase
+================================================================================
+
+# گزارش ممیزی وضعیت فعلی Inzorya  
+**فقط خواندن · مبتنی بر کد واقعی · بدون پیشنهاد معماری آینده**
+
+وضعیت کلی: **یک اپلیکیشن Next.js کامل با اسکیمای غنی، سرویس‌های دامنه‌ای واقعی، و پلتفرم AI که عملاً همیشه mock است.** معماری Agent (goal → plan → tool → observe → iterate) وجود ندارد.
+
+---
+
+## 1. APPLICATION MAP
+
+| لایه | واقعیت | مسیرهای کلیدی |
+|---|---|---|
+| Framework | Next.js **16.2.11** (App Router, Turbopack) | `package.json`, `src/app/` |
+| Runtime | Node.js · React **19** | — |
+| Frontend | Client/Server Components · Tailwind 4 · Radix · Zustand · TanStack Query · Framer Motion · Recharts · XYFlow | `src/components/`, `src/hooks/` |
+| Backend | Route Handlers در همان اپ (بدون Nest/Express جدا) | `src/app/api/**`, `src/server/services/**` |
+| Database | PostgreSQL (Docker روی `:5433`) | `docker-compose` / `.env` |
+| ORM | Prisma **6.19** · **~۱۸۳ مدل** | `prisma/schema.prisma` |
+| Auth | NextAuth v5 (Credentials + PrismaAdapter) · session JWT | `src/lib/auth.ts`, `src/lib/auth.config.ts`, `src/middleware.ts` |
+| Authorization | عضویت Workspace + دسترسی Brand در سرویس‌ها (`getWorkspaceForUser` و مشابه) | `src/server/services/workspace.ts` |
+| API | REST-ish JSON تحت `/api/*` | ۵۱ فایل `route.ts` |
+| Background jobs | **ندارد** (صف AI فقط جدول DB؛ بدون worker) | `src/server/ai/queue/store.ts` |
+| Queues / Redis | ENVهای Upstash هست؛ **مصرف runtime ندارد** | `.env.example` |
+| Caching | فقط React Query client-side | — |
+| External integrations | Meta Graph **sandbox-first**؛ بقیه ENV بدون SDK | `src/server/services/meta/integration.ts` |
+| AI | پلتفرم داخلی mock-first | `src/server/ai/**` |
+| File/image | آپلود لوگو/مدیا به DB/URL؛ تولید تصویر AI نیست | `api/brands/logo`, `api/media`, `api/brain/assets` |
+| Deployment | اسکریپت‌های `next build`/`start`؛ بدون IaC مشهود در repo | `package.json` |
+
+**SDKهای LLM در dependencies نیستند** (نه `openai` نه `@anthropic-ai/sdk`).
+
+---
+
+## 2. CURRENT ROUTES
+
+Auth middleware matcher: `/w/*`, `/onboarding/*`, `/dashboard`, `/login`, `/register`, `/forgot-password`  
+(`src/middleware.ts`). `/` و `/api/*` در matcher نیستند؛ APIها داخل handler با `auth()` محافظت می‌شوند.
+
+### Public
+| Path | Purpose | Status | Data |
+|---|---|---|---|
+| `/` | لندینگ مارکتینگ | FUNCTIONAL UI | Static/i18n · `src/app/(marketing)/page.tsx` |
+
+### Authentication
+| Path | Status |
+|---|---|
+| `/login`, `/register`, `/forgot-password` | FUNCTIONAL · DB User |
+| `/api/auth/[...nextauth]`, `/api/register`, `/api/forgot-password` | FUNCTIONAL |
+
+### Onboarding
+| Path | Status |
+|---|---|
+| `/onboarding/business` | FUNCTIONAL · wizard → `BusinessProfile` |
+| `/onboarding/brand` | FUNCTIONAL · برند ساده |
+
+### Workspace / Dashboard shell
+| Path | Status |
+|---|---|
+| `/dashboard` | Redirect به `/w/{slug}/home` |
+| `/w/{ws}/home` | FUNCTIONAL · داده واقعی + فرصت‌ها |
+| `/w/{ws}/activity`, `/settings/**`, `/team/**`, `/integrations/**` | PARTIAL / UI+DB متفاوت |
+
+### Brand (نمونه مهم — همه زیر `/w/{ws}/b/{brand}/`)
+| Path | Status | Real/Mock |
+|---|---|---|
+| `brain`, `brain/interview` | FUNCTIONAL | DB |
+| `strategy` | FUNCTIONAL | DB |
+| `strategist` | FUNCTIONAL UI | AI **mock** |
+| `planner`, `creator` | FUNCTIONAL UI | AI mock → DB |
+| `opportunities` | FUNCTIONAL | Deterministic + AI mock discover |
+| `matching` | FUNCTIONAL | Deterministic scoring |
+| `recommendations` | FUNCTIONAL | Eligibility real + AI mock generate |
+| `calendar` | FUNCTIONAL | Catalog DB |
+| `knowledge-graph` | FUNCTIONAL admin | Taxonomy DB |
+| `knowledge` | FUNCTIONAL docs | `KnowledgeDocument` |
+| `community` | FUNCTIONAL UI | Inbox seed + AI mock assist |
+| `inbox`, `contacts`, `channels` | FUNCTIONAL | DB · Meta sandbox |
+| `studio`, `campaigns`, `media` | FUNCTIONAL/PARTIAL | DB |
+| `analytics` | UI | **Mock provider** |
+| `decisions`, `work`, `pipeline` | FUNCTIONAL UI | AI mock + DB |
+| `automations` | UI editor | Mock schedule · DB graph |
+| `content`, `workspace` | Hub UX | لینک به ماژول‌ها |
+| `agents`, `tasks` | UI shell | Reserved / thin |
+
+### AI admin
+| Path | Status |
+|---|---|
+| Settings AI / `api/ai` | Platform admin · mock executions |
+
+---
+
+## 3. DATABASE — ACTUAL DATA MODEL
+
+~**۱۸۳ مدل** در `prisma/schema.prisma`. حدود **۱۷۱** با `prisma.*` در `src/` لمس می‌شوند؛ تعدادی فقط schema/adapter.
+
+### فعال و پرکاربرد
+| خانواده | مدل‌های اصلی | استفاده |
+|---|---|---|
+| Auth/Workspace | User, Workspace, WorkspaceMember, Brand | ثبت‌نام، شل، دسترسی |
+| Brain | BusinessBrain, BusinessQuestion, BusinessAnswer, BrandVoice, BrandAsset, BusinessBrainVersion | مصاحبه + امتیاز |
+| Strategy | MarketingStrategy, AudiencePersona, Competitor, ContentPillar, RoadmapTask | صفحه Strategy |
+| BusinessProfile | BusinessProfile | Onboarding |
+| Inbox | Contact, Conversation, Message, … | Inbox + Community |
+| Content studio | ContentItem, Campaign, MediaAsset, … | Studio |
+| Planner/Creator | ContentPlan, ContentPlanItem, GenerationSession, GeneratedContent, … | Planner/Creator |
+| Calendar | MarketingEvent + Country/Tag/Season/Import/… | Calendar admin |
+| Knowledge Graph | KnowledgeNode, KnowledgeRelation, KnowledgeRelationType, MarketingEventKnowledge | Graph service |
+| Opportunities | BusinessOpportunity, OpportunityScore, Evidence, Rule, Override, Conflict, Alert, … | Matching + Opportunities |
+| Campaign recs | CampaignRecommendation, CampaignScenario, CampaignExecutionPlan, … | Recommendations |
+| Strategist | StrategyConversation, StrategyMessage, Recommendation, BusinessMemory, … | AI Assistant |
+| Work/Decisions | MarketingTask, ExecutiveBrief, Decision*, … | Work + Decisions |
+| AI platform | AITask, AITaskExecution, Prompt*, MemoryRecord, UsageMetric, CostRecord, … | `runAITask` |
+| Meta vault | ConnectedAccount, AccessToken, RefreshToken, OAuthSession, … | Sandbox/OAuth |
+
+### کم‌استفاده / schema سنگین بدون منطق کامل
+بسیاری از مدل‌های taxonomy (`Industry`, `BusinessType`, `CTA`, …)، بخشی از analytics (`Kpi`, `Insight` با seed mock)، صف بدون worker.
+
+**Memory به‌عنوان vector store:** فیلد `embeddingRef` هست؛ **embedding واقعی نیست** (`NoopEmbeddingService`).
+
+---
+
+## 4. BUSINESS BRAIN — FUNCTIONAL
+
+**ورودی کاربر:** مصاحبه ساختاریافته (`BRAIN_QUESTIONS` در `src/lib/business-brain.ts`) + voice + assets.  
+**ذخیره:** `BusinessAnswer` / `BrandVoice` / `BrandAsset` روی `BusinessBrain`.  
+**اعتبارسنجی:** کلید سؤال از کاتالوگ؛ امتیاز `refreshBrainScore`.  
+**نسخه‌برداری:** `BusinessBrainVersion` / `snapshotBrain`.  
+**مصرف‌کنندگان:**
+- `composeContext` → provider `business_brain` (`src/server/ai/context/engine.ts`)
+- Strategist / Planner / Creator / Community از طریق context providers
+- Matching قطعی عمدتاً از Brand/Knowledge/Event — **نه لزوماً تمام جواب‌های Brain**
+
+**مسیر نمونه:**  
+Interview UI → `POST /api/brain` → `BusinessAnswer` → `composeContext` → `runAITask` (mock) → پاسخ ساختگی با echoی context.
+
+**AI interpretation جدا:** ندارد (فقط context JSON کوتاه).  
+**حافظه جداگانه Brain:** نسخه‌ها + memory records عمومی AI؛ نه memory اختصاصی مصاحبه.
+
+---
+
+## 5. KNOWLEDGE GRAPH — FUNCTIONAL (admin) / PARTIAL (مصرف Agent)
+
+- مدل‌ها: `KnowledgeNode`, `KnowledgeRelation`, `KnowledgeRelationType`, لینک به رویداد
+- سرویس: `src/server/services/knowledge-graph.ts`
+- API: `/api/knowledge-graph`
+- UI: workspace Knowledge Graph
+- Seed/ensure کاتالوگ taxonomy
+- Matching از `knowledgeLinks` رویدادها استفاده می‌کند
+
+**آیا Agent می‌تواند query کند؟**  
+**خیر به‌معنای Agent.** جستجو از طریق سرویس/API انسانی است. در `composeContext` فقط **تعداد** `KnowledgeDocument` می‌آید، نه traversal گراف. ابزار tool-calling برای گراف وجود ندارد.
+
+---
+
+## 6. CALENDAR INTELLIGENCE — FUNCTIONAL (کاتالوگ داخلی)
+
+پیاده‌سازی‌شده: رویدادها، دسته، کشور/منطقه، فصل، تگ، ترجمه/localization، import/export، جستجو، upcoming، admin CRUD  
+فایل‌ها: `calendar.ts`, `calendar-catalog.ts`, `/api/calendar`, `/api/calendar/sync`
+
+منابع خارجی Calendarific/Eventbrite: ENV هست؛ **pipeline واقعی به آن‌ها در کد محصولی قطعی دیده نشد** (کاتالوگ داخلی/import).
+
+### «فرصت‌های ۳۰ روز آینده این برند؟»
+| لایه | واقعیت |
+|---|---|
+| داده + matching | بله — `runDeterministicMatching({ horizonDays })` |
+| Discover AI | افق پیش‌فرض ۹۰ روز · خروجی mock |
+| UI آماده «۳۰ روز NL» | خیر |
+| پاسخ محصولی آماده | **PARTIAL** — با `horizonDays: 30` روی matching API ممکن است؛ Agent/NL نیست |
+
+---
+
+## 7. MATCHING / OPPORTUNITY ENGINE — FUNCTIONAL (deterministic) + PARTIAL (AI discover)
+
+**جریان قطعی:**  
+Brand context → MarketingEvent (افق) → قوانین `OpportunityRule` → امتیاز چندبعدی → `BusinessOpportunity` + `OpportunityScore` + Evidence → Override/Conflict/History  
+
+فایل: `src/server/services/opportunity-matching.ts` · `runDeterministicMatching`  
+API: `/api/matching`
+
+**جریان AI discover:**  
+`discoverOpportunities` → `runAITask("opportunity.match")` → **MockAIProvider** JSON  
+
+**نوع:** hybrid در سطح محصول، ولی **نیمه AI همیشه mock** با پیش‌فرض فعلی.
+
+---
+
+## 8. CAMPAIGN RECOMMENDATIONS — PARTIAL / MOCK AI
+
+- Eligibility روی فرصت‌های scored واقعی (`listEligibleOpportunities`)
+- Generate: `runAITask("campaign.generate")` → mock سناریو/پلن
+- ذخیره: `CampaignRecommendation`, scenarios, execution plans, impact estimates, learning signals
+- Actions: handoff به planner، schedule review، … در سرویس
+
+**امروز AI چه می‌سازد؟** خروجی **ساختاریافته mock** از `MockAIProvider`، نه LLM زنده.
+
+---
+
+## 9. AI INFRASTRUCTURE
+
+| جزء | وضعیت |
+|---|---|
+| `runAITask` executor | IMPLEMENTED |
+| Task registry (~۱۵ task) | IMPLEMENTED |
+| Prompt repository | IMPLEMENTED (برای mock) |
+| Context composer | IMPLEMENTED |
+| Router / model registry | IMPLEMENTED · اولویت mock |
+| OpenAI/Anthropic/Gemini/OpenRouter adapters | **STUB** — `generate()` همیشه throw |
+| `AI_FORCE_MOCK` پیش‌فرض | **true** (`.env.example`) |
+| Streaming محصولی | types فقط |
+| Embeddings / RAG / vector | Noop / NOT |
+| Tool calling | NOT |
+| Agent loop | NOT |
+| Queue worker | schema/list فقط |
+| Usage/cost/error tables | نوشته می‌شود روی اجرای mock |
+
+**Tasks ثبت‌شده:**  
+`platform.echo`, `platform.inspect_context`, `content.generate_caption`, `campaign.generate`, `conversation.analyze`, `analytics.summarize`, `lead.classify`, `text.rewrite`, `strategist.advise`, `planner.generate`, `creator.generate`, `opportunity.match`, `community.assist`, `decision.brief`, `task.assist`
+
+**برای همه:** LLM واقعی؟ **خیر (با تنظیمات پیش‌فرض).** Provider: **mock**. نتیجه در جداول دامنه + `AITaskExecution` ذخیره می‌شود.
+
+---
+
+## 10. AGENT CAPABILITIES ALREADY PRESENT
+
+**Agent architecture: NOT IMPLEMENTED.**
+
+موجود است:
+- فراخوانی‌های AI تک‌مرحله‌ای (`runAITask`)
+- UIهایی با نام «Agent» reserved (`/agents`)
+- automation graph (ویرایشگر flow بدون worker واقعی)
+
+موجود نیست:
+- goal interpretation loop
+- tool selection
+- multi-step execution/observation
+- function/tool calling به ابزارهای دامنه
+
+**AI function ≠ Agent.** اینجا فقط AI functions/task runners هستند.
+
+---
+
+## 11. CONTENT SYSTEM
+
+| قابلیت | وضعیت |
+|---|---|
+| Content planning | FUNCTIONAL · AI mock → DB |
+| Calendar slots در plan | FUNCTIONAL |
+| Types (post/story/reel/…) | FUNCTIONAL enums/fields |
+| Creator captions/hooks/hashtags | MOCK AI → DB |
+| Image generation | NOT |
+| Studio drafts/approvals | PARTIAL · DB workflow |
+| Scheduling field | PARTIAL · status SCHEDULED در studio |
+| Publishing به شبکه | NOT (واقعی) |
+
+---
+
+## 12. SOCIAL MEDIA INTEGRATIONS
+
+| پلتفرم | واقعیت |
+|---|---|
+| Instagram / Facebook / Messenger (Meta) | OAuth مسیر + **sandbox connect** · توکن رمزنگاری‌شده · Graph publish وقتی `META_API_ENABLED=true` — پیش‌فرض **false** |
+| LinkedIn | ENV فقط · بدون client کامل |
+| X / TikTok / YouTube / Pinterest | کاتالوگ کانال/mock UI · بدون OAuth واقعی مشهود |
+
+Webhooks Meta: verify/signature scaffolding · بدون اتوماسیون کامل محصولی.  
+Publish/analytics/comments/DMs زنده از Graph: **نه در حالت پیش‌فرض.**
+
+---
+
+## 13. ANALYTICS — MOCK
+
+منبع: `src/lib/analytics/mock-provider.ts`  
+API: `/api/analytics` → `{ source: "mock" }`  
+جداول analytics می‌توانند snapshot بگیرند ولی ingestion واقعی GA/GSC/social **نیست**.
+
+---
+
+## 14. COMMUNITY MANAGEMENT — PARTIAL / MOCK AI
+
+- بازیابی نظرات زنده شبکه: **نه** (داده inbox/seed محلی)
+- Classify / suggest reply: `community.assist` → **mock**
+- Auto-reply rules: مدل/UI · ارسال واقعی شبکه نه
+- DM واقعی: نه
+- تاریخچه گفتگو: Conversation/Message در Postgres (inbox)
+- Escalation/notify: notifications داخلی محدود
+
+---
+
+## 15. MEMORY
+
+| نوع | واقعیت |
+|---|---|
+| User memory | ضعیف · پروفایل User |
+| Brand memory | Brain + BusinessProfile + BusinessMemory (strategist) |
+| Conversation memory | StrategyMessage + ConversationMemory مدل |
+| Content memory | ContentItem / Generated* |
+| Performance memory | CampaignLearning + analytics mock |
+| Agent memory | NOT |
+| Long-term MemoryRecord | write/read متنی · بدون embedding |
+
+---
+
+## 16. BACKGROUND / AUTOMATION
+
+| مورد | واقعیت |
+|---|---|
+| Cron / workers | NOT |
+| Redis/Upstash runtime | NOT |
+| AI queue | جدول بدون process |
+| Automations «SCHEDULE» | mock در catalog |
+| Email (Resend) | ENV · forgot-password بدون ارسال واقعی قطعی |
+| Webhooks Meta | endpoint موجود · وابسته به enable |
+
+**تقریباً هیچ چیز بدون درخواست کاربر به‌صورت پایدار اجرا نمی‌شود.**
+
+---
+
+## 17. EXTERNAL SERVICES
+
+| Service | ENV | Code usage | Functional? | Purpose |
+|---|---|---|---|---|
+| PostgreSQL | DATABASE_URL | Prisma | Yes | DB |
+| NextAuth | AUTH_SECRET/URL | auth | Yes | Auth |
+| Token vault | TOKEN_ENCRYPTION_KEY | Meta tokens | Yes (encrypt) | Secrets |
+| Meta Graph | META_* | `meta/integration.ts` | Partial (sandbox default) | Social |
+| OpenAI | OPENAI_API_KEY | stub only | No | Planned LLM |
+| Anthropic | ANTHROPIC_API_KEY | stub only | No | Planned LLM |
+| Google AI | GOOGLE_AI_API_KEY | stub | No | Planned LLM |
+| OpenRouter | OPENROUTER_API_KEY | stub | No | Planned LLM |
+| Resend | RESEND_API_KEY | little/none product | No | Email |
+| Firecrawl | FIRECRAWL_API_KEY | no product client | No | Crawl |
+| Tavily | TAVILY_API_KEY | none | No | Search |
+| Calendarific | CALENDARIFIC_API_KEY | none solid | No | Events |
+| Eventbrite | EVENTBRITE_API_TOKEN | none solid | No | Events |
+| Upstash Redis | UPSTASH_* | none | No | Queue/cache |
+| LinkedIn OAuth | LINKEDIN_* | none complete | No | Social |
+| Groq/Mistral/Apify/Semrush/Exa | — | not in deps/code | No | — |
+
+---
+
+## 18. API INVENTORY (مهم‌ها)
+
+نمونه وضعیت‌دار:
+
+| Method | Path | Auth | DB | Ext | AI | Status |
+|---|---|---|---|---|---|---|
+| * | `/api/auth/[...nextauth]` | — | Yes | — | — | Live |
+| POST | `/api/register` | No | Yes | — | — | Live |
+| * | `/api/brain` | Yes | Yes | — | — | Live |
+| * | `/api/strategist` | Yes | Yes | — | Mock | Live |
+| * | `/api/planner`, `/creator` | Yes | Yes | — | Mock | Live |
+| * | `/api/matching` | Yes | Yes | — | — | Live deterministic |
+| * | `/api/opportunities` | Yes | Yes | — | Mock discover | Live |
+| * | `/api/recommendations` | Yes | Yes | — | Mock gen | Live |
+| * | `/api/calendar` | Yes | Yes | — | — | Live |
+| * | `/api/knowledge-graph` | Yes | Yes | — | — | Live |
+| * | `/api/community` | Yes | Yes | — | Mock | Live |
+| * | `/api/analytics` | Yes | optional | — | — | Mock |
+| * | `/api/integrations/meta` | Yes | Yes | Meta optional | — | Sandbox/Live gate |
+| * | `/api/ai` | Yes | Yes | — | Mock | Admin |
+| * | `/api/inbox`, `/contacts`, `/channels` | Yes | Yes | — | — | Live |
+
+~۵۱ route؛ بیشتر به سرویس دامنه وصل‌اند، نه dead.
+
+---
+
+## 19. USER JOURNEYS — کجا قطع می‌شود
+
+**A Register → Workspace → Brand → Dashboard**  
+تا Home: **کار می‌کند.**
+
+**B Create brand → Business info → Strategy**  
+Onboarding + Brain + Strategy: **کار می‌کند.**
+
+**C Calendar → Event → Matching → Opportunity → Recommendation**  
+کاتالوگ → matching قطعی → فرصت → generate recommendation: **کار می‌کند تا خروجی mock AI.**
+
+**D Recommendation → Campaign → Planner → Content**  
+handoff/planner/creator/studio DB: **PARTIAL** · انتشار شبکه قطع است.
+
+**E Social connect → Content → Approval → Publishing**  
+Sandbox connect: بله · Publish واقعی: **قطع در Meta disabled.**
+
+**F Analytics → Performance → Learning → Recommendation**  
+Analytics mock · learning signals محدود از feedback فرصت/کمپین: **PARTIAL ضعیف.**
+
+---
+
+## 20. WHAT CAN AN AGENT ACTUALLY DO TODAY?
+
+| Agent capability | Available? | Tool/API | Input | Output | Real/Mock |
+|---|---|---|---|---|---|
+| Read brand context | Yes (service) | composeContext / brain API | brandId | JSON | Real DB |
+| Read audience | Partial | strategy personas / brain | brandId | fields | Real |
+| Read calendar | Yes | calendar API/services | filters | events | Real catalog |
+| Find opportunities | Yes | matching / opportunities | brand, horizon | opportunities | Real det. / Mock AI |
+| Score opportunities | Yes | opportunity-matching | brand+event | scores | Real det. |
+| Generate campaign | Partial | recommendations + campaign.generate | eligible opps | scenarios | Mock AI |
+| Create content plan | Partial | planner.generate | brief | ContentPlan | Mock AI→Real DB |
+| Generate copy | Partial | creator.generate | plan/item | GeneratedContent | Mock AI→Real DB |
+| Generate creative image | No | — | — | — | — |
+| Analyze performance | Partial | analytics API | range | charts | Mock |
+| Search web | No | — | — | — | — |
+| Search competitors | Partial | Competitor model UI | manual | DB | Real CRUD |
+| Publish content | No (default) | Meta gated | — | — | Sandbox only |
+| Read comments (network) | No | — | — | — | Seed inbox only |
+| Reply comments | Partial | community assist | conversation | suggestion | Mock |
+| Read/Reply DMs (network) | No | — | — | — | — |
+| Send notifications | Partial | notifications API | events | in-app | Real limited |
+| Create tasks | Yes | work API | decisions/plans | MarketingTask | Real DB |
+| Schedule content | Partial | studio scheduledAt | datetime | status | DB only |
+| Generate reports | Partial | analytics reports | brand | mock report | Mock |
+
+**هیچ‌کدام از طریق Agent tool-calling در دسترس نیست** — فقط API/UI انسانی یا فراخوانی سرویس داخلی.
+
+---
+
+## 21. AGENT READINESS SCORECARD (0–5)
+
+| محور | نمره | دلیل کوتاه |
+|---|---|---|
+| Context availability | 4 | composeContext چند منبع DB |
+| Structured business data | 4 | Brain/Strategy/Profile غنی |
+| Knowledge retrieval | 2 | گراف هست؛ retrieval برداری/Agent نه |
+| Calendar intelligence | 4 | کاتالوگ و جستجوی واقعی |
+| Opportunity detection | 4 | matching قطعی قوی |
+| Deterministic tools | 4 | matching/calendar/brain services |
+| AI infrastructure | 3 | executor خوب؛ LLM زنده نه |
+| Tool calling | 0 | نیست |
+| Agent orchestration | 0 | نیست |
+| Memory | 2 | متنی؛ بدون embedding |
+| Social integrations | 2 | Meta sandbox |
+| Content generation | 2 | pipeline DB + mock AI |
+| Publishing | 1 | gated/off |
+| Analytics | 1 | mock |
+| Background automation | 1 | بدون worker |
+| Human approval | 3 | studio/community/recs actions |
+| Observability | 3 | AI execution/metrics tables |
+| Error handling | 3 | AIPlatformError + guards |
+
+---
+
+## 22. CRITICAL GAPS
+
+### Must build
+- LLM provider واقعی (یا صراحت محصولی روی mock)
+- لایه Tool API برای Agent (calendar/match/brain/planner به‌صورت tools)
+- Orchestration loop (plan/act/observe)
+- Publishing واقعی یا حذف وعده publish
+
+### Should build
+- Embeddings/RAG روی Knowledge + docs
+- Worker/queue برای automations و sync
+- Analytics واقعی یا برچسب واضح mock
+- LinkedIn و … فقط اگر در scope باشد
+
+### Later
+- Multi-agent specialization
+- Live social listening کامل
+- Cost governance پیشرفته
+
+### Not necessary (الان)
+- بازنویسی کامل Prisma
+- دور انداختن matching/calendar/brain (قوی‌اند به‌عنوان tools آینده)
+
+---
+
+## 23. WHAT WE SHOULD NOT REBUILD
+
+این‌ها **واقعاً پیاده‌سازی شده‌اند** و کاندید Tool شدن‌اند:
+
+- Business Brain (+ composeContext)
+- Calendar Intelligence catalog
+- Deterministic Opportunity Matching
+- Knowledge Graph (admin + relations)
+- Recommendation eligibility + persistence
+- Planner/Creator persistence pipelines (با تعویض mock→LLM)
+- Inbox/Conversation data model
+- Meta token vault/sandbox scaffolding
+
+---
+
+# INZORYA — CURRENT REALITY
+
+### What is genuinely working
+Auth، Workspace/Brand، Onboarding، Business Brain، Strategy CRUD، Calendar catalog، Deterministic matching، Opportunities persistence، Knowledge Graph admin، Inbox/Contacts، Planner/Creator/Studio **ذخیره DB**، Meta sandbox connect، i18n، شل داشبورد AI-first (ناوبری/هوم).
+
+### What is partially working
+Campaign recommendations (eligibility واقعی + generate mock)، Community assist، Decisions/Work/Pipeline، Automations editor، Meta OAuth واقعی (پشت پرچم)، Handoffs بین ماژول‌ها.
+
+### What is only UI/schema
+صفحات reserved مثل Agents، بخشی از Team/Integrations catalog، بسیاری taxonomy models، AI queue بدون worker، embeddingRef بدون vector DB.
+
+### What is currently mocked
+تمام خروجی‌های `runAITask` با پیش‌فرض `AI_FORCE_MOCK=true`، Analytics bundle، بخش زیادی از «هوش» Community/Strategist/Creator/Planner/Campaign generate، sandbox social tokens.
+
+### What AI actually does
+یک executor یک‌مرحله‌ای context را از Postgres می‌خواند، prompt را آماده می‌کند، و **MockAIProvider** JSON قطعی برمی‌گرداند؛ اجرا در `AITaskExecution` و جداول دامنه ذخیره می‌شود. **هیچ HTTP به OpenAI/Anthropic زده نمی‌شود.**
+
+### What Agent capabilities already exist
+هیچ Agent واقعی. فقط task runners و UIهای ماژولار.
+
+### What tools an Agent can already call
+از دید Agent: **هیچ tool ثبت‌شده‌ای نیست.** از دید انسان/کد: ده‌ها service/API دامنه قابل فراخوانی برنامه‌ای.
+
+### What data an Agent can already access
+(اگر به سرویس‌ها وصل شود:) Brain، Strategy، Events، Opportunities+Scores، Knowledge nodes، Plans/Generated content، Conversations، Campaigns، MemoryRecord متنی، ConnectedAccounts metadata.
+
+### What an Agent cannot do yet
+Tool selection، multi-step reasoning loop، web search، live social read/write، image gen، RAG، real LLM، background autonomous runs، NL «۳۰ روز فرصت» به‌عنوان محصول Agent.
+
+### Strongest existing foundations
+Deterministic Matching · Calendar catalog · Business Brain + Context engine · Prisma domain breadth · Task/executor scaffolding.
+
+### Biggest architectural gaps
+No agents/tools · Mock-only AI · No workers · No real publish/analytics · Knowledge not queryable as RAG/tool.
+
+### Current system flow
+
+```
+User
+→ Auth (NextAuth)
+→ Workspace / Brand
+→ (optional) Onboarding + Business Brain interview
+→ Dashboard Home (goals / prompt → deep-link)
+→ Module UI (Strategist | Planner | Matching | Calendar | …)
+→ API Route Handler
+→ Domain Service
+→ Prisma/Postgres
+→ (optional) runAITask → MockAIProvider → JSON
+→ Persist domain + AITaskExecution
+→ UI render
+→ [STOP: no autonomous agent loop, no live LLM, no real social publish by default]
+```
+
+---
+
+منابع ممیزی موازی: [AI infrastructure](3f61fd86-a6ed-47ae-a323-5b5d4c4ffb7a) · [DB schema](db7e55ae-d77d-4352-9d32-347f03239788) · [Routes/APIs](83884a96-0253-49b7-bc46-55e6aa54ebf5) · [Brain/Calendar/Matching](52b5d45e-6ad4-4049-8580-1ddf752569bf) · [Content/Social/Analytics](564a86d9-fe1b-4398-88ac-52f63e827dcb).
+
+
+================================================================================
+APPENDIX A — Follow-up notes after subagent completion
+================================================================================
+
+جزئیات زیرagentها ([AI](3f61fd86-a6ed-47ae-a323-5b5d4c4ffb7a)، [Content/Social](564a86d9-fe1b-4398-88ac-52f63e827dcb)، [Brain/Matching](52b5d45e-6ad4-4049-8580-1ddf752569bf)، [Routes](83884a96-0253-49b7-bc46-55e6aa54ebf5)، [DB](db7e55ae-d77d-4352-9d32-347f03239788)) گزارش اصلی را تأیید می‌کنند. سه نکته دقیق‌تر که ارزش ثبت دارد:
+
+1. **Matching قطعی** از `Brand` + `BusinessProfile` + `MarketingStrategy` می‌خواند، نه مستقیم از جواب‌های Business Brain.
+2. **Meta Graph** حتی با `META_API_ENABLED=true` هنوز stub است (`MetaGraphClientStub`).
+3. مدل‌های Creator مثل `ContentScore` / `BrandValidation` / `VisualSuggestion` در اسکیما هستند ولی consumer ندارند.
+
+گزارش کامل ممیزی همان پیام قبلی است؛ اقدام دیگری لازم نیست.
+
+
+================================================================================
+APPENDIX B — Detailed subagent reports
+================================================================================
+
+
+======================================================================
+Subagent: AI Platform
+ID: 3f61fd86-a6ed-47ae-a323-5b5d4c4ffb7a
+======================================================================
+
+# گزارش ممیزی AI Infrastructure — Inzorya (فقط خواندن)
+
+## حکم کلی
+
+پلتفرم AI **provider-agnostic و mock-first** است. مسیر اجرا (`runAITask`) واقعی است، اما **هیچ فراخوانی شبکه به LLM واقعی وجود ندارد**: SDKهای OpenAI/Anthropic در `package.json` نیستند؛ adapterهای live در `stubs.ts` فقط خطا می‌دهند؛ پیش‌فرض `AI_FORCE_MOCK=true` است. Agent، tool-calling، embeddings/RAG و streaming محصولی **پیاده‌سازی نشده‌اند**.
+
+---
+
+## لایه زیرساخت
+
+| جزء | مسیر | وضعیت |
+|---|---|---|
+| Facade | `e:\Machine Learning\Inzorya\src\server\ai\index.ts` | IMPLEMENTED |
+| Config | `e:\Machine Learning\Inzorya\src\server\ai\config.ts` | IMPLEMENTED |
+| Task registry | `e:\Machine Learning\Inzorya\src\server\ai\tasks\registry.ts` | IMPLEMENTED |
+| Executor | `e:\Machine Learning\Inzorya\src\server\ai\tasks\executor.ts` | IMPLEMENTED (sync؛ همیشه `adapter.generate`) |
+| Prompts | `e:\Machine Learning\Inzorya\src\server\ai\prompts\repository.ts` | IMPLEMENTED |
+| Context engine | `e:\Machine Learning\Inzorya\src\server\ai\context\engine.ts` | IMPLEMENTED (DB slices، نه RAG) |
+| Router/catalog | `e:\Machine Learning\Inzorya\src\server\ai\routing\router.ts` | IMPLEMENTED (با force-mock) |
+| Mock provider | `e:\Machine Learning\Inzorya\src\server\ai\providers\mock.ts` | MOCK (deterministic) |
+| Live providers | `e:\Machine Learning\Inzorya\src\server\ai\providers\stubs.ts` | SCHEMA_ONLY / STUB — `generate()` همیشه throw |
+| Provider registry | `e:\Machine Learning\Inzorya\src\server\ai\providers\registry.ts` | IMPLEMENTED |
+| Guardrails | `e:\Machine Learning\Inzorya\src\server\ai\guardrails\index.ts` | PARTIAL (PII/injection پایه؛ rate-limit noop) |
+| Memory | `e:\Machine Learning\Inzorya\src\server\ai\memory\store.ts` | PARTIAL (text در DB؛ `embeddingRef=null`) |
+| Embeddings | `e:\Machine Learning\Inzorya\src\server\ai\embeddings\types.ts` | SCHEMA_ONLY |
+| Streaming types | `e:\Machine Learning\Inzorya\src\server\ai\streaming\types.ts` | SCHEMA_ONLY؛ mock `stream()` هست ولی executor استفاده نمی‌کند |
+| Queue | `e:\Machine Learning\Inzorya\src\server\ai\queue\store.ts` | PARTIAL — بدون worker |
+| Evaluation | `e:\Machine Learning\Inzorya\src\server\ai\evaluation\types.ts` | SCHEMA_ONLY / placeholder |
+| Metrics | `e:\Machine Learning\Inzorya\src\server\ai\observability\metrics.ts` | IMPLEMENTED |
+| Prisma AI models | `e:\Machine Learning\Inzorya\prisma\schema.prisma` (~1722–1937) | IMPLEMENTED |
+| Admin API | `e:\Machine Learning\Inzorya\src\app\api\ai\route.ts` | IMPLEMENTED |
+| Admin UI | `e:\Machine Learning\Inzorya\src\components\ai\ai-platform-admin.tsx` | IMPLEMENTED |
+
+### Env (`.env.example`)
+
+```
+AI_PLATFORM_ENABLED="true"
+AI_FORCE_MOCK="true"          # پیش‌فرض force mock (حتی اگر unset → true)
+AI_PROVIDER_PRIORITY="mock,openai,anthropic,gemini,openrouter,local"
+OPENAI_API_KEY=""
+ANTHROPIC_API_KEY=""
+GOOGLE_AI_API_KEY=""
+OPENROUTER_API_KEY=""
+AI_LOCAL_ENABLED="false"
+```
+
+مسیر: `e:\Machine Learning\Inzorya\.env.example`
+
+**نکته مهم:** حتی با `AI_FORCE_MOCK=false` و کلید پر، stubها هنوز HTTP به LLM نمی‌زنند — فقط throw می‌کنند تا «live calls disabled».
+
+### مدل‌های کاتالوگ
+
+| key | provider | واقعی؟ |
+|---|---|---|
+| `mock-general` | mock | بله (mock) |
+| `openai-gpt-4o-mini` | openai | فقط catalog |
+| `anthropic-claude-sonnet` | anthropic | فقط catalog |
+| `gemini-flash` | gemini | فقط catalog |
+| `openrouter-auto` | openrouter | فقط catalog |
+| `local-default` | local | فقط catalog |
+
+---
+
+## قابلیت‌های محصولی (از طریق `runAITask`)
+
+الگوی مشترک برای همه موارد زیر:
+- **LLM واقعی؟** خیر — `MockAIProvider.generate`
+- **Provider/model (پیش‌فرض):** `mock` / `mock-general`
+- **Prompt:** `e:\Machine Learning\Inzorya\src\server\ai\prompts\repository.ts` (+ نسخه در جداول `Prompt` / `PromptVersion`)
+- **Context مشترک:** `composeContext` → `ContextSnapshot`؛ پیام کاربر شامل `Task + Input + Context (+ Persian rule)`
+- **ذخیره مشترک اجرا:** `AITaskExecution` + `UsageMetric` + `CostRecord` + اختیاری `MemoryRecord` (SESSION)
+
+### 1. `strategist.advise` — Marketing Strategist  
+**وضعیت: IMPLEMENTED (MOCK)**
+
+| فیلد | مقدار |
+|---|---|
+| LLM call | خیر — mock |
+| Provider/model | mock / mock-general |
+| Prompt | key `strategist.advise` در `prompts/repository.ts` |
+| Context | business_brain, brand_voice, marketing_strategy, campaign, analytics_summary, knowledge_base, connected_channels, content_history, customer, conversation |
+| Input اضافه | question, conversationType, followUpKind, priorSummary, language |
+| Result storage | `StrategyMessage` (ASSISTANT + structured), strategy docs/recommendations، `MemoryRecord` scope BUSINESS؛ executionId |
+| Service | `e:\Machine Learning\Inzorya\src\server\services\strategist.ts` |
+| API | `e:\Machine Learning\Inzorya\src\app\api\strategist\route.ts` (`send_message`) |
+
+### 2. `planner.generate` — Content Planner  
+**وضعیت: IMPLEMENTED (MOCK)**
+
+| فیلد | مقدار |
+|---|---|
+| LLM | mock |
+| Prompt | `planner.generate` |
+| Context | brain, voice, strategy, campaign, analytics, knowledge, channels, content_history, customer |
+| Input | planType, settings, startDate, endDate, language |
+| Storage | `PlanningSession`, plan items در Prisma؛ execution روی session |
+| Service | `e:\Machine Learning\Inzorya\src\server\services\planner.ts` |
+| API | `e:\Machine Learning\Inzorya\src\app\api\planner\route.ts` (`generate` / `regenerate`) |
+
+### 3. `creator.generate` — Content Creator (+ rewrite)  
+**وضعیت: IMPLEMENTED (MOCK)**
+
+| فیلد | مقدار |
+|---|---|
+| LLM | mock |
+| Prompt | `creator.generate` |
+| Context | brain, voice, strategy, campaign, analytics, knowledge, content_history, channels, customer |
+| Input | platform, objective, contentType, variationCount, campaignName, rewriteStyle, sourceVariation, language |
+| Storage | `GenerationSession`, `GeneratedContent`, variations؛ qualityFlags |
+| Service | `e:\Machine Learning\Inzorya\src\server\services\creator.ts` |
+| API | `e:\Machine Learning\Inzorya\src\app\api\creator\route.ts` |
+
+### 4. `opportunity.match` — Opportunity Intelligence  
+**وضعیت: IMPLEMENTED (MOCK)**
+
+| فیلد | مقدار |
+|---|---|
+| LLM | mock |
+| Prompt | `opportunity.match` |
+| Context | brain, voice, strategy, campaign, analytics, content_history, channels, customer, knowledge_base |
+| Input | events[], planningMode, constraints, learningSignals |
+| Storage | `BusinessOpportunity` (+ scores/recs) |
+| Service | `e:\Machine Learning\Inzorya\src\server\services\opportunities.ts` |
+| API | `e:\Machine Learning\Inzorya\src\app\api\opportunities\route.ts` (`discover`) |
+
+### 5. `campaign.generate` — Campaign Recommendation Engine  
+**وضعیت: IMPLEMENTED (MOCK)**
+
+| فیلد | مقدار |
+|---|---|
+| LLM | mock |
+| Prompt | `campaign.generate` |
+| Context | brain, voice, strategy, campaign, analytics, content_history, channels, knowledge_base |
+| Input | opportunities[], eligibility, learningSignals |
+| Storage | campaign proposal records via `persistProposal` |
+| Service | `e:\Machine Learning\Inzorya\src\server\services\campaign-recommendations.ts` |
+| API | `e:\Machine Learning\Inzorya\src\app\api\recommendations\route.ts` (`generate`) |
+
+### 6. `community.assist` — Community Manager  
+**وضعیت: IMPLEMENTED (MOCK)**
+
+| فیلد | مقدار |
+|---|---|
+| LLM | mock |
+| Prompt | `community.assist` |
+| Context | brain, voice, knowledge_base, strategy, customer, conversation, content_history |
+| Input | conversations[], tone, responseMode, learningSignals |
+| Storage | `ConversationIntent`, `ConversationPriority`, sentiment/profile/suggestions/automationHints |
+| Service | `e:\Machine Learning\Inzorya\src\server\services\community.ts` |
+| API | `e:\Machine Learning\Inzorya\src\app\api\community\route.ts` (`scan`) |
+
+### 7. `decision.brief` — Marketing Decision Center  
+**وضعیت: IMPLEMENTED (MOCK)**
+
+| فیلد | مقدار |
+|---|---|
+| LLM | mock |
+| Prompt | `decision.brief` |
+| Context | brain, voice, strategy, campaign, analytics, content_history, channels, customer, conversation, knowledge_base |
+| Input | signals, learningSignals, priorities, focusMode |
+| Storage | `ExecutiveBrief` (DAILY/MORNING), `DecisionRecommendation`, insights/memories |
+| Service | `e:\Machine Learning\Inzorya\src\server\services\decisions.ts` |
+| API | `e:\Machine Learning\Inzorya\src\app\api\decisions\route.ts` (`generate`) |
+
+### 8. `task.assist` — Task Engine  
+**وضعیت: IMPLEMENTED (MOCK)**
+
+| فیلد | مقدار |
+|---|---|
+| LLM | mock |
+| Prompt | `task.assist` |
+| Context | brain, strategy, campaign, content_history |
+| Input | mode (breakdown/estimate/order/…), tasks[], capacity |
+| Storage | زیر‌وظایف/`MarketingTask`، estimates، order، blockers (بسته به mode) |
+| Service | `e:\Machine Learning\Inzorya\src\server\services\work.ts` |
+| API | `e:\Machine Learning\Inzorya\src\app\api\work\route.ts` (`assist`) |
+
+### 9–10. Platform playground  
+**وضعیت: IMPLEMENTED (MOCK)**
+
+| Task | کاربرد | API |
+|---|---|---|
+| `platform.echo` | echo JSON | `POST /api/ai` intent `run_task` |
+| `platform.inspect_context` | دیباگ context | `inspect_context` / run_task |
+
+مسیر: `e:\Machine Learning\Inzorya\src\app\api\ai\route.ts`
+
+---
+
+## قراردادهای آینده (ثبت‌شده، محصولی نشده)
+
+| Task | توضیح registry | وضعیت |
+|---|---|---|
+| `content.generate_caption` | «not exposed this sprint» | SCHEMA_ONLY (+ prompt + mock generic fallback) |
+| `conversation.analyze` | همین | SCHEMA_ONLY |
+| `analytics.summarize` | همین | SCHEMA_ONLY |
+| `lead.classify` | همین | SCHEMA_ONLY |
+| `text.rewrite` | همین | SCHEMA_ONLY |
+
+تعریف: `tasks/registry.ts` خطوط ~73–168؛ promptهای کوتاه در `prompts/repository.ts`. Mock handler اختصاصی ندارند → fallback عمومی mock JSON (`ok/summary/echo`).
+
+---
+
+## جستجوی agent / tools / RAG / streaming
+
+| موضوع | یافته | وضعیت |
+|---|---|---|
+| **AI Agents** | صفحه UI رزرو: `src/app/(dashboard)/.../agents/`؛ copy: «در این اسپرینت عاملی نیست» | NOT_IMPLEMENTED |
+| **Tool / function calling** | فلگ `supportsTools` در catalog؛ بدون tool loop، بدون tools در `ProviderGenerateRequest` | SCHEMA_ONLY |
+| **Orchestration / multi-agent** | فقط pipeline تک‌مرحله‌ای `runAITask` | NOT_IMPLEMENTED |
+| **Streaming محصولی** | mock `stream()`؛ executor فقط `generate`؛ `input.stream` فقط برای route filter | PARTIAL / unused |
+| **Embeddings** | interface + `NoopEmbeddingService` | SCHEMA_ONLY |
+| **RAG / vector** | docs: «Ask Knowledge (RAG UI)» آینده؛ knowledge search متنی/DB نه vector | NOT_IMPLEMENTED |
+| **Knowledge Graph** | deterministic graph/events — بدون LLM | IMPLEMENTED (non-LLM) |
+| **Matching Engine** | صریحاً «No LLM» — scoring از KG + Brain | IMPLEMENTED (non-LLM) |
+| **Inbox «agent»** | assignee انسانی، نه AI agent | unrelated |
+| **Queue worker** | enqueue/list/cancel بدون processor | PARTIAL |
+
+مسیرهای مرتبط:
+- Matching: `e:\Machine Learning\Inzorya\src\server\services\opportunity-matching.ts`, `src\app\api\matching\route.ts`
+- Knowledge Graph: `e:\Machine Learning\Inzorya\src\server\services\knowledge-graph.ts`
+- Docs RAG آینده: `e:\Machine Learning\Inzorya\docs\architecture\dashboard-architecture.md`
+
+---
+
+## Context ارسال‌شده (جزئیات)
+
+`composeContext` فقط sliceهای انتخابی از Prisma را می‌سازد (نه retrieval برداری):
+
+| Provider key | داده تقریبی |
+|---|---|
+| `business_brain` | completion%, score, voiceTone, recentAnswers (truncate) |
+| `marketing_strategy` | goals, tone, platforms, stage, counts |
+| `connected_channels` | product/platform/health/username |
+| `campaign` | ۵ کمپین اخیر |
+| `conversation` | فقط count |
+| `customer` | فقط contact count |
+| `brand_voice` | brandVoice, name, industry |
+| `knowledge_base` | فقط document count |
+| `content_history` | ۵ content item |
+| `analytics_summary` | تا ۸ KPI |
+
+سرویس‌ها اغلب payload غنی‌تر را در `input` می‌فرستند (مثلاً متن مکالمات در community، events در opportunities).
+
+---
+
+## Mock vs Real — خلاصه اجرایی
+
+```
+runAITask
+  → routeModel (forceMock → فقط mock)
+  → MockAIProvider.generate (deterministic per taskKey)
+  → OpenAI/Anthropic/Gemini/OpenRouter/Local = StubProvider.throw
+```
+
+**هیچ فراخوانی واقعی LLM در codebase فعال نیست.** برای live شدن حداقل نیاز است: SDK واقعی، پیاده‌سازی `generate` در stubها، و `AI_FORCE_MOCK=false`.
+
+---
+
+## ماتریس وضعیت سریع
+
+| قابلیت | وضعیت |
+|---|---|
+| AI platform shell (tasks/prompts/context/metrics/admin) | IMPLEMENTED |
+| ۸ قابلیت محصولی AI بالا | IMPLEMENTED روی MOCK |
+| Live LLM providers | NOT_IMPLEMENTED (stubs) |
+| Agent / tool-calling / orchestration | NOT_IMPLEMENTED |
+| Embeddings / RAG / vector DB | SCHEMA_ONLY / NOT_IMPLEMENTED |
+| Streaming end-to-end | PARTIAL (types + mock only) |
+| Async queue workers | PARTIAL (DB queue only) |
+| Matching / Knowledge Graph | IMPLEMENTED بدون LLM |
+| UI Agents page | NOT_IMPLEMENTED (placeholder) |
+
+
+======================================================================
+Subagent: Content / Social
+ID: 564a86d9-fe1b-4398-88ac-52f63e827dcb
+======================================================================
+
+# ممیزی فقط‌خواندنی Inzorya
+
+وضعیت کلی: **پلتفرم عمدتاً product-ready روی Prisma + UI است؛ انتشار واقعی شبکه‌های اجتماعی، AI زنده، analytics واقعی، Redis/worker، و بیشتر سرویس‌های ENV هنوز پیاده‌سازی نشده‌اند.**
+
+---
+
+## 1. سیستم محتوا
+
+| بخش | وضعیت | مسیرهای کلیدی | توضیح |
+|---|---|---|---|
+| **Planner** | **AI mock + DB واقعی** | `e:\Machine Learning\Inzorya\src\server\services\planner.ts` · `e:\Machine Learning\Inzorya\src\app\api\planner\route.ts` · `e:\Machine Learning\Inzorya\src\components\planner\content-planner-workspace.tsx` | `runAITask("planner.generate")` → خروجی در `ContentPlan` / `ContentPlanItem`. پیش‌فرض `AI_FORCE_MOCK=true`. |
+| **Creator** | **AI mock + DB واقعی** | `e:\Machine Learning\Inzorya\src\server\services\creator.ts` · `e:\Machine Learning\Inzorya\src\app\api\creator\route.ts` | کپشن/هوک/هشتگ/امتیاز از mock؛ `pushVariationToStudio` فقط `ContentItem` در DB می‌سازد. |
+| **Studio** | **Real CRUD، بدون publish API** | `e:\Machine Learning\Inzorya\src\app\api\studio\content\route.ts` · `e:\Machine Learning\Inzorya\src\components\studio\content-studio.tsx` · `e:\Machine Learning\Inzorya\src\lib\content-studio.ts` | پایپ‌لاین IDEAS→PUBLISHED در Prisma؛ UI صریحاً «بدون AI for now». |
+| **Captions** | **AI mock (از Creator)** | `e:\Machine Learning\Inzorya\src\server\ai\tasks\registry.ts` (`creator.generate`, `content.generate_caption`) · `e:\Machine Learning\Inzorya\src\server\ai\providers\mock.ts` | `content.generate_caption` فقط قرارداد آینده است («not exposed this sprint»). |
+| **Images** | **Upload واقعی؛ تولید AI نیست** | `e:\Machine Learning\Inzorya\src\app\api\media\route.ts` · `public/uploads/media/...` | آپلود محلی تصویر تا ۱۰MB. Creator فقط `visualDirection` متنی می‌دهد. |
+| **Approval** | **Status داخلی / ناقص** | Studio: status `REVIEW`/`APPROVED` · Planner approve در API · `content/approvals/page.tsx` فقط placeholder (`LocalizedDashboardPage`) | تأیید = تغییر وضعیت DB، نه گیت‌وی انتشار خارجی. |
+| **Scheduling** | **DB-only** | `studio/content/route.ts` → `scheduledAt` + status `SCHEDULED` | هیچ cron/worker برای انتشار در زمان مقرر نیست. |
+| **Publishing** | **Mock/local فقط** | `status === "PUBLISHED"` → `publishedAt = new Date()` | هیچ تماس Graph/LinkedIn/TikTok برای پست واقعی وجود ندارد. |
+
+جریان واقعی داخل اپ: Planner → Creator → Studio (همه روی Postgres). انتشار به شبکه اجتماعی: **وجود ندارد.**
+
+---
+
+## 2. یکپارچه‌سازی شبکه‌های اجتماعی (فقط کد واقعی)
+
+### Meta (Instagram / Facebook / Messenger)
+
+| قابلیت | وضعیت | مسیر |
+|---|---|---|
+| OAuth start + state | **Real scaffolding** | `e:\Machine Learning\Inzorya\src\server\services\meta\integration.ts` · `e:\Machine Learning\Inzorya\src\app\api\integrations\meta\route.ts` |
+| OAuth callback | **Real route**؛ exchange کد **غیرفعال** | `e:\Machine Learning\Inzorya\src\app\api\integrations\meta\callback\route.ts` |
+| Sandbox connect | **Real (توکن ساختگی رمزنگاری‌شده)** | `completeSandboxConnect` در `meta\integration.ts` |
+| Token vault AES-GCM | **Real** | `e:\Machine Learning\Inzorya\src\lib\crypto\token-vault.ts` |
+| Graph client | **Stub همیشه** | `e:\Machine Learning\Inzorya\src\lib\meta\config.ts` — حتی با `META_API_ENABLED=true` هنوز `MetaGraphClientStub` برمی‌گردد (`Production Graph client will be wired here`) |
+| Sync | **Dry-run** | `queueSyncJob` فوراً SUCCEEDED با `apiCalls: false` |
+| Webhooks | **Verify + audit فقط** | `e:\Machine Learning\Inzorya\src\app\api\webhooks\meta\route.ts` — `processed: false`؛ بدون ingest پیام/کامنت |
+| Publish | **ندارد** | هیچ تابع publish به Graph پیدا نشد |
+
+محصولات Meta در کد: فقط `instagram` | `facebook_pages` | `messenger` (`META_PRODUCTS`).
+
+### سایر پلتفرم‌ها
+
+| پلتفرم | OAuth واقعی؟ | Token واقعی؟ | Publish؟ | Webhook؟ | واقعیت کد |
+|---|---|---|---|---|---|
+| **Instagram** | اسکلت Meta | sandbox / stub | خیر | اسکلت | بالا |
+| **Facebook** | اسکلت Meta | sandbox / stub | خیر | اسکلت | بالا |
+| **LinkedIn** | خیر | خیر | خیر | خیر | فقط کاتالوگ/enum/UI؛ `LINKEDIN_CLIENT_ID/SECRET` در `.env.example` **هیچ `process.env` در کد ندارد** |
+| **X** | خیر | خیر | خیر | خیر | mock connect در `channels/route.ts` |
+| **TikTok** | خیر | خیر | خیر | خیر | کاتالوگ + mock |
+| **YouTube** | خیر | خیر | خیر | خیر | کاتالوگ + mock |
+| **WhatsApp / Telegram** | خیر | خیر | خیر | خیر | کاتالوگ؛ Meta note: «reuse foundation later» |
+
+Mock connect همه پلتفرم‌ها:  
+`e:\Machine Learning\Inzorya\src\app\api\channels\route.ts` (خطوط ~126–128: `providerMeta: { mock: true }`)  
+کاتالوگ: `e:\Machine Learning\Inzorya\src\lib\business.ts`
+
+---
+
+## 3. Analytics
+
+| منبع | وضعیت | مسیر |
+|---|---|---|
+| **Social / داشبورد داخلی** | **Mock deterministic** | `e:\Machine Learning\Inzorya\src\lib\analytics\mock-provider.ts` · `e:\Machine Learning\Inzorya\src\server\services\analytics\repository.ts` |
+| API | برچسب `source: "mock"` | `e:\Machine Learning\Inzorya\src\app\api\analytics\route.ts` |
+| Persist گزارش/قالب | **Real (Prisma)** | همان repository — `createAnalyticsReport` / templates |
+| Cache | **In-memory** (نه Redis) | `MemoryAnalyticsCache` در repository |
+| **GA / GA4 / GTM** | **وجود ندارد** | هیچ `gtag` / `GA_` / `measurementId` در کد |
+
+UI صریحاً funnel/ROI را mock نشان می‌دهد: `e:\Machine Learning\Inzorya\src\components\analytics\analytics-view.tsx`.
+
+---
+
+## 4. Community management
+
+| قابلیت | وضعیت | مسیر |
+|---|---|---|
+| Inbox / conversations | **DB واقعی + seed mock خودکار** | `e:\Machine Learning\Inzorya\src\app\api\conversations\route.ts` · `e:\Machine Learning\Inzorya\src\server\services\inbox-seed.ts` |
+| Comments از شبکه | **خیر** | webhook Meta پردازش نمی‌کند |
+| DMs از شبکه | **خیر** | فقط پیام‌های محلی/seed |
+| Auto-reply / پیشنهاد AI | **AI mock + قوانین DB**؛ ارسال فقط به inbox داخلی | `e:\Machine Learning\Inzorya\src\server\services\community.ts` — کامنت: «still not Meta API» |
+| Orders در UI | **Mock صریح** | `e:\Machine Learning\Inzorya\src\components\inbox\inbox-view.tsx` (`MOCK_ORDERS`) |
+| Automations | **UI/DB + شمارنده‌های demo**؛ اجرای واقعی mock | `e:\Machine Learning\Inzorya\src\lib\automation-catalog.ts` («Send Message (mock)», «cron-like schedule (mock)») · `e:\Machine Learning\Inzorya\src\server\services\automation.ts` |
+
+---
+
+## 5. Background jobs
+
+| مکانیزم | وضعیت | مسیر |
+|---|---|---|
+| Cron / vercel cron | **ندارد** | `vercel.json` نیست؛ `package.json` بدون اسکریپت worker |
+| Redis / Upstash | **ENV خالی، بدون کد** | `.env.example` فقط |
+| AI queue | **جدول Prisma؛ بدون worker** | `e:\Machine Learning\Inzorya\src\server\ai\queue\store.ts` — «no worker process yet»؛ UI: `ai-platform-admin.tsx` |
+| SyncJob Meta | **صف DB + تکمیل فوری dry-run** | `meta\integration.ts` `queueSyncJob` |
+| Automations | **بدون موتور زمان‌بندی واقعی** | catalog mock |
+| Email | **Reset token در DB؛ ایمیل ارسال نمی‌شود** | `e:\Machine Learning\Inzorya\src\app\api\forgot-password\route.ts` — بدون Resend/SMTP |
+| AI execution | **هم‌زمان در request** | `e:\Machine Learning\Inzorya\src\server\ai\tasks\executor.ts` (`runAITask`) |
+
+وابستگی‌ها (`package.json`): **بدون** bull/bullmq، ioredis، @upstash، resend، openai SDK، inngest.
+
+---
+
+## 6. سرویس‌های خارجی
+
+منبع ENV: `e:\Machine Learning\Inzorya\.env.example`
+
+| Service | ENV | Code usage | Functional? |
+|---|---|---|---|
+| **PostgreSQL / Prisma** | `DATABASE_URL` | `e:\Machine Learning\Inzorya\src\lib\db.ts` · کل سرویس‌ها | **بله** |
+| **Auth (NextAuth)** | `AUTH_SECRET`, `AUTH_URL`, `NEXTAUTH_URL` | `e:\Machine Learning\Inzorya\src\lib\auth.ts` · `api\auth\[...nextauth]` | **بله** (auth اپ) |
+| **Token vault** | `TOKEN_ENCRYPTION_KEY` | `e:\Machine Learning\Inzorya\src\lib\crypto\token-vault.ts` | **بله** (رمزنگاری محلی) |
+| **Meta Graph / OAuth** | `META_APP_ID`, `META_APP_SECRET`, `META_GRAPH_API_VERSION`, `META_OAUTH_REDIRECT_URI`, `META_API_ENABLED`, `META_OAUTH_SANDBOX`, `META_WEBHOOK_VERIFY_TOKEN` | `lib\meta\config.ts` · `server\services\meta\integration.ts` · API routes | **جزئی**: OAuth URL/sandbox/webhook verify کار می‌کند؛ **Graph زنده خیر** (stub دائمی) |
+| **AI Platform** | `AI_PLATFORM_ENABLED`, `AI_FORCE_MOCK`, `AI_PROVIDER_PRIORITY`, … | `e:\Machine Learning\Inzorya\src\server\ai\config.ts` · `providers\mock.ts` · `providers\stubs.ts` | **Mock بله**؛ live خیر |
+| **OpenAI** | `OPENAI_API_KEY` | فقط config + stub که throw می‌کند | **خیر** |
+| **Anthropic** | `ANTHROPIC_API_KEY` | stub | **خیر** |
+| **Gemini** | `GOOGLE_AI_API_KEY` | stub | **خیر** |
+| **OpenRouter** | `OPENROUTER_API_KEY` | stub | **خیر** |
+| **Local AI** | `AI_LOCAL_ENABLED` | stub | **خیر** |
+| **Resend** | `RESEND_API_KEY` | **هیچ ارجاع کدی** | **خیر** |
+| **Firecrawl** | `FIRECRAWL_API_KEY` | **هیچ ارجاع کدی** | **خیر** |
+| **Tavily** | `TAVILY_API_KEY` | **هیچ ارجاع کدی** | **خیر** |
+| **Calendarific** | `CALENDARIFIC_API_KEY` | **هیچ ارجاع کدی** (تقویم: import CSV/ICS/REST عمومی) | **خیر** |
+| **Eventbrite** | `EVENTBRITE_API_TOKEN` | **هیچ ارجاع کدی** | **خیر** |
+| **Upstash Redis** | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | **هیچ ارجاع کدی** | **خیر** |
+| **LinkedIn OAuth** | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | **هیچ `process.env.LINKEDIN_*`** | **خیر** |
+
+نکته `.env.example` خط ۲۹: `AI_DAILY_COST_LIM\`IT_USD` به‌نظر typo است؛ کد از `AI_DAILY_COST_LIMIT_USD` می‌خواند (`server\ai\config.ts`).
+
+---
+
+## جمع‌بندی اجرایی
+
+1. **محتوا end-to-end داخل اپ واقعی است** (Planner/Creator/Studio روی DB)، اما خروجی AI پیش‌فرض **mock** است و **انتشار خارجی وجود ندارد**.
+2. **تنها اسکلت یکپارچه‌سازی واقعی برای Meta است**؛ و حتی آن هم Graph را صدا نمی‌زند. LinkedIn/X/TikTok/YouTube فقط UI/کاتالوگ/mock connect هستند.
+3. **Analytics و بخش زیادی از inbox/community demo/mock هستند**؛ GA وجود ندارد.
+4. **Jobs/Redis/email outbound هنوز foundation هستند**؛ ENVهای Resend/Firecrawl/Upstash/… فقط placeholder.
+
+
+======================================================================
+Subagent: Brain / Matching
+ID: 52b5d45e-6ad4-4049-8580-1ddf752569bf
+======================================================================
+
+# ممیزی فقط‌خواندنی Inzorya — پنج سیستم کلیدی
+
+## آیا سیستم می‌تواند «فرصت‌های ۳۰ روز آینده برای برند» را جواب دهد؟
+
+**جزئی / غیرمستقیم — نه به‌صورت محصول آماده.**
+
+| لایه | وضعیت |
+|------|--------|
+| داده و اسکور | بله — `BusinessOpportunity` با `brandId` + `eventDate` + امتیاز |
+| Matching قطعی | افق پیش‌فرض **۱۲۰ روز**؛ پارامتر `horizonDays` هست ولی UI روی ۱۲۰ قفل است |
+| Discover با AI | افق پیش‌فرض **۹۰ روز**؛ UI مقدار ۳۰ نمی‌فرستد |
+| Home | فقط **۱۴ روز** آینده، حداکثر ۵ فرصت |
+| API اختصاصی «۳۰ روز» / پرسش NL به ایجنت | **نیست** |
+
+مسیر عملی امروز: `POST /api/matching` با `intent: "run"` و `horizonDays: 30`، سپس فیلتر `eventDate`؛ یا خواندن `upcoming` از داشبورد و فیلتر کلاینت. مسیر گفت‌وگویی/ایجنت برای این سؤال وجود ندارد.
+
+---
+
+## ۱) Business Brain — **FUNCTIONAL** (با شکاف مصرف در Matching)
+
+### مدل‌ها (`prisma/schema.prisma`)
+- `BusinessBrain`, `BusinessQuestion`, `BusinessAnswer`, `BrandVoice`, `BrandAsset`, `BusinessBrainVersion` (~۱۰۸۳–۱۱۸۶)
+- کامنت اسکیما: «structured knowledge for future AI (no LLM in this sprint)» — ولی الان AI context واقعاً می‌خواندش
+
+### Lib / Service / API / UI
+| نقش | مسیر |
+|-----|------|
+| سوالات، گروه‌ها، completion | `e:\Machine Learning\Inzorya\src\lib\business-brain.ts` |
+| CRUD/ensure/score/snapshot | `e:\Machine Learning\Inzorya\src\server\services\business-brain.ts` |
+| API | `e:\Machine Learning\Inzorya\src\app\api\brain\route.ts`, `...\api\brain\assets\route.ts` |
+| UI | `...\components\brain\business-brain-workspace.tsx` → صفحات `...\b\[brandSlug]\brain\page.tsx`, `...\brain\interview\page.tsx` |
+| پروفایل موازی (قدیمی‌تر) | `BusinessProfile` via `...\api\business-profile\route.ts` + `...\components\business\business-profile-editor.tsx` |
+
+### مصرف‌کنندگان واقعی
+1. **AI Context** — `composeContext` provider `business_brain` در `src\server\ai\context\engine.ts` (۱۲ پاسخ اخیر + voice + score)
+2. **تقریباً همه AI taskها** — `src\server\ai\tasks\registry.ts` (`campaign.generate`, `opportunity.match`, creator, community, decisions, …)
+3. **Home** — completion سلامت برند: `src\app\(dashboard)\w\[workspaceSlug]\home\page.tsx`
+4. **Studio pillars** — `ensureStrategyForBrain` از `api\studio\pillars`
+5. **Strategist labels** — `src\lib\strategist.ts`
+
+### شکاف مهم
+`runDeterministicMatching` → `loadBrandContext` در `opportunity-matching.ts` از **`Brand` + `businessProfile` + `marketingStrategy`** می‌خواند، **نه از `BusinessBrain` answers**. UI Matching ادعا می‌کند «از Business Brain»؛ در کد قطعی، Brain مستقیم نیست.
+
+---
+
+## ۲) Knowledge Graph — **PARTIAL** (داده/ادمین FUNCTIONAL؛ ایجنت NOT_IMPLEMENTED)
+
+### مدل‌ها (EPIC-023, ~۲۹۸۲–۳۱۷۵)
+`Industry`, `BusinessType`, `ProductCategory`, `Audience`, …، `KnowledgeNode`, `KnowledgeRelation`, `KnowledgeRelationType`, `MarketingEventKnowledge`
+
+### مسیر کد
+| نقش | مسیر |
+|-----|------|
+| Seed / kinds / relations | `src\lib\knowledge-graph.ts` |
+| Ensure, search, connect, event link, preview | `src\server\services\knowledge-graph.ts` |
+| API | `src\app\api\knowledge-graph\route.ts` |
+| UI | `src\components\knowledge\knowledge-graph-workspace.tsx` → `...\knowledge-graph\page.tsx` |
+
+### قابلیت پرسش توسط ایجنت
+`ContextProviderKey` در `engine.ts` شامل **`knowledge_graph` نیست** — فقط `knowledge_base` (تعداد اسناد).  
+Matching رویدادها را با `knowledgeLinks` اسکور می‌کند، ولی:
+- لینک event↔node عمدتاً **دستی** (`intent: "link_event"`)
+- `ensureKnowledgeGraph` نودها را seed می‌کند؛ **auto-link رویدادهای seed به KG دیده نشد**
+- اگر لینک نباشد، قوانین با امتیاز پیش‌فرض ضعیف (~۲۵–۳۵) ادامه می‌دهند
+
+**طبقه‌بندی:** هسته CRUD/UI = FUNCTIONAL؛ اتصال غنی event↔graph = PARTIAL؛ agent-queryable = **NOT_IMPLEMENTED**.
+
+---
+
+## ۳) Calendar Intelligence — **FUNCTIONAL** (کاتالوگ seed محدود؛ لوکالایز PARTIAL)
+
+### مدل‌ها (EPIC-021/022, ~۲۵۳۱+)
+`MarketingEvent` + Category/Source/Region/Country/Tag، `MarketingTranslation`, `MarketingLocalization`, seasons، versions، history، import jobs
+
+### مسیر کد
+| نقش | مسیر |
+|-----|------|
+| Categories/sources/filters/helpers | `src\lib\calendar.ts` |
+| Search/CRUD/seed از `SEED_EVENTS` | `src\server\services\calendar.ts` (`ensureCalendarCatalog`) |
+| Import CSV/ICS/JSON/… | `src\server\services\calendar-catalog.ts` |
+| Seed رویدادها (~۳۰+ curated) | `src\lib\opportunities.ts` → `SEED_EVENTS` |
+| API | `src\app\api\calendar\route.ts` |
+| UI ادمین | `src\components\calendar\calendar-admin-workspace.tsx` → `...\calendar\page.tsx` |
+
+### دسته‌ها و localization
+- دسته‌ها: `CALENDAR_CATEGORIES` (~۵۰ کلید) در `lib\calendar.ts`
+- Translation/Localization در اسکیما + upsert در `calendar.ts` + فرم UI
+- نمایش FA برای عناوین: نگاشت سخت‌کد در `src\i18n\display-labels.ts` (`localizeEventishTitle`) — نه مصرف کامل `MarketingLocalization` در همه سطوح فرصت
+
+**طبقه‌بندی:** Calendar CRUD/search/import = **FUNCTIONAL**؛ پوشش رویداد جهانی = seed محدود (**PARTIAL** نسبت به «تقویم کامل دنیا»)؛ localization چندزبانه در DB = **PARTIAL** (مدل کامل، پرشدن/مصرف ناهمگون).
+
+---
+
+## ۴) Matching / Opportunity Engine — **FUNCTIONAL** (دو مسیر؛ یکی deterministic واقعی، یکی AI/mock)
+
+### جریان Brand → Event → Score → Opportunity
+
+```
+Brand context (profile/strategy/channels)
+    + MarketingEvent (calendar, ACTIVE)
+    + event.knowledgeLinks (KG, optional)
+        → evaluateRules (11 rules, weights in lib/matching.ts)
+        → overall score → scoreLevel (ignore|low|medium|high|critical)
+        → upsert BusinessOpportunity + OpportunityScore + Evidence + History + Conflicts
+```
+
+| مرحله | فایل |
+|-------|------|
+| قوانین/سطح امتیاز | `src\lib\matching.ts` |
+| اجرا | `runDeterministicMatching` در `src\server\services\opportunity-matching.ts` |
+| API Matching | `src\app\api\matching\route.ts` (`intent: run|override`) |
+| UI Matching | `src\components\matching\matching-engine-workspace.tsx` (افق UI=120) |
+| مسیر موازی AI | `discoverOpportunities` در `src\server\services\opportunities.ts` → task `opportunity.match` |
+| API Opportunities | `src\app\api\opportunities\route.ts` |
+| UI Opportunities | `src\components\opportunities\opportunities-workspace.tsx` |
+
+### نکات کیفیت
+- Matching قطعی: **بدون LLM** — reproducible
+- Discover AI: تا ۱۸ کاندید؛ با `AI_FORCE_MOCK` پیش‌فرض (`config.ts`: `forceMock` مگر `AI_FORCE_MOCK=false`) عملاً **خروجی mock**
+- Discover هنگام create معمولاً `matchSource: AI` را ست نمی‌کند (default اسکیما = `DETERMINISTIC`) — ناسازگاری داده
+- Dashboard matching فقط `matchSource in [DETERMINISTIC, MANUAL]` را می‌آورد → ردیف‌های AI-discover اگر بعداً درست علامت بخورند ممکن است جدا بمانند
+
+**طبقه‌بندی کلی:** Matching قطعی = **FUNCTIONAL**؛ Opportunity Intelligence UI/AI path = **PARTIAL/MOCK** بسته به provider.
+
+---
+
+## ۵) Campaign Recommendations — **PARTIAL / MOCK** (pipeline واقعی، تولید محتوا mock تا وقتی forceMock روشن است)
+
+### مسیر
+| نقش | مسیر |
+|-----|------|
+| Eligibility / strategies | `src\lib\campaign-recommendations.ts` (`minScore: 61`, `minConfidence: 55`) |
+| Generate + approve + planner | `src\server\services\campaign-recommendations.ts` |
+| AI task | `campaign.generate` در registry + prompts |
+| Mock proposals | `src\server\ai\providers\mock.ts` (~۴۳۵–۷۲۴): blueprint کامل بدون کپی نهایی |
+| API | `src\app\api\recommendations\route.ts` |
+| UI | `src\components\recommendations\campaign-recommendations-workspace.tsx` |
+| Schema | `CampaignRecommendation` + scenarios/execution/impact/learning (~۳۳۷۰+) |
+
+### AI امروز چه می‌سازد؟
+جهت‌های ساختاری (نه کپی نهایی):
+- name, objective, strategy, audience, channels, duration
+- offer/theme/visual/messaging/CTA/landing/email **direction**
+- story/reel/carousel **sequence purposes**
+- contentPlan (نوع+تعداد+offset، بدون body)
+- execution phases, resources, scenarios CONSERVATIVE/BALANCED/AGGRESSIVE
+- whyThisCampaign / whyNow / evidence / risks
+- Approve → `Campaign` با status `PLANNING` (بدون auto-launch)
+
+پیش‌نیاز: فرصت‌های eligible از matching قبلی. Context شامل Business Brain است؛ اشاره mock به knowledge_graph فقط در متن evidence است، نه query واقعی KG.
+
+**طبقه‌بندی:** Persistence + eligibility + human approval flow = **FUNCTIONAL**؛ محتوای تولیدشده با تنظیمات پیش‌فرض = **MOCK**.
+
+---
+
+## جمع‌بندی طبقه‌بندی
+
+| سیستم | وضعیت | یک‌خطی |
+|--------|--------|--------|
+| **1. Business Brain** | **FUNCTIONAL** | مصاحبه، API، نسخه، مصرف در AI؛ Matching از Profile می‌خواند نه Brain |
+| **2. Knowledge Graph** | **PARTIAL** | Admin/seed/API کامل؛ event links دستی؛ ایجنت query ندارد |
+| **3. Calendar Intelligence** | **FUNCTIONAL** | CRUD/search/import/seed؛ localization مدل‌شده ولی مصرف ناقص |
+| **4. Matching/Opportunity** | **FUNCTIONAL** (+ مسیر AI **MOCK/PARTIAL**) | Brand→Event→Score→Opportunity قطعی کار می‌کند |
+| **5. Campaign Recommendations** | **PARTIAL / MOCK** | Pipeline واقعی؛ generate پیش‌فرض mock |
+
+### پاسخ نهایی به سؤال ۳۰روزه
+**قابلیت داده/اسکور: بله. قابلیت محصول «بپرس و جواب ۳۰روزه بگیر»: خیر.** نیاز به `horizonDays: 30` (یا فیلتر تاریخ) + اجرای matching؛ بدون endpoint/ایجنت اختصاصی و بدون استفاده مستقیم Business Brain در اسکور قطعی.
+
+
+======================================================================
+Subagent: Routes
+ID: 83884a96-0253-49b7-bc46-55e6aa54ebf5
+======================================================================
+
+# حسابرسی فقط‌خواندنی: مسیرها و APIهای Inzorya
+
+جمع: **۷۲** فایل `page.tsx` · **۵۱** فایل `route.ts`  
+مسیرها از ریشهٔ پروژه: `e:\Machine Learning\Inzorya\`
+
+---
+
+## ۳) Middleware و Auth
+
+### `e:\Machine Learning\Inzorya\src\middleware.ts`
+- `NextAuth(authConfig).auth` را به‌عنوان middleware اجرا می‌کند.
+- **matcher:** `/w/:path*`، `/onboarding/:path*`، `/dashboard`، `/login`، `/register`، `/forgot-password`
+- مسیر عمومی `/` و همهٔ `/api/**` در matcher نیستند (API فقط با `requireUser`/`auth()` داخل handler محافظت می‌شود).
+
+### `e:\Machine Learning\Inzorya\src\lib\auth.config.ts`
+| شرط | رفتار |
+|---|---|
+| `/login`، `/register`، `/forgot-password` | اگر لاگین باشد → redirect به `/dashboard`؛ وگرنه اجازه |
+| `/w/*`، `/onboarding*`، `/dashboard` | فقط اگر `auth.user` باشد |
+| بقیه | اجازه (عمومی) |
+| Session | JWT؛ `token.id` → `session.user.id` |
+| صفحات Auth | `signIn`/`error` → `/login` |
+| Providers در config | خالی (`[]`) — credentials در `auth` کامل‌تر است |
+
+---
+
+## ۱) صفحات (`page.tsx`) — گروه‌بندی
+
+نشانهٔ **placeholder**: `LocalizedDashboardPage` یا `localized-detail-page` → فقط کپی i18n + empty state، بدون داده واقعی.
+
+### Public (۱)
+| مسیر فایل | URL | داده | اجزای کلیدی | وابستگی API |
+|---|---|---|---|---|
+| `src/app/(marketing)/page.tsx` | `/` | real (session check) | `LandingPage` | `hasActiveWorkspaceSession` (نه REST) |
+
+### Auth (۳)
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `src/app/(auth)/login/page.tsx` | `/login` | client form | Card/Input، `signIn("credentials")` | NextAuth credentials |
+| `src/app/(auth)/register/page.tsx` | `/register` | client form | همان UI | `POST /api/register` |
+| `src/app/(auth)/forgot-password/page.tsx` | `/forgot-password` | client form | Card/Input | `POST /api/forgot-password` |
+
+### Onboarding (۲)
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `src/app/onboarding/business/page.tsx` | `/onboarding/business` | **real** (prisma profile) | `BusinessOnboardingWizard` | `/api/business-profile` |
+| `src/app/onboarding/brand/page.tsx` | `/onboarding/brand` | **real** (workspaces) | `BrandOnboardingForm` | `POST /api/brands` |
+
+### Workspace (سطح workspace، بدون brand در URL) — ۱۴
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `src/app/(dashboard)/w/[workspaceSlug]/home/page.tsx` | `/w/:ws/home` | **real** (prisma brain/plan/opps) | `HomeWorkspace` | SSR prisma + brain services |
+| `src/app/(dashboard)/w/[workspaceSlug]/activity/page.tsx` | `/w/:ws/activity` | client→API | `ActivityFeed` | `GET /api/activity` |
+| `src/app/(dashboard)/w/[workspaceSlug]/workspace/page.tsx` | `/w/:ws/workspace` | **placeholder** | `LocalizedDashboardPage` (`workspace`) | — |
+| `src/app/(dashboard)/w/[workspaceSlug]/team/page.tsx` | `/w/:ws/team` | **placeholder** | `team` | — |
+| `src/app/(dashboard)/w/[workspaceSlug]/team/invites/page.tsx` | `.../team/invites` | **placeholder** | `team-invites` | — |
+| `src/app/(dashboard)/w/[workspaceSlug]/team/roles/page.tsx` | `.../team/roles` | **placeholder** | `team-roles` | — |
+| `src/app/(dashboard)/w/[workspaceSlug]/integrations/page.tsx` | `.../integrations` | redirect | → اولین brand `/channels` | auth + workspace |
+| `src/app/(dashboard)/w/[workspaceSlug]/integrations/catalog/page.tsx` | `.../integrations/catalog` | **placeholder** | `integrations-catalog` | — |
+| `src/app/(dashboard)/w/[workspaceSlug]/integrations/[integrationId]/page.tsx` | `.../integrations/:id` | **placeholder detail** | `localized-detail-page` | — |
+| `src/app/(dashboard)/w/[workspaceSlug]/settings/page.tsx` | `.../settings` | **real** (user+brand) | `SettingsHub` | `/api/profile` (از hub) |
+| `src/app/(dashboard)/w/[workspaceSlug]/settings/workspace/page.tsx` | `.../settings/workspace` | **real** | `WorkspaceSettingsForm` | `PATCH /api/workspace` |
+| `src/app/(dashboard)/w/[workspaceSlug]/settings/brands/page.tsx` | `.../settings/brands` | **placeholder** | — | — |
+| `src/app/(dashboard)/w/[workspaceSlug]/settings/notifications/page.tsx` | `.../settings/notifications` | **placeholder** | — | shell: `/api/notifications` |
+| `src/app/(dashboard)/w/[workspaceSlug]/settings/billing/page.tsx` | `.../settings/billing` | **placeholder** | — | — |
+| `src/app/(dashboard)/w/[workspaceSlug]/settings/security/page.tsx` | `.../settings/security` | **placeholder** | — | — |
+| `src/app/(dashboard)/w/[workspaceSlug]/settings/api/page.tsx` | `.../settings/api` | **placeholder** | — | — |
+
+*(تیم/اینتگریشن/تنظیمات بالا ۱۴+؛ settings/ai و settings/integrations در Admin/Social)*
+
+### Brand (هویت برند / کسب‌وکار) — ۶
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `src/app/(dashboard)/w/[workspaceSlug]/b/[brandSlug]/page.tsx` | `/w/:ws/b/:brand` | redirect | → `/brand` | — |
+| `.../brand/page.tsx` | `.../brand` | **real** SSR | `BrandEditor` | `/api/brands/update`, `/api/brands/logo` |
+| `.../business/page.tsx` | `.../business` | **real** SSR+prisma | `BusinessProfileEditor` | `/api/business-profile` |
+| `.../brain/page.tsx` | `.../brain` | client→API | `BusinessBrainWorkspace` | `/api/brain`, `/api/brain/assets` |
+| `.../brain/interview/page.tsx` | `.../brain/interview` | همان | `BusinessBrainWorkspace` + skeleton | `/api/brain` |
+| `.../strategy/page.tsx` | `.../strategy` | client→API | `StrategyWorkspace` | `/api/strategy` |
+
+### Dashboard (ورودی / هاب) — ۴
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `src/app/dashboard/page.tsx` | `/dashboard` | **real** | workspace picker → redirect | `getUserWorkspaces` |
+| `.../b/[brandSlug]/workspace/page.tsx` | `.../workspace` | لینک‌هاب (static UI) | `WorkspaceHub` | بدون fetch مستقیم |
+| `.../b/[brandSlug]/content/page.tsx` | `.../content` | لینک‌هاب | `ContentHub` | بدون fetch؛ لینک به planner/creator/studio |
+| `.../home` | (بالا در Workspace) | — | — | — |
+
+### AI — ۱۰
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `.../strategist/page.tsx` | `.../strategist` | **real** via API | `StrategistWorkspace` | `/api/strategist` (+AI) |
+| `.../planner/page.tsx` | `.../planner` | **real** | `ContentPlannerWorkspace` | `/api/planner` (+AI) |
+| `.../creator/page.tsx` | `.../creator` | **real** | `ContentCreatorWorkspace` | `/api/creator` (+AI) |
+| `.../decisions/page.tsx` | `.../decisions` | **real** | `DecisionCenterWorkspace` | `/api/decisions` (+AI) |
+| `.../opportunities/page.tsx` | `.../opportunities` | **real** | `OpportunitiesWorkspace` | `/api/opportunities` (+AI) |
+| `.../matching/page.tsx` | `.../matching` | **real** (deterministic) | `MatchingEngineWorkspace` | `/api/matching` |
+| `.../recommendations/page.tsx` | `.../recommendations` | **real** | `CampaignRecommendationsWorkspace` | `/api/recommendations` (+AI) |
+| `.../knowledge-graph/page.tsx` | `.../knowledge-graph` | **real** | `KnowledgeGraphWorkspace` | `/api/knowledge-graph` |
+| `.../work/page.tsx` | `.../work` | **real** | `WorkEngineWorkspace` | `/api/work` (+AI assist) |
+| `.../pipeline/page.tsx` | `.../pipeline` | **real** | `ExecutionPipelineWorkspace` | `/api/pipeline` |
+
+### Calendar (۱)
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `.../calendar/page.tsx` | `.../calendar` | **real** | `CalendarAdminWorkspace` | `/api/calendar` (+ sync helper) |
+
+### Content — ۱۸
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `.../studio/page.tsx` | `.../studio` | **real** | `ContentStudio` | `/api/studio/content|campaigns|pillars`, `/api/media` |
+| `.../media/page.tsx` | `.../media` | **real** | `MediaManager` | `/api/media` |
+| `.../media/[assetId]/page.tsx` | `.../media/:id` | **placeholder detail** | — | — |
+| `.../media/folders/[folderId]/page.tsx` | `.../media/folders/:id` | **placeholder detail** | — | — |
+| `.../knowledge/page.tsx` | `.../knowledge` | **real** | `KnowledgeWorkspace` | `/api/knowledge` |
+| `.../knowledge/[docId]/page.tsx` | `.../knowledge/:id` | **placeholder detail** | — | — |
+| `.../knowledge/ask/page.tsx` | `.../knowledge/ask` | **placeholder** | — | — |
+| `.../knowledge/sources/page.tsx` | `.../knowledge/sources` | **placeholder** | — | — |
+| `.../campaigns/page.tsx` | `.../campaigns` | redirect | → `studio?tab=campaigns` | — |
+| `.../campaigns/new/page.tsx` | `.../campaigns/new` | **placeholder** | — | — |
+| `.../campaigns/[campaignId]/page.tsx` | `.../campaigns/:id` | **placeholder detail** | — | — |
+| `.../campaigns/[campaignId]/content/page.tsx` | `.../content` | **placeholder detail** | — | — |
+| `.../campaigns/[campaignId]/timeline/page.tsx` | `.../timeline` | **placeholder detail** | — | — |
+| `.../campaigns/[campaignId]/settings/page.tsx` | `.../settings` | **placeholder detail** | — | — |
+| `.../content/[contentId]/page.tsx` | `.../content/:id` | **placeholder detail** | — | — |
+| `.../content/approvals/page.tsx` | `.../content/approvals` | **placeholder** | — | — |
+| `.../automations/page.tsx` | `.../automations` | **real** (+demo seed) | `AutomationsList` | `/api/automations` |
+| `.../automations/[automationId]/page.tsx` | `.../automations/:id` | **real** | `AutomationBuilder` | `/api/automations` |
+| `.../automations/runs/page.tsx` | `.../automations/runs` | **mock UI** (empty) | EmptyState — «mocked for now» | — |
+
+### Analytics (۱)
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `.../analytics/page.tsx` | `.../analytics` | **mock metrics** (`source: "mock"`) + DB reports | `AnalyticsView` | `/api/analytics` |
+
+### Social (۴)
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `.../channels/page.tsx` | `.../channels` | **real** (+sandbox Meta) | `ChannelsView` | `/api/integrations/meta` (و کانال‌ها) |
+| `.../inbox/page.tsx` | `.../inbox` | **real** + seed mock conversations | `InboxView` | `/api/inbox`, `/api/conversations` |
+| `.../community/page.tsx` | `.../community` | **real** (+AI) | `CommunityManagerWorkspace` | `/api/community` |
+| `.../contacts/page.tsx` | `.../contacts` | **real** | `ContactsView` | `/api/contacts` |
+
+### Admin (۲ در تنظیمات + AI platform)
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `.../settings/ai/page.tsx` | `.../settings/ai` | **real** | `AIPlatformAdmin` | `/api/ai` (DB + AI platform؛ `AI_FORCE_MOCK`) |
+| `.../settings/integrations/page.tsx` | `.../settings/integrations` | **real** | `IntegrationSettings` | `/api/integrations/meta` |
+
+*(سایر settings بالا در Workspace؛ billing/api/security هنوز placeholder.)*
+
+### Other (۶)
+| مسیر فایل | URL | داده | اجزا | API |
+|---|---|---|---|---|
+| `.../agents/page.tsx` | `.../agents` | **placeholder** | — | — |
+| `.../agents/[agentId]/page.tsx` | `.../agents/:id` | **placeholder detail** | — | — |
+| `.../tasks/page.tsx` | `.../tasks` | **placeholder** | — | (موتور کار واقعی در `/work`) |
+| `.../tasks/[taskId]/page.tsx` | `.../tasks/:id` | **placeholder detail** | — | — |
+
+**جمع صفحات شمرده‌شده در گروه‌ها ≈ ۷۲** (با احتساب همهٔ settings/integrations/team و detailها).
+
+---
+
+## ۲) APIها (`src/app/api/**/route.ts`)
+
+اختصارات Auth: **RU**=`requireUser` · **RBA**=`requireBrandAccess` · **RWA**=`requireWorkspaceAccess` · **pub**=بدون session · **auth()**=session مستقیم · **Meta HMAC**=امضای webhook
+
+| مسیر | Methods | هدف | Auth | DB / AI |
+|---|---|---|---|---|
+| `src/app/api/auth/[...nextauth]/route.ts` | GET, POST | NextAuth handlers | N/A | session |
+| `src/app/api/register/route.ts` | POST | ثبت‌نام + workspace | **pub** | prisma User |
+| `src/app/api/forgot-password/route.ts` | POST | توکن ریست | **pub** | prisma |
+| `src/app/api/locale/route.ts` | POST | کوکی locale | **pub** | — |
+| `src/app/api/profile/route.ts` | PATCH | پروفایل/رمز | RU | prisma |
+| `src/app/api/workspace/route.ts` | PATCH, POST | rename / create workspace | RU | prisma |
+| `src/app/api/brands/route.ts` | POST | ساخت برند | auth() | workspace service |
+| `src/app/api/brands/update/route.ts` | PATCH | ویرایش برند | RU+RBA | prisma |
+| `src/app/api/brands/logo/route.ts` | POST | آپلود لوگو | RU+RBA | prisma + filesystem |
+| `src/app/api/business-profile/route.ts` | GET, POST, PATCH | پروفایل کسب‌وکار / onboarding | RU (+RBA برای GET/PATCH) | prisma |
+| `src/app/api/brain/route.ts` | GET, PATCH | Business Brain | RU+RBA | prisma |
+| `src/app/api/brain/assets/route.ts` | POST, DELETE | دارایی‌های brain | RU+RBA | prisma + FS |
+| `src/app/api/strategy/route.ts` | GET, PATCH | استراتژی بازاریابی | RU+RBA | prisma |
+| `src/app/api/strategist/route.ts` | GET, POST | گفتگوی استراتژیست | RU+RBA | DB + **AI** (`AIPlatformError`) |
+| `src/app/api/planner/route.ts` | GET, POST | پلن محتوا / generate | RU+RBA | DB + **AI** |
+| `src/app/api/planner/handoff/route.ts` | POST | handoff pipeline→planner | RU+RBA | execution-pipeline service |
+| `src/app/api/creator/route.ts` | GET, POST | تولید محتوا | RU+RBA | DB + **AI** `generateContent` |
+| `src/app/api/decisions/route.ts` | GET, POST | Decision Center / brief | RU+RBA | DB + **AI** |
+| `src/app/api/opportunities/route.ts` | GET, POST | فرصت‌ها / discover | RU+RBA | DB + **AI** |
+| `src/app/api/matching/route.ts` | GET, POST | matching قطعی فرصت | RU+RBA | service/DB (بدون LLM مستقیم) |
+| `src/app/api/recommendations/route.ts` | GET, POST | توصیه کمپین | RU+RBA | DB + **AI** |
+| `src/app/api/knowledge-graph/route.ts` | GET, POST | گراف دانش | RU+RBA | knowledge-graph service/DB |
+| `src/app/api/knowledge/route.ts` | GET, POST, PATCH, DELETE | اسناد دانش | RU+RBA | prisma |
+| `src/app/api/calendar/route.ts` | GET, POST | تقویم رویدادها | RU+RBA | calendar services/DB |
+| `src/app/api/calendar/sync/route.ts` | POST | sync workflow→calendar | RU+RBA | pipeline service |
+| `src/app/api/work/route.ts` | GET, POST | موتور تسک / AI assist | RU+RBA | DB + **AI** `runTaskAssist` |
+| `src/app/api/pipeline/route.ts` | GET, POST | execution pipeline | RU+RBA | pipeline service/DB |
+| `src/app/api/workflow/status/route.ts` | GET, POST | وضعیت workflow | RU+RBA | pipeline |
+| `src/app/api/tasks/create/route.ts` | POST | ساخت تسک‌های pipeline | RU+RBA | pipeline |
+| `src/app/api/community/route.ts` | GET, POST | Community Manager | RU+RBA | DB + **AI** |
+| `src/app/api/inbox/route.ts` | GET, POST, PATCH, DELETE | تگ/ریپلای اینباکس | RU+RBA | prisma |
+| `src/app/api/conversations/route.ts` | GET, POST, PATCH | مکالمات اینباکس | RU+RBA | prisma + **ensureInboxMockData** |
+| `src/app/api/contacts/route.ts` | GET, POST, PATCH, DELETE | مخاطبین | RU+RBA | prisma |
+| `src/app/api/channels/route.ts` | GET, PATCH | کانال‌ها (اتصال **mock**) | RU+RBA | prisma؛ connect = mock OAuth shape |
+| `src/app/api/integrations/meta/route.ts` | GET, POST | Meta OAuth/sandbox | RU+RBA | prisma + Meta services |
+| `src/app/api/integrations/meta/callback/route.ts` | GET | OAuth callback redirect | state/OAuth (نه RU) | prisma |
+| `src/app/api/webhooks/meta/route.ts` | GET, POST | verify + receive webhook | verify token / HMAC | audit log؛ بدون پردازش بیزنس کامل |
+| `src/app/api/content/route.ts` | GET, POST, PATCH, DELETE | کتابخانه محتوا | RU+RBA | prisma |
+| `src/app/api/studio/content/route.ts` | GET, POST, PATCH | Content Studio items | RU+RBA | prisma (+default templates) |
+| `src/app/api/studio/campaigns/route.ts` | GET, POST, PATCH | کمپین‌ها | RU+RBA | prisma |
+| `src/app/api/studio/pillars/route.ts` | GET, POST, PATCH | content pillars | RU+RBA | prisma |
+| `src/app/api/studio/templates/route.ts` | GET, POST | قالب‌ها | RU+RBA | prisma (+seed defaults) |
+| `src/app/api/media/route.ts` | GET, POST, DELETE | media assets | RU+RBA | prisma + FS |
+| `src/app/api/automations/route.ts` | GET, POST, PATCH, DELETE | اتوماسیون‌ها | RU+RBA | prisma + **ensureDemoAutomations** |
+| `src/app/api/analytics/route.ts` | GET, POST | آنالیتیکس | RU+RBA | reports DB؛ overview **`source: "mock"`** |
+| `src/app/api/ai/route.ts` | GET, POST | ادمین پلتفرم AI / `runAITask` | RU+RWA | prisma AI catalog + **AI**؛ `forceMock` اگر `AI_FORCE_MOCK!=="false"` |
+| `src/app/api/activity/route.ts` | GET | فید فعالیت | RU+RWA | prisma (+seed اولیه اگر خالی) |
+| `src/app/api/notifications/route.ts` | GET, PATCH | اعلان‌ها | RU+RWA | prisma + **ensureMockNotifications** |
+| `src/app/api/favorites/route.ts` | GET, POST, DELETE | علاقه‌مندی‌ها | RU+RWA | prisma |
+| `src/app/api/recents/route.ts` | GET, POST | اخیرها | RU+RWA | prisma |
+| `src/app/api/search/route.ts` | GET | جستجو صفحات+موجودیت‌ها | RU+RBA | prisma + لیست ثابت صفحات |
+
+**۵۱ مسیر کامل.**
+
+---
+
+## نکات برجسته داده واقعی در برابر mock
+
+| حوزه | وضعیت |
+|---|---|
+| Auth / workspace / brand / brain / strategy / studio / media / knowledge docs | عمدتاً **real DB** |
+| AI features (strategist/planner/creator/…) | real API surface؛ ممکن است با `AI_FORCE_MOCK` mock شوند |
+| Analytics metrics | صریحاً **mock provider** |
+| Channels connect (legacy `/api/channels`) | **mock** connection |
+| Meta integration | real OAuth/sandbox scaffolding |
+| Inbox conversations | DB با **seed mock** در صورت خالی |
+| Notifications | **ensureMockNotifications** |
+| Automations | DB + **demo templates/automations**؛ runs page فقط UI mock |
+| ~۲۰ صفحه Localized*/detail | **placeholder** بدون backend |
+
+Middleware فقط صفحه را قفل می‌کند؛ **هیچ route در `/api` زیر middleware matcher نیست** و باید خود handler احراز هویت کند (به‌جز register/forgot-password/locale/auth/webhooks/meta callback).
+
+
+======================================================================
+Subagent: Database
+ID: db7e55ae-d77d-4352-9d32-347f03239788
+======================================================================
+
+## خلاصه
+
+فایل: `e:\Machine Learning\Inzorya\prisma\schema.prisma` — **۱۸۳ مدل**.
+
+در `src/` حدود **۱۷۱ مدل** با `prisma.modelName.*` دیده می‌شود؛ **۱۲ مدل** هیچ فراخوانی مستقیمی ندارند. سه تای auth (`Account`, `Session`, `VerificationToken`) فقط از طریق `PrismaAdapter` در `src\lib\auth.ts` استفاده می‌شوند.
+
+---
+
+## ۱) User / Auth
+
+| Model | معنی | فیلدهای کلیدی | استفاده | CRUD واقعی؟ |
+|---|---|---|---|---|
+| **User** | کاربر اپ | `email`, `passwordHash`, `name`, `image` | `src\lib\auth.ts`, `src\app\api\register\route.ts`, `src\app\api\profile\route.ts`, `src\app\api\forgot-password\route.ts`, `src\app\(dashboard)\w\[workspaceSlug]\settings\page.tsx` | بله: create/update/find |
+| **PasswordResetToken** | ریست پسورد | `email`, `token`, `expires` | `src\app\api\forgot-password\route.ts` | بله: create/delete |
+| **Account / Session / VerificationToken** | NextAuth | OAuth/session tokens | فقط adapter در `src\lib\auth.ts` (بدون `prisma.account` مستقیم) | غیرمستقیم |
+| **WorkspaceMember** | عضویت | `workspaceId`, `userId`, `role` | create تو در تو در `src\server\services\workspace.ts`؛ read در `src\app\api\inbox\route.ts`, `src\server\services\work.ts`, `src\server\services\community.ts` | Create بله (nested)؛ update/delete مستقیم ضعیف |
+
+---
+
+## ۲) Workspace / Brand
+
+| Model | معنی | فیلدهای کلیدی | Consumers | CRUD؟ |
+|---|---|---|---|---|
+| **Workspace** | فضای کاری | `name`, `slug` | `src\server\services\workspace.ts`, `src\server\access.ts`, `src\app\api\workspace\route.ts`, `src\app\api\business-profile\route.ts`, settings pages | بله |
+| **Brand** | برند داخل workspace | `workspaceId`, `name`, `slug`, `logoUrl`, colors, voice | `workspace.ts`, `access.ts`, `brands/update`, `brands/logo`, `brain/*`, `strategy`, `ai`, decisions/opportunities/strategist/... | بله |
+| **BusinessProfile** | پروفایل کسب‌وکار/آنبوردینگ | goals, audience, platforms, `onboardingStep` | `src\app\api\business-profile\route.ts`, `strategy/route.ts`, `brain/route.ts`, onboarding/business pages | بله (upsert) |
+| **MarketingStrategy** | استراتژی ساخت‌یافته برند | `goals[]`, platforms, tone, stage | `src\app\api\strategy\route.ts`, `business-brain.ts`, planner/creator/decisions | بله |
+| **AudiencePersona / Competitor / ContentPillar / RoadmapTask** | اجزای استراتژی | name/notes/sortOrder | `src\app\api\strategy\route.ts`؛ pillars همچنین `studio/pillars`, `studio/content`, `brain` | بله (غالباً replace via createMany/deleteMany) |
+
+APIهای مرتبط: `/api/workspace`, `/api/brands`, `/api/brands/update`, `/api/brands/logo`, `/api/business-profile`, `/api/strategy`
+
+---
+
+## ۳) Business Brain
+
+| Model | معنی | فیلدهای کلیدی | Consumers | CRUD؟ |
+|---|---|---|---|---|
+| **BusinessBrain** | مصاحبه/وضعیت brain برند | `brandId`, score, completion, version | `src\server\services\business-brain.ts`, `src\app\api\brain\route.ts`, `src\server\ai\context\engine.ts` | بله |
+| **BusinessQuestion** | کاتالوگ سوالات | `key`, `groupKey`, `prompt`, `inputType` | `business-brain.ts`, `brain/route.ts` | upsert/seed |
+| **BusinessAnswer** | پاسخ‌ها | `brainId`, `questionId`, `value`/`valueJson` | `src\app\api\brain\route.ts` | upsert |
+| **BrandVoice** | صدای برند | traits, tone, forbidden/preferred words | `brain/route.ts` | upsert |
+| **BrandAsset** | دارایی‌های برند | `kind`, `url`, mime/size | `src\app\api\brain\assets\route.ts` | create/update |
+| **BusinessBrainVersion** | اسنپ‌شات نسخه‌ها | `version`, `snapshot` Json | `business-brain.ts` | create فقط |
+
+API: `/api/brain`, `/api/brain/assets`
+
+---
+
+## ۴) Knowledge Graph (+ docs)
+
+| Model | معنی | Consumers | CRUD؟ |
+|---|---|---|---|
+| **KnowledgeDocument** | اسناد دانش برند | `src\app\api\knowledge\route.ts`, search, layout, AI context | CRUD کامل |
+| **KnowledgeNode / KnowledgeRelation / KnowledgeRelationType / MarketingEventKnowledge** | گراف دانش | تقریباً فقط `src\server\services\knowledge-graph.ts` ← API `src\app\api\knowledge-graph\route.ts` | بله |
+| **Industry, BusinessType, ProductCategory, Audience, CampaignType, MarketingObjective, ContentType, DistributionChannel, CTA, EmotionalTone** | تاکسونومی seed | فقط `knowledge-graph.ts` (عمدتاً upsert) | write سبک/seed؛ UI CRUD غنی نه |
+
+---
+
+## ۵) Calendar / Events
+
+هسته: **MarketingEvent** (+ catalog).
+
+| Model | Consumers اصلی | CRUD؟ |
+|---|---|---|
+| **MarketingEvent** | `src\server\services\calendar.ts`, `calendar-catalog.ts`, opportunities, matching, knowledge-graph | بله (create/update/delete/upsert) |
+| **MarketingSource/Category/Region/Country/Tag/Season** | `calendar.ts` (+ catalog برای tag) | seed/upsert + read |
+| **MarketingEventCountry/Tag/Season/SecondarySource** | calendar (+ catalog) | junction write |
+| **MarketingTranslation / MarketingLocalization** | calendar + catalog | upsert |
+| **MarketingEventVersion / History / Verification** | `calendar.ts` | create/upsert سبک |
+| **MarketingImportJob / MarketingImportLog** | `calendar-catalog.ts` | create/update |
+
+API: `src\app\api\calendar\route.ts`, `src\app\api\calendar\sync\route.ts`
+
+---
+
+## ۶) Matching / Opportunities
+
+| Model | معنی | Consumers | CRUD؟ |
+|---|---|---|---|
+| **BusinessOpportunity** | فرصت کسب‌وکار مرتبط با event | `opportunities.ts`, `opportunity-matching.ts`, decisions, campaign-recommendations, home page | بله قوی |
+| **OpportunityScore / Evidence / Rule / History / Override / Conflict** | امتیاز، شواهد، قوانین، تاریخچه matching | matching + opportunities | بله (عمدتاً service-side) |
+| **OpportunityRecommendation / Alert / Feedback / Category** | پیشنهاد/هشدار/فیدبک | `opportunities.ts` | بله |
+
+API: `/api/opportunities`, `/api/matching`
+
+---
+
+## ۷) Campaigns (+ recommendations / pipeline)
+
+| Model | Consumers | CRUD؟ |
+|---|---|---|---|
+| **Campaign** | studio campaigns/content، creator، planner، decisions، opportunities، execution-pipeline، AI context | بله |
+| **CampaignRecommendation / Scenario / ExecutionPlan / ImpactEstimate / Learning** | `src\server\services\campaign-recommendations.ts` ← `/api/recommendations` | بله (plan/impact فقط upsert) |
+| **CampaignWorkflow / PlannerHandoff / WorkflowTimeline / WorkflowDependency / WorkflowAudit** | `src\server\services\execution-pipeline.ts` ← `/api/pipeline`, `/api/workflow/status`, `/api/planner/handoff`, `/api/tasks/create`, calendar sync | بله |
+
+---
+
+## ۸) Content (Studio / Plans / Creator)
+
+| Model | Consumers | CRUD؟ |
+|---|---|---|---|
+| **ContentItem** | `/api/content`, `/api/studio/content`, planner, creator, decisions, search, layout | CRUD کامل |
+| **ContentBrief / ChecklistItem / Comment / Template / Pillar** | studio content/templates/pillars (+ strategy برای pillar) | بله (comment/brief نازک‌تر) |
+| **MediaAsset** | `/api/media`, layout | بله |
+| **EditorialCalendar** | فقط create در `opportunities.ts` (slot از فرصت) | create محدود؛ بدون API CRUD عمومی |
+| **ContentPlan / ContentPlanItem / PlanningSession / PlanningInsight / PlanningTemplate** | `planner.ts` ← `/api/planner`؛ pipeline؛ home | بله |
+| **PlanningConstraint** | — | **هیچ** |
+| **GenerationSession / GeneratedContent / GeneratedVariation / GenerationFeedback** | `creator.ts` ← `/api/creator` | بله |
+| **ContentScore / BrandValidation / VisualSuggestion** | — | **هیچ** (در schema به variation وصل‌اند ولی runtime ندارند) |
+| **ContentAttachment** | — | **هیچ** |
+
+---
+
+## ۹) Tasks / Work
+
+| Model | Consumers | CRUD؟ |
+|---|---|---|---|
+| **MarketingGoal / MarketingProject / MarketingTask / Milestone** | `work.ts` ← `/api/work`؛ pipeline | بله |
+| **TaskComment / TaskDependency / TaskActivity / TaskWatcher** | `work.ts` (+ dependency در pipeline) | بله (comment/activity فقط create) |
+| **TaskLabel / MarketingTaskLabel** | — | **هیچ** |
+
+---
+
+## ۱۰) Analytics
+
+همه از `src\server\services\analytics\repository.ts` ← `/api/analytics`.
+
+| Model | Ops | نکته |
+|---|---|---|
+| **Metric, Kpi, AnalyticsSnapshot, AudienceSnapshot, ContentMetric, CampaignMetric, ChannelMetric** | عمدتاً upsert | overview با `source: "mock"` |
+| **Insight** | createMany/deleteMany | |
+| **Report / ReportTemplate** | find/create | save_report واقعی است |
+
+CRUD «واقعی» برای metricهای کانال/کمپین بیشتر seed/upsert داخلی است تا ingestion زنده.
+
+---
+
+## ۱۱) Social channels / Integrations
+
+| Model | Consumers | CRUD؟ |
+|---|---|---|---|
+| **SocialChannel** | `lib\business.ts`, `/api/channels`, meta integration, inbox-seed | upsert کاتالوگ |
+| **ChannelConnection / ChannelPermission** | `/api/channels`, meta integration, strategy, search, inbox-seed | بله |
+| **ConnectedAccount, OAuthSession, AccessToken, RefreshToken, IntegrationPermission, WebhookSubscription, SyncJob, SyncHistory, IntegrationAuditLog** | `src\server\services\meta\integration.ts` + `/api/integrations/meta*` | بله (لایه Meta) |
+
+---
+
+## ۱۲) AI / Memory / Recommendations (چند لایه)
+
+**AI infra**
+- **AIProvider / AIModel / AITask / AITaskExecution / Prompt / PromptVersion**: `src\server\ai\*` + `/api/ai`
+- **ContextSnapshot**: create در `context\engine.ts`
+- **MemoryRecord**: `src\server\ai\memory\store.ts`
+- **UsageMetric / CostRecord / AIError**: `observability\metrics.ts`
+
+**Strategist recommendations (جدا از campaign recommendations)**
+- **StrategyConversation / Message / Document / Template**
+- **BusinessDecision / BusinessMemory / Recommendation / RecommendationAction**
+- Consumers: `src\server\services\strategist.ts` ← `/api/strategist`
+
+**Executive decisions / memory**
+- **ExecutiveBrief / DecisionRecommendation / DecisionAction / BusinessPriority / ExecutiveMemory / MarketingInsight**
+- Consumers: `src\server\services\decisions.ts` ← `/api/decisions`
+- **DecisionEvidence**: بدون استفاده
+
+---
+
+## ۱۳) Notifications / UX shell
+
+| Model | Consumers | CRUD؟ |
+|---|---|---|---|
+| **Notification** | `/api/notifications`, `workspace-experience.ts`, decisions, work | بله |
+| **Activity** | `/api/activity`, workspace-experience | create/read |
+| **Favorite / RecentItem** | `/api/favorites`, `/api/recents`, workspace-experience | بله |
+
+---
+
+## ۱۴) Inbox / Community (مرتبط ولی خارج از لیست اصلی)
+
+استفاده سنگین: **Conversation, Contact, Message, InboxTag, SavedReply, Assignment, InternalNote, ConversationEvent**, به‌علاوه community models در `community.ts` ← `/api/community`, `/api/conversations`, `/api/inbox`.
+
+**Automation***: `/api/automations` + `automation.ts` — CRUD قوی؛ **AutomationExecution** بدون استفاده.
+
+---
+
+## مدل‌های schema با استفاده کم/صفر
+
+### صفر فراخوانی مستقیم `prisma.*` در `src/`
+1. **Account** — فقط PrismaAdapter  
+2. **Session** — فقط PrismaAdapter  
+3. **VerificationToken** — فقط PrismaAdapter  
+4. **ContentAttachment**  
+5. **AutomationExecution**  
+6. **PlanningConstraint**  
+7. **ContentScore**  
+8. **BrandValidation**  
+9. **VisualSuggestion**  
+10. **DecisionEvidence**  
+11. **TaskLabel**  
+12. **MarketingTaskLabel**
+
+### استفاده نازک / تقریباً فقط seed یا write یک‌طرفه
+- تاکسونومی KG: `Audience`, `CampaignType`, `CTA`, `EmotionalTone`, … (فقط `knowledge-graph.ts`)
+- Analytics metrics snapshots (upsert + mock overview)
+- `EditorialCalendar` — یک `create` در opportunities
+- `WorkspaceMember` — create فقط nested؛ بدون API مدیریت اعضا
+- `ContextSnapshot`, `BusinessBrainVersion`, `PlannerHandoff` — write محدود، بدون CRUD UI کامل
+- `ConversationParticipant`, `MessageAttachment` — عمدتاً seed در `inbox-seed.ts`
+
+---
+
+## نقشه سریع API ↔ سرویس برای خانواده‌های هدف
+
+| حوزه | API | Service اصلی |
+|---|---|---|
+| Workspace/Brand | `/api/workspace`, `/api/brands*` | `workspace.ts` |
+| Business Brain | `/api/brain*` | `business-brain.ts` |
+| Knowledge Graph | `/api/knowledge-graph`, `/api/knowledge` | `knowledge-graph.ts` |
+| Calendar | `/api/calendar*` | `calendar.ts`, `calendar-catalog.ts` |
+| Matching | `/api/matching` | `opportunity-matching.ts` |
+| Opportunities | `/api/opportunities` | `opportunities.ts` |
+| Campaign recs | `/api/recommendations` | `campaign-recommendations.ts` |
+| Content/Studio | `/api/content`, `/api/studio/*` | routes مستقیم + creator/planner |
+| Planner | `/api/planner*` | `planner.ts`, `execution-pipeline.ts` |
+| Tasks | `/api/work`, `/api/tasks/create` | `work.ts`, `execution-pipeline.ts` |
+| Analytics | `/api/analytics` | `analytics/repository.ts` |
+| Channels/Meta | `/api/channels`, `/api/integrations/meta*` | `meta/integration.ts` |
+| AI | `/api/ai` | `server/ai/*` |
+| Strategist recs | `/api/strategist` | `strategist.ts` |
+| Decisions/Memory | `/api/decisions` | `decisions.ts` |
+| Notifications | `/api/notifications` | `workspace-experience.ts` |
+
+---
+
+**جمع‌بندی:** اسکما خیلی بزرگ‌تر از سطح «محصول کامل» است؛ هسته User/Workspace/Brand، Brain، Calendar→Opportunity→Campaign workflow، Content/Planner/Creator، Tasks و Notifications مسیر runtime واقعی دارند. شکاف‌های واضح: مدل‌های امتیاز/اعتبارسنجی Creator (`ContentScore`/`BrandValidation`/`VisualSuggestion`)، label تسک‌ها، `PlanningConstraint`، `AutomationExecution`، `DecisionEvidence`، و `ContentAttachment` — تعریف‌شده‌اند ولی consumer ندارند.
