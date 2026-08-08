@@ -13,6 +13,7 @@ export {
 export {
   parseContentBlueprint,
   contentBlueprintSchema,
+  contentPlanItemSchema,
   countFormats,
   type ContentBlueprint,
   type ContentPlanItem,

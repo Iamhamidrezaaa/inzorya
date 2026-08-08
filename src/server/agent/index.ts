@@ -132,3 +132,19 @@ export type {
   PlanningMode,
   RunContentStrategistResult,
 } from "@/server/agent/content-strategist";
+export {
+  CONTENT_CREATOR_AGENT,
+  CONTENT_CREATOR_AGENT_ID,
+  CONTENT_CREATOR_TOOL_IDS,
+  CONTENT_CREATOR_SUPPORTED_FORMATS,
+  runContentCreatorAgent,
+  parseContentAsset,
+  enforceBlueprintFidelity,
+  contentAssetSchema,
+  isContentCreatorToolId,
+} from "@/server/agent/content-creator";
+export type {
+  ContentAsset,
+  CreativeBlock,
+  RunContentCreatorResult,
+} from "@/server/agent/content-creator";

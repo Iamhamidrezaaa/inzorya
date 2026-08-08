@@ -6,6 +6,7 @@ import {
   bootstrapAgentTools,
   getDefaultToolRegistry,
   runAgentExecution,
+  runContentCreatorAgent,
   runContentStrategistAgent,
   runMarketingReadonlyAgent,
   runTrendIntelligenceAgent,
@@ -25,11 +26,15 @@ const debugBodySchema = z.object({
       "trend.intelligence",
       "viral.content.analyst",
       "content.strategist",
+      "content.creator",
     ])
     .optional()
     .default("marketing.readonly"),
   toolId: z.string().optional(),
   toolInput: z.record(z.string(), z.unknown()).optional(),
+  /** Optional Content Blueprint / plan item for content.creator */
+  blueprint: z.record(z.string(), z.unknown()).optional(),
+  blueprintItem: z.record(z.string(), z.unknown()).optional(),
 });
 
 const ALLOWED_DEBUG_TOOLS = new Set([
@@ -153,6 +158,30 @@ export async function POST(request: Request) {
             body.message ||
             "برای هفته آینده اینستاگرامم برنامه بده.",
           ...scope,
+        });
+        return NextResponse.json({ result });
+      }
+
+      if (agentId === "content.creator") {
+        const { contentBlueprintSchema, contentPlanItemSchema } = await import(
+          "@/server/agent/content-strategist/output"
+        );
+        const blueprintParsed = body.blueprint
+          ? contentBlueprintSchema.safeParse(body.blueprint)
+          : null;
+        const itemParsed = body.blueprintItem
+          ? contentPlanItemSchema.safeParse(body.blueprintItem)
+          : null;
+
+        const result = await runContentCreatorAgent({
+          message:
+            body.message ||
+            "این Blueprint را به محتوای قابل تولید تبدیل کن.",
+          ...scope,
+          blueprint: blueprintParsed?.success
+            ? blueprintParsed.data
+            : undefined,
+          blueprintItem: itemParsed?.success ? itemParsed.data : undefined,
         });
         return NextResponse.json({ result });
       }

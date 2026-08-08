@@ -41,6 +41,13 @@ export const FOUNDATION_AGENTS: AgentDefinition[] = [
     description:
       "Read-only strategist that produces a structured Content Blueprint from brand, calendar, opportunities, trends, and user constraints — no final copy or publishing.",
   },
+  {
+    id: "content.creator",
+    name: "Content Creator",
+    version: "1.0.0",
+    description:
+      "Transforms an approved Content Blueprint into production-ready creative assets — no strategy replacement, publishing, or business-record persistence.",
+  },
 ];
 
 export class AgentRegistry {
