@@ -14,6 +14,12 @@ export function mapHttpToSearchError(
       "Web search timed out.",
     );
   }
+  if (kind === "network") {
+    return new ResearchProviderError(
+      "WEB_SEARCH_PROVIDER_REQUEST_FAILED",
+      "Web search network connectivity failed.",
+    );
+  }
   if (kind === "parse") {
     return new ResearchProviderError(
       "WEB_SEARCH_PROVIDER_MALFORMED_RESPONSE",
@@ -23,7 +29,7 @@ export function mapHttpToSearchError(
   if (status === 401 || status === 403) {
     return new ResearchProviderError(
       "WEB_SEARCH_PROVIDER_AUTH_FAILED",
-      "Web search authentication failed.",
+      "Web search authentication or authorization failed.",
     );
   }
   if (status === 429) {
@@ -32,8 +38,14 @@ export function mapHttpToSearchError(
       "Web search rate limit exceeded.",
     );
   }
+  if (status != null && status >= 500) {
+    return new ResearchProviderError(
+      "WEB_SEARCH_PROVIDER_REQUEST_FAILED",
+      "Web search provider returned a server error.",
+    );
+  }
   return new ResearchProviderError(
-    "WEB_SEARCH_PROVIDER_ERROR",
+    "WEB_SEARCH_PROVIDER_REQUEST_FAILED",
     "Web search provider request failed.",
   );
 }
@@ -48,6 +60,12 @@ export function mapHttpToCrawlError(
       "Crawl timed out.",
     );
   }
+  if (kind === "network") {
+    return new ResearchProviderError(
+      "CRAWL_PROVIDER_REQUEST_FAILED",
+      "Crawl network connectivity failed.",
+    );
+  }
   if (kind === "parse") {
     return new ResearchProviderError(
       "CRAWL_PROVIDER_MALFORMED_RESPONSE",
@@ -57,7 +75,7 @@ export function mapHttpToCrawlError(
   if (status === 401 || status === 403) {
     return new ResearchProviderError(
       "CRAWL_PROVIDER_AUTH_FAILED",
-      "Crawl authentication failed.",
+      "Crawl authentication or authorization failed.",
     );
   }
   if (status === 429) {
@@ -66,8 +84,14 @@ export function mapHttpToCrawlError(
       "Crawl rate limit exceeded.",
     );
   }
+  if (status != null && status >= 500) {
+    return new ResearchProviderError(
+      "CRAWL_PROVIDER_REQUEST_FAILED",
+      "Crawl provider returned a server error.",
+    );
+  }
   return new ResearchProviderError(
-    "CRAWL_PROVIDER_ERROR",
+    "CRAWL_PROVIDER_REQUEST_FAILED",
     "Crawl provider request failed.",
   );
 }

@@ -114,7 +114,7 @@ export const researchFindTrendingTopicsTool: ToolDefinition<
       const reason =
         err instanceof ResearchProviderError
           ? err.code
-          : "WEB_SEARCH_PROVIDER_ERROR";
+            : "WEB_SEARCH_PROVIDER_REQUEST_FAILED";
       return {
         available: false,
         reason,

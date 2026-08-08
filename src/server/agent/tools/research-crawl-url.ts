@@ -65,7 +65,7 @@ export const researchCrawlUrlTool: ToolDefinition<
       const reason =
         err instanceof ResearchProviderError
           ? err.code
-          : "CRAWL_PROVIDER_ERROR";
+          : "CRAWL_PROVIDER_REQUEST_FAILED";
       return {
         available: false,
         reason,

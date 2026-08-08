@@ -255,7 +255,7 @@ describe("EPIC AGENT-004 — research provider layer", () => {
 
     it("provider failure / timeout / malformed", async () => {
       for (const code of [
-        "CRAWL_PROVIDER_ERROR",
+        "CRAWL_PROVIDER_REQUEST_FAILED",
         "CRAWL_PROVIDER_TIMEOUT",
         "CRAWL_PROVIDER_MALFORMED_RESPONSE",
       ] as const) {

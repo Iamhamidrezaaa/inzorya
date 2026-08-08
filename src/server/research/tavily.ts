@@ -1,6 +1,9 @@
+import { mapHttpToSearchError } from "@/server/research/errors";
 import {
-  mapHttpToSearchError,
-} from "@/server/research/errors";
+  isAbortTimeoutError,
+  isConnectNetworkError,
+  normalizeSecret,
+} from "@/server/research/http";
 import {
   MAX_SEARCH_RESULTS,
   RESEARCH_TIMEOUT_MS,
@@ -9,11 +12,12 @@ import {
   type WebSearchProvider,
   type WebSearchResultItem,
 } from "@/server/research/types";
-import { isTimeoutError } from "@/server/research/http";
 
 const TAVILY_SEARCH_URL = "https://api.tavily.com/search";
 
-function normalizeDepth(raw?: string): "basic" | "advanced" | "fast" | "ultra-fast" {
+function normalizeDepth(
+  raw?: string,
+): "basic" | "advanced" | "fast" | "ultra-fast" {
   const v = (raw || "basic").toLowerCase();
   if (v === "advanced" || v === "fast" || v === "ultra-fast" || v === "basic") {
     return v;
@@ -21,17 +25,24 @@ function normalizeDepth(raw?: string): "basic" | "advanced" | "fast" | "ultra-fa
   return "basic";
 }
 
+/**
+ * Tavily Search — official auth is Bearer token (OpenAPI bearerAuth).
+ * @see https://docs.tavily.com/documentation/api-reference/endpoint/search
+ */
 export class TavilyWebSearchProvider implements WebSearchProvider {
   readonly id = "tavily";
+  private readonly apiKey: string | undefined;
 
-  constructor(private readonly apiKey: string | undefined = process.env.TAVILY_API_KEY) {}
+  constructor(apiKey: string | undefined = process.env.TAVILY_API_KEY) {
+    this.apiKey = normalizeSecret(apiKey);
+  }
 
   isConfigured(): boolean {
-    return Boolean(this.apiKey?.trim());
+    return Boolean(this.apiKey);
   }
 
   async search(input: WebSearchInput): Promise<WebSearchResultItem[]> {
-    if (!this.isConfigured()) {
+    if (!this.apiKey) {
       throw new ResearchProviderError(
         "WEB_SEARCH_PROVIDER_NOT_CONFIGURED",
         "Tavily API key is not configured.",
@@ -43,8 +54,8 @@ export class TavilyWebSearchProvider implements WebSearchProvider {
       MAX_SEARCH_RESULTS,
     );
 
+    // Body must NOT rely on api_key field — current API uses Bearer auth.
     const body: Record<string, unknown> = {
-      api_key: this.apiKey,
       query: input.query.slice(0, 400),
       max_results: limit,
       search_depth: normalizeDepth(input.searchDepth),
@@ -61,13 +72,20 @@ export class TavilyWebSearchProvider implements WebSearchProvider {
     try {
       response = await fetch(TAVILY_SEARCH_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(RESEARCH_TIMEOUT_MS),
       });
     } catch (err) {
-      if (isTimeoutError(err)) {
+      if (isAbortTimeoutError(err)) {
         throw mapHttpToSearchError(null, "abort");
+      }
+      if (isConnectNetworkError(err)) {
+        throw mapHttpToSearchError(null, "network");
       }
       throw mapHttpToSearchError(null, "network");
     }
@@ -88,23 +106,24 @@ export class TavilyWebSearchProvider implements WebSearchProvider {
       throw mapHttpToSearchError(null, "parse");
     }
 
-    return results.slice(0, limit).map((raw) => {
-      const row = raw as Record<string, unknown>;
-      const title = typeof row.title === "string" ? row.title : "";
-      const url = typeof row.url === "string" ? row.url : "";
-      const snippet =
-        typeof row.content === "string"
-          ? row.content.slice(0, 1200)
-          : null;
-      const publishedAt =
-        typeof row.published_date === "string" ? row.published_date : null;
-      return {
-        title: title || url || "Untitled",
-        url,
-        snippet,
-        source: "tavily",
-        publishedAt,
-      };
-    }).filter((r) => r.url);
+    return results
+      .slice(0, limit)
+      .map((raw) => {
+        const row = raw as Record<string, unknown>;
+        const title = typeof row.title === "string" ? row.title : "";
+        const url = typeof row.url === "string" ? row.url : "";
+        const snippet =
+          typeof row.content === "string" ? row.content.slice(0, 1200) : null;
+        const publishedAt =
+          typeof row.published_date === "string" ? row.published_date : null;
+        return {
+          title: title || url || "Untitled",
+          url,
+          snippet,
+          source: "tavily",
+          publishedAt,
+        };
+      })
+      .filter((r) => r.url);
   }
 }

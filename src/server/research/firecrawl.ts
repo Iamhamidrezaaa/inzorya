@@ -1,5 +1,9 @@
 import { mapHttpToCrawlError } from "@/server/research/errors";
-import { isTimeoutError } from "@/server/research/http";
+import {
+  isAbortTimeoutError,
+  isConnectNetworkError,
+  normalizeSecret,
+} from "@/server/research/http";
 import {
   MAX_CRAWL_CONTENT_CHARS,
   RESEARCH_TIMEOUT_MS,
@@ -50,19 +54,24 @@ export function assertPublicHttpUrl(raw: string): URL {
   return url;
 }
 
+/**
+ * Firecrawl single-URL scrape.
+ * @see https://docs.firecrawl.dev/api-reference/endpoint/scrape
+ */
 export class FirecrawlCrawlProvider implements CrawlProvider {
   readonly id = "firecrawl";
+  private readonly apiKey: string | undefined;
 
-  constructor(
-    private readonly apiKey: string | undefined = process.env.FIRECRAWL_API_KEY,
-  ) {}
+  constructor(apiKey: string | undefined = process.env.FIRECRAWL_API_KEY) {
+    this.apiKey = normalizeSecret(apiKey);
+  }
 
   isConfigured(): boolean {
-    return Boolean(this.apiKey?.trim());
+    return Boolean(this.apiKey);
   }
 
   async crawl(input: CrawlInput): Promise<CrawlResult> {
-    if (!this.isConfigured()) {
+    if (!this.apiKey) {
       throw new ResearchProviderError(
         "CRAWL_PROVIDER_NOT_CONFIGURED",
         "Firecrawl API key is not configured.",
@@ -77,6 +86,7 @@ export class FirecrawlCrawlProvider implements CrawlProvider {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
           Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
@@ -87,8 +97,12 @@ export class FirecrawlCrawlProvider implements CrawlProvider {
         signal: AbortSignal.timeout(RESEARCH_TIMEOUT_MS),
       });
     } catch (err) {
-      if (isTimeoutError(err)) {
+      if (isAbortTimeoutError(err)) {
         throw mapHttpToCrawlError(null, "abort");
+      }
+      // Connect/DNS failures are environment connectivity, not response timeouts.
+      if (isConnectNetworkError(err)) {
+        throw mapHttpToCrawlError(null, "network");
       }
       throw mapHttpToCrawlError(null, "network");
     }
@@ -137,10 +151,11 @@ export class FirecrawlCrawlProvider implements CrawlProvider {
       ? {
           description:
             typeof meta.description === "string" ? meta.description : null,
-          language:
-            typeof meta.language === "string" ? meta.language : null,
+          language: typeof meta.language === "string" ? meta.language : null,
           sourceURL:
-            typeof meta.sourceURL === "string" ? meta.sourceURL : url.toString(),
+            typeof meta.sourceURL === "string"
+              ? meta.sourceURL
+              : url.toString(),
           statusCode:
             typeof meta.statusCode === "number" ? meta.statusCode : null,
         }
@@ -149,9 +164,7 @@ export class FirecrawlCrawlProvider implements CrawlProvider {
     return {
       url: url.toString(),
       title,
-      content: markdown
-        ? markdown.slice(0, MAX_CRAWL_CONTENT_CHARS)
-        : null,
+      content: markdown ? markdown.slice(0, MAX_CRAWL_CONTENT_CHARS) : null,
       metadata: safeMeta,
       source: "firecrawl",
     };
