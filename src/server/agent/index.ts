@@ -115,3 +115,20 @@ export type {
   BrandFitItem,
   RunViralContentAnalystResult,
 } from "@/server/agent/viral-content-analyst";
+export {
+  CONTENT_STRATEGIST_AGENT,
+  CONTENT_STRATEGIST_AGENT_ID,
+  CONTENT_STRATEGIST_TOOL_IDS,
+  CONTENT_STRATEGY_OBJECTIVES,
+  runContentStrategistAgent,
+  parseContentBlueprint,
+  contentBlueprintSchema,
+  countFormats,
+  isContentStrategistToolId,
+} from "@/server/agent/content-strategist";
+export type {
+  ContentBlueprint,
+  ContentPlanItem,
+  PlanningMode,
+  RunContentStrategistResult,
+} from "@/server/agent/content-strategist";

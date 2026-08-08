@@ -6,6 +6,7 @@ import {
   bootstrapAgentTools,
   getDefaultToolRegistry,
   runAgentExecution,
+  runContentStrategistAgent,
   runMarketingReadonlyAgent,
   runTrendIntelligenceAgent,
   runViralContentAnalystAgent,
@@ -23,6 +24,7 @@ const debugBodySchema = z.object({
       "marketing.readonly",
       "trend.intelligence",
       "viral.content.analyst",
+      "content.strategist",
     ])
     .optional()
     .default("marketing.readonly"),
@@ -140,6 +142,16 @@ export async function POST(request: Request) {
           message:
             body.message ||
             "محتواهای موفق این حوزه رو بررسی کن.",
+          ...scope,
+        });
+        return NextResponse.json({ result });
+      }
+
+      if (agentId === "content.strategist") {
+        const result = await runContentStrategistAgent({
+          message:
+            body.message ||
+            "برای هفته آینده اینستاگرامم برنامه بده.",
           ...scope,
         });
         return NextResponse.json({ result });

@@ -34,6 +34,13 @@ export const FOUNDATION_AGENTS: AgentDefinition[] = [
     description:
       "Read-only specialist that analyzes content and research signals to identify observable effectiveness patterns — analysis and blueprint only.",
   },
+  {
+    id: "content.strategist",
+    name: "Content Strategist",
+    version: "1.0.0",
+    description:
+      "Read-only strategist that produces a structured Content Blueprint from brand, calendar, opportunities, trends, and user constraints — no final copy or publishing.",
+  },
 ];
 
 export class AgentRegistry {
