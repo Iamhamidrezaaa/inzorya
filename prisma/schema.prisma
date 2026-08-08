@@ -242,6 +242,7 @@ model User {
   contentDraftsCreated ContentDraft[] @relation("ContentDraftCreator")
   contentDraftVersions ContentDraftVersion[] @relation("ContentDraftVersionAuthor")
   contentDraftReviews ContentReview[] @relation("ContentDraftReviewer")
+  socialOAuthStates SocialOAuthState[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -319,6 +320,7 @@ model Workspace {
   campaignWorkflows CampaignWorkflow[]
   agentExecutions AgentExecution[]
   contentDrafts ContentDraft[]
+  socialAccounts SocialAccount[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -418,6 +420,7 @@ model Brand {
   campaignWorkflows     CampaignWorkflow[]
   agentExecutions       AgentExecution[]
   contentDrafts         ContentDraft[]
+  socialAccounts        SocialAccount[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -2100,7 +2103,101 @@ model ContentReview {
   @@index([reviewerId, createdAt])
 }
 
-/// EPIC-014 — AI Marketing Strategist
+/// EPIC-014 — Social Account Integration Foundation
+/// (Meta / TikTok / Pinterest are NOT registered here.)
+
+enum SocialAccountStatus {
+  NOT_CONNECTED
+  CONNECTING
+  CONNECTED
+  EXPIRED
+  REAUTH_REQUIRED
+  ERROR
+  DISCONNECTED
+}
+
+enum SocialOAuthStateStatus {
+  PENDING
+  CONSUMED
+  EXPIRED
+  FAILED
+}
+
+model SocialAccount {
+  id                String              @id @default(cuid())
+  workspaceId       String
+  brandId           String
+  /// Provider id e.g. "linkedin" — never meta/tiktok/pinterest in this EPIC
+  platform          String
+  platformAccountId String
+  accountName       String?
+  username          String?
+  profileUrl        String?
+  profileImageUrl   String?
+  status            SocialAccountStatus @default(CONNECTING)
+  /// Declared capabilities snapshot (booleans)
+  capabilities      Json
+  scopes            String[]            @default([])
+  tokenExpiresAt    DateTime?
+  connectedAt       DateTime?
+  lastSyncedAt      DateTime?
+  lastError         String?
+  disconnectedAt    DateTime?
+  workspace         Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand             Brand               @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  credential        SocialAccountCredential?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@unique([brandId, platform, platformAccountId])
+  @@index([workspaceId, brandId])
+  @@index([brandId, status])
+  @@index([platform, status])
+}
+
+model SocialAccountCredential {
+  id                   String    @id @default(cuid())
+  socialAccountId      String    @unique
+  accessCiphertext     String    @db.Text
+  accessIv             String
+  accessAuthTag        String
+  refreshCiphertext    String?   @db.Text
+  refreshIv            String?
+  refreshAuthTag       String?
+  tokenType            String    @default("Bearer")
+  scopes               String[]  @default([])
+  accessExpiresAt      DateTime?
+  refreshExpiresAt     DateTime?
+  keyVersion           Int       @default(1)
+  socialAccount        SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model SocialOAuthState {
+  id                   String                @id @default(cuid())
+  stateHash            String                @unique
+  userId               String
+  workspaceId          String
+  brandId              String
+  platform             String
+  redirectUri          String
+  status               SocialOAuthStateStatus @default(PENDING)
+  codeVerifierCipher   String?               @db.Text
+  codeVerifierIv       String?
+  codeVerifierAuthTag  String?
+  expiresAt            DateTime
+  consumedAt           DateTime?
+  error                String?
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  @@index([brandId, status])
+  @@index([expiresAt])
+}
+
+/// EPIC-014b — AI Marketing Strategist
 
 enum StrategyConversationType {
   MARKETING_STRATEGY

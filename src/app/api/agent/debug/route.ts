@@ -26,9 +26,13 @@ const debugBodySchema = z.object({
       "run_tool",
       "run_agent",
       "run_director",
+      "list_social_accounts",
+      "inspect_capabilities",
+      "provider_health",
     ])
     .default("echo"),
   message: z.string().optional(),
+  socialAccountId: z.string().optional(),
   agentId: z
     .enum([
       "marketing.readonly",
@@ -64,6 +68,8 @@ const ALLOWED_DEBUG_TOOLS = new Set([
   "research.crawlUrl",
   "research.searchCompetitors",
   "research.findTrendingTopics",
+  "social.getConnectedAccounts",
+  "social.getCapabilities",
 ]);
 
 /**
@@ -84,6 +90,65 @@ export async function POST(request: Request) {
     }
 
     const registry = bootstrapAgentTools(getDefaultToolRegistry());
+
+    if (body.action === "list_social_accounts") {
+      const { socialAccounts } = await import("@/server/social/service");
+      const { assertNoTokenLeak, redactSecrets } = await import(
+        "@/server/social/credentials"
+      );
+      const accounts = await socialAccounts.listAccounts({
+        workspaceId: access.workspace.id,
+        brandId: access.brand.id,
+      });
+      const payload = redactSecrets({ accounts });
+      assertNoTokenLeak(payload);
+      return NextResponse.json(payload);
+    }
+
+    if (body.action === "inspect_capabilities") {
+      const { socialAccounts } = await import("@/server/social/service");
+      const { getSocialProviderRegistry } = await import(
+        "@/server/social/registry"
+      );
+      const { assertNoTokenLeak, redactSecrets } = await import(
+        "@/server/social/credentials"
+      );
+      if (body.socialAccountId) {
+        const caps = await socialAccounts.getCapabilities(body.socialAccountId, {
+          workspaceId: access.workspace.id,
+          brandId: access.brand.id,
+        });
+        const payload = redactSecrets(caps);
+        assertNoTokenLeak(payload);
+        return NextResponse.json(payload);
+      }
+      const providers = getSocialProviderRegistry()
+        .listProviders()
+        .map((p) => p.descriptor());
+      const payload = redactSecrets({ providers });
+      assertNoTokenLeak(payload);
+      return NextResponse.json(payload);
+    }
+
+    if (body.action === "provider_health") {
+      const { socialAccounts } = await import("@/server/social/service");
+      const { assertNoTokenLeak, redactSecrets } = await import(
+        "@/server/social/credentials"
+      );
+      if (!body.socialAccountId) {
+        return NextResponse.json(
+          { error: "socialAccountId required" },
+          { status: 400 },
+        );
+      }
+      const account = await socialAccounts.syncHealth(body.socialAccountId, {
+        workspaceId: access.workspace.id,
+        brandId: access.brand.id,
+      });
+      const payload = redactSecrets({ account });
+      assertNoTokenLeak(payload);
+      return NextResponse.json(payload);
+    }
 
     if (body.action === "list_tools") {
       return NextResponse.json({

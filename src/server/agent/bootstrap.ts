@@ -17,6 +17,10 @@ import { researchFindTrendingTopicsTool } from "@/server/agent/tools/research-fi
 import { researchSearchCompetitorsTool } from "@/server/agent/tools/research-search-competitors";
 import { researchSearchWebTool } from "@/server/agent/tools/research-search-web";
 import { systemEchoTool } from "@/server/agent/tools/system-echo";
+import {
+  socialGetCapabilitiesTool,
+  socialGetConnectedAccountsTool,
+} from "@/server/agent/tools/social-accounts";
 
 export const MARKETING_READ_TOOLS = [
   brandGetContextTool,
@@ -38,10 +42,16 @@ export const PERFORMANCE_RESEARCH_TOOLS = [
   researchFindTrendingTopicsTool,
 ] as const;
 
+export const SOCIAL_READ_TOOLS = [
+  socialGetConnectedAccountsTool,
+  socialGetCapabilitiesTool,
+] as const;
+
 const ALL_FOUNDATION_TOOLS = [
   systemEchoTool,
   ...MARKETING_READ_TOOLS,
   ...PERFORMANCE_RESEARCH_TOOLS,
+  ...SOCIAL_READ_TOOLS,
 ];
 
 let bootstrapped = false;
