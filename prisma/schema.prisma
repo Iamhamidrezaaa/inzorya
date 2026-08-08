@@ -239,6 +239,9 @@ model User {
   plannerHandoffs PlannerHandoff[] @relation("PlannerHandoffActor")
   workflowAudits WorkflowAudit[] @relation("WorkflowAuditActor")
   agentExecutions AgentExecution[]
+  contentDraftsCreated ContentDraft[] @relation("ContentDraftCreator")
+  contentDraftVersions ContentDraftVersion[] @relation("ContentDraftVersionAuthor")
+  contentDraftReviews ContentReview[] @relation("ContentDraftReviewer")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -315,6 +318,7 @@ model Workspace {
   campaignRecommendations CampaignRecommendation[]
   campaignWorkflows CampaignWorkflow[]
   agentExecutions AgentExecution[]
+  contentDrafts ContentDraft[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -413,6 +417,7 @@ model Brand {
   campaignLearnings     CampaignLearning[]
   campaignWorkflows     CampaignWorkflow[]
   agentExecutions       AgentExecution[]
+  contentDrafts         ContentDraft[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -1974,6 +1979,7 @@ model AgentExecution {
   brand       Brand                @relation(fields: [brandId], references: [id], onDelete: Cascade)
   user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   toolExecutions AgentToolExecution[]
+  contentDrafts  ContentDraft[]
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 
@@ -2002,6 +2008,96 @@ model AgentToolExecution {
 
   @@index([agentExecutionId, sequence])
   @@index([toolId, createdAt])
+}
+
+/// EPIC-013 — Human-in-the-Loop Content Workspace
+
+enum ContentDraftStatus {
+  DRAFT
+  IN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  READY
+}
+
+enum ContentDraftVersionSource {
+  AI_CREATE
+  AI_REGENERATE
+  HUMAN_EDIT
+}
+
+enum ContentReviewStatus {
+  SENT_FOR_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  READY
+  NOTE
+}
+
+model ContentDraft {
+  id                     String              @id @default(cuid())
+  workspaceId            String
+  brandId                String
+  createdById            String
+  sourceAgentExecutionId String?
+  blueprintReference     Json?
+  channel                String
+  format                 String
+  topic                  String
+  objective              String?
+  audience               String?
+  pillar                 String?
+  angle                  String?
+  whyNow                 String?             @db.Text
+  evidence               Json?
+  /// Current creative payload (hooks, script, caption, etc.)
+  contentPayload         Json
+  status                 ContentDraftStatus  @default(DRAFT)
+  currentVersion         Int                 @default(1)
+  workspace              Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand                  Brand               @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdBy              User                @relation("ContentDraftCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  sourceAgentExecution   AgentExecution?     @relation(fields: [sourceAgentExecutionId], references: [id], onDelete: SetNull)
+  versions               ContentDraftVersion[]
+  reviews                ContentReview[]
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  @@index([brandId, status, updatedAt])
+  @@index([workspaceId, createdAt])
+  @@index([sourceAgentExecutionId])
+}
+
+model ContentDraftVersion {
+  id             String                    @id @default(cuid())
+  contentDraftId String
+  version        Int
+  source         ContentDraftVersionSource
+  contentPayload Json
+  changeSummary  String?
+  component      String?
+  instruction    String?
+  createdById    String?
+  contentDraft   ContentDraft              @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
+  createdBy      User?                     @relation("ContentDraftVersionAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime                  @default(now())
+
+  @@unique([contentDraftId, version])
+  @@index([contentDraftId, createdAt])
+}
+
+model ContentReview {
+  id             String              @id @default(cuid())
+  contentDraftId String
+  reviewerId     String
+  status         ContentReviewStatus
+  note           String?             @db.Text
+  contentDraft   ContentDraft        @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
+  reviewer       User                @relation("ContentDraftReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  createdAt      DateTime            @default(now())
+
+  @@index([contentDraftId, createdAt])
+  @@index([reviewerId, createdAt])
 }
 
 /// EPIC-014 — AI Marketing Strategist

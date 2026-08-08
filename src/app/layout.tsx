@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
 import { getI18n } from "@/i18n/server";
+import "@fontsource/outfit/400.css";
+import "@fontsource/outfit/500.css";
+import "@fontsource/outfit/600.css";
+import "@fontsource/outfit/700.css";
 import "@fontsource/estedad/arabic-400.css";
 import "@fontsource/estedad/arabic-500.css";
 import "@fontsource/estedad/arabic-600.css";
@@ -11,12 +14,6 @@ import "@fontsource/estedad/latin-500.css";
 import "@fontsource/estedad/latin-600.css";
 import "@fontsource/estedad/latin-700.css";
 import "./globals.css";
-
-const sans = Outfit({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -41,7 +38,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className={`${sans.variable} min-h-svh antialiased ${
+        className={`min-h-svh antialiased ${
           locale === "fa" ? "font-fa" : "font-sans"
         }`}
       >

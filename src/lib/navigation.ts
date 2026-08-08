@@ -27,6 +27,7 @@ import {
   Sparkles,
   Users,
   Workflow,
+  ClipboardCheck,
 } from "lucide-react";
 
 export type NavItem = {
@@ -114,6 +115,11 @@ export function getNavGroups(
           href: `${b}/content`,
           icon: LayoutGrid,
           badge: badges.content,
+        },
+        {
+          title: "Content Workspace",
+          href: `${b}/content-workspace`,
+          icon: ClipboardCheck,
         },
         { title: t.analytics, href: `${b}/analytics`, icon: LineChart },
         { title: t.workspace, href: `${b}/workspace`, icon: Briefcase },

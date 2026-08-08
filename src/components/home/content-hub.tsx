@@ -37,12 +37,21 @@ export function ContentHub({
       desc: hub.openStudioDesc,
       icon: Clapperboard,
     },
+    {
+      href: `${base}/content-workspace`,
+      title: locale === "fa" ? "فضای کار محتوا" : "Content Workspace",
+      desc:
+        locale === "fa"
+          ? "بازبینی، ویرایش و تأیید محتوای پیشنهادی AI"
+          : "Review, edit, and approve AI-proposed content",
+      icon: PenLine,
+    },
   ];
 
   return (
     <div className="space-y-8" dir={locale === "fa" ? "rtl" : "ltr"}>
       <PageHeader title={hub.title} description={hub.subtitle || page.description} />
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         {actions.map((a) => (
           <Link
             key={a.href}
