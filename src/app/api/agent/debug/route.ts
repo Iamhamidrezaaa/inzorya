@@ -8,6 +8,7 @@ import {
   runAgentExecution,
   runContentCreatorAgent,
   runContentStrategistAgent,
+  runMarketingDirectorAgent,
   runMarketingReadonlyAgent,
   runSocialAnalyticsAgent,
   runTrendIntelligenceAgent,
@@ -18,7 +19,14 @@ const debugBodySchema = z.object({
   workspaceSlug: z.string().min(1),
   brandSlug: z.string().min(1),
   action: z
-    .enum(["echo", "list_tools", "list_agents", "run_tool", "run_agent"])
+    .enum([
+      "echo",
+      "list_tools",
+      "list_agents",
+      "run_tool",
+      "run_agent",
+      "run_director",
+    ])
     .default("echo"),
   message: z.string().optional(),
   agentId: z
@@ -29,6 +37,7 @@ const debugBodySchema = z.object({
       "content.strategist",
       "content.creator",
       "social.analytics",
+      "marketing.director",
     ])
     .optional()
     .default("marketing.readonly"),
@@ -198,11 +207,57 @@ export async function POST(request: Request) {
         return NextResponse.json({ result });
       }
 
+      if (agentId === "marketing.director") {
+        const result = await runMarketingDirectorAgent({
+          message:
+            body.message ||
+            "برای هفته آینده اینستاگرامم برنامه بده.",
+          ...scope,
+        });
+        return NextResponse.json({
+          result: {
+            success: result.success,
+            response: result.response,
+            executionId: result.executionId,
+            intent: result.intent,
+            constraints: result.constraints,
+            steps: result.steps,
+            specialistCalls: result.specialistCalls,
+            final: result.final,
+            error: result.error,
+          },
+        });
+      }
+
       const result = await runMarketingReadonlyAgent({
         message: body.message || "اطلاعات برند من چیست؟",
         ...scope,
       });
       return NextResponse.json({ result });
+    }
+
+    if (body.action === "run_director") {
+      const result = await runMarketingDirectorAgent({
+        message:
+          body.message ||
+          "برای هفته آینده اینستاگرامم برنامه بده.",
+        userId: user.id!,
+        workspaceId: access.workspace.id,
+        brandId: access.brand.id,
+      });
+      return NextResponse.json({
+        result: {
+          success: result.success,
+          response: result.response,
+          executionId: result.executionId,
+          intent: result.intent,
+          constraints: result.constraints,
+          steps: result.steps,
+          specialistCalls: result.specialistCalls,
+          final: result.final,
+          error: result.error,
+        },
+      });
     }
 
     const result = await runAgentExecution({

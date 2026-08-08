@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireBrandAccess, requireUser } from "@/server/access";
-import {
-  AgentError,
-  runMarketingReadonlyAgent,
-} from "@/server/agent";
+import { AgentError, runMarketingDirectorAgent } from "@/server/agent";
 
 const bodySchema = z.object({
   workspaceSlug: z.string().min(1),
   brandSlug: z.string().min(1),
   message: z.string().min(1).max(8_000),
+  brandId: z.string().min(1).optional(),
 });
 
 /**
- * Authenticated Marketing Intelligence Agent endpoint.
- * Brand scope is always taken from requireBrandAccess — never from LLM.
+ * Primary authenticated Agent chat endpoint.
+ * Routes to marketing.director — brand scope from requireBrandAccess.
  */
 export async function POST(request: Request) {
   try {
@@ -29,7 +27,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not found." }, { status: 404 });
     }
 
-    const result = await runMarketingReadonlyAgent({
+    if (body.brandId && body.brandId !== access.brand.id) {
+      return NextResponse.json(
+        { error: "brandId does not match authenticated brand access." },
+        { status: 403 },
+      );
+    }
+
+    const result = await runMarketingDirectorAgent({
       message: body.message,
       userId: user.id!,
       workspaceId: access.workspace.id,
@@ -41,7 +46,8 @@ export async function POST(request: Request) {
       response: result.response,
       executionId: result.executionId,
       status: result.status,
-      rounds: result.rounds,
+      intent: result.intent,
+      specialistCalls: result.specialistCalls,
       error: result.error,
     });
   } catch (err) {

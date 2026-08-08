@@ -55,6 +55,13 @@ export const FOUNDATION_AGENTS: AgentDefinition[] = [
     description:
       "Read-only specialist that turns real connected social performance into evidence-based insights — never invents metrics or generates content.",
   },
+  {
+    id: "marketing.director",
+    name: "Marketing Director",
+    version: "1.0.0",
+    description:
+      "Primary user-facing orchestration Agent that routes work to specialist Agents and synthesizes one coherent answer.",
+  },
 ];
 
 export class AgentRegistry {

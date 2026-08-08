@@ -168,3 +168,36 @@ export type {
   SocialAnalyticsProvider,
   PlatformConnectionStatus,
 } from "@/server/agent/social-analytics";
+export {
+  DIRECTOR_ALLOWED_SPECIALISTS,
+  SPECIALIST_CATALOG,
+  MAX_SPECIALIST_CALLS,
+  MAX_ORCHESTRATION_DEPTH,
+  invokeSpecialistAgent,
+  setSpecialistInvokers,
+  resetSpecialistInvokers,
+  specialistIdToInvokeName,
+  invokeNameToSpecialistId,
+  isDirectorAllowedSpecialist,
+} from "@/server/agent/a2a";
+export type {
+  DirectorSpecialistId,
+  DirectorIntent,
+  CompactHandoff,
+  SpecialistInvokeResult,
+  SpecialistInvokerMap,
+  SpecialistInvoker,
+  SpecialistInvokeContext,
+} from "@/server/agent/a2a";
+export {
+  MARKETING_DIRECTOR_AGENT,
+  runMarketingDirectorAgent,
+  parseDirectorFinal,
+  directorFinalSchema,
+} from "@/server/agent/marketing-director";
+export type {
+  RunMarketingDirectorResult,
+  DirectorFinalResult,
+  DirectorStepState,
+} from "@/server/agent/marketing-director";
+export { MARKETING_DIRECTOR_AGENT_ID } from "@/server/agent/a2a";
