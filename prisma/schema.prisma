@@ -238,6 +238,7 @@ model User {
   tasksWatching TaskWatcher[] @relation("TaskWatcher")
   plannerHandoffs PlannerHandoff[] @relation("PlannerHandoffActor")
   workflowAudits WorkflowAudit[] @relation("WorkflowAuditActor")
+  agentExecutions AgentExecution[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -313,6 +314,7 @@ model Workspace {
   marketingProjects MarketingProject[]
   campaignRecommendations CampaignRecommendation[]
   campaignWorkflows CampaignWorkflow[]
+  agentExecutions AgentExecution[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 }
@@ -410,6 +412,7 @@ model Brand {
   campaignRecommendations CampaignRecommendation[]
   campaignLearnings     CampaignLearning[]
   campaignWorkflows     CampaignWorkflow[]
+  agentExecutions       AgentExecution[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   archivedAt     DateTime?
@@ -1934,6 +1937,71 @@ model AIError {
 
   @@index([workspaceId, createdAt])
   @@index([code, createdAt])
+}
+
+/// EPIC AGENT-001 — Agent Runtime foundation (no autonomous agents yet)
+
+enum AgentExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AgentToolExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+model AgentExecution {
+  id          String               @id @default(cuid())
+  agentId     String
+  workspaceId String
+  brandId     String
+  userId      String
+  input       Json?
+  status      AgentExecutionStatus @default(PENDING)
+  result      Json?
+  errorCode   String?
+  errorMessage String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brand       Brand                @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolExecutions AgentToolExecution[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([workspaceId, createdAt])
+  @@index([brandId, createdAt])
+  @@index([agentId, createdAt])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model AgentToolExecution {
+  id               String                    @id @default(cuid())
+  agentExecutionId String
+  toolId           String
+  sequence         Int
+  input            Json?
+  output           Json?
+  status           AgentToolExecutionStatus  @default(PENDING)
+  errorCode        String?
+  errorMessage     String?
+  durationMs       Int?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  agentExecution   AgentExecution            @relation(fields: [agentExecutionId], references: [id], onDelete: Cascade)
+  createdAt        DateTime                  @default(now())
+
+  @@index([agentExecutionId, sequence])
+  @@index([toolId, createdAt])
 }
 
 /// EPIC-014 — AI Marketing Strategist
