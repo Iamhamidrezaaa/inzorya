@@ -60,3 +60,27 @@ export {
   prismaAgentRuntimeStore,
   runAgentExecution,
 } from "@/server/agent/runtime";
+export {
+  getAgentLLMProvider,
+  setAgentLLMProvider,
+  resetAgentLLMProvider,
+  OpenAILLMProvider,
+  FakeLLMProvider,
+  LLMProviderError,
+} from "@/server/agent/llm";
+export type {
+  LLMProvider,
+  LLMChatRequest,
+  LLMChatResult,
+  FakeLLMStep,
+} from "@/server/agent/llm";
+export {
+  MARKETING_READONLY_AGENT,
+  MARKETING_READONLY_AGENT_ID,
+  MARKETING_READONLY_TOOL_IDS,
+  MAX_TOOL_CALL_ROUNDS,
+  runMarketingReadonlyAgent,
+  toolIdToFunctionName,
+  functionNameToToolId,
+  isMarketingReadonlyToolId,
+} from "@/server/agent/marketing-readonly";

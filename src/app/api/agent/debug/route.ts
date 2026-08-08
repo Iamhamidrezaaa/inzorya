@@ -6,13 +6,14 @@ import {
   bootstrapAgentTools,
   getDefaultToolRegistry,
   runAgentExecution,
+  runMarketingReadonlyAgent,
 } from "@/server/agent";
 
 const debugBodySchema = z.object({
   workspaceSlug: z.string().min(1),
   brandSlug: z.string().min(1),
   action: z
-    .enum(["echo", "list_tools", "list_agents", "run_tool"])
+    .enum(["echo", "list_tools", "list_agents", "run_tool", "run_agent"])
     .default("echo"),
   message: z.string().optional(),
   toolId: z.string().optional(),
@@ -103,6 +104,18 @@ export async function POST(request: Request) {
         },
       });
 
+      return NextResponse.json({ result });
+    }
+
+    if (body.action === "run_agent") {
+      const result = await runMarketingReadonlyAgent({
+        message:
+          body.message ||
+          "اطلاعات برند من چیست؟",
+        userId: user.id!,
+        workspaceId: access.workspace.id,
+        brandId: access.brand.id,
+      });
       return NextResponse.json({ result });
     }
 

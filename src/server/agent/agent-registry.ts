@@ -13,6 +13,13 @@ export const FOUNDATION_AGENTS: AgentDefinition[] = [
     description:
       "Minimal foundation agent used to verify Agent Runtime → Tool Registry → Executor.",
   },
+  {
+    id: "marketing.readonly",
+    name: "Marketing Intelligence",
+    version: "1.0.0",
+    description:
+      "Read-only marketing analyst that gathers Inzorya evidence via Tools and answers evidence-based questions.",
+  },
 ];
 
 export class AgentRegistry {
