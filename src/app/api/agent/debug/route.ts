@@ -7,6 +7,7 @@ import {
   getDefaultToolRegistry,
   runAgentExecution,
   runMarketingReadonlyAgent,
+  runTrendIntelligenceAgent,
 } from "@/server/agent";
 
 const debugBodySchema = z.object({
@@ -16,6 +17,10 @@ const debugBodySchema = z.object({
     .enum(["echo", "list_tools", "list_agents", "run_tool", "run_agent"])
     .default("echo"),
   message: z.string().optional(),
+  agentId: z
+    .enum(["marketing.readonly", "trend.intelligence"])
+    .optional()
+    .default("marketing.readonly"),
   toolId: z.string().optional(),
   toolInput: z.record(z.string(), z.unknown()).optional(),
 });
@@ -108,13 +113,26 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "run_agent") {
-      const result = await runMarketingReadonlyAgent({
-        message:
-          body.message ||
-          "اطلاعات برند من چیست؟",
+      const agentId = body.agentId ?? "marketing.readonly";
+      const scope = {
         userId: user.id!,
         workspaceId: access.workspace.id,
         brandId: access.brand.id,
+      };
+
+      if (agentId === "trend.intelligence") {
+        const result = await runTrendIntelligenceAgent({
+          message:
+            body.message ||
+            "برای برند من ترندهای مهم این هفته را پیدا کن.",
+          ...scope,
+        });
+        return NextResponse.json({ result });
+      }
+
+      const result = await runMarketingReadonlyAgent({
+        message: body.message || "اطلاعات برند من چیست؟",
+        ...scope,
       });
       return NextResponse.json({ result });
     }

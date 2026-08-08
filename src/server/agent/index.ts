@@ -84,3 +84,18 @@ export {
   functionNameToToolId,
   isMarketingReadonlyToolId,
 } from "@/server/agent/marketing-readonly";
+export {
+  TREND_INTELLIGENCE_AGENT,
+  TREND_INTELLIGENCE_AGENT_ID,
+  TREND_INTELLIGENCE_TOOL_IDS,
+  runTrendIntelligenceAgent,
+  parseTrendIntelligence,
+  trendIntelligenceSchema,
+  isTrendIntelligenceToolId,
+} from "@/server/agent/trend-intelligence";
+export type {
+  TrendIntelligenceResult,
+  TrendItem,
+  TrendEvidence,
+  RunTrendIntelligenceResult,
+} from "@/server/agent/trend-intelligence";

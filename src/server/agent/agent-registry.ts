@@ -20,6 +20,13 @@ export const FOUNDATION_AGENTS: AgentDefinition[] = [
     description:
       "Read-only marketing analyst that gathers Inzorya evidence via Tools and answers evidence-based questions.",
   },
+  {
+    id: "trend.intelligence",
+    name: "Trend Intelligence",
+    version: "1.0.0",
+    description:
+      "Read-only specialist that finds public research signals, evaluates brand relevance, and returns structured trend intelligence.",
+  },
 ];
 
 export class AgentRegistry {
