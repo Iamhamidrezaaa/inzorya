@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { ResearchProviderError } from "@/server/research";
+import { getWebSearchProvider } from "@/server/research/registry";
 import type { ToolDefinition } from "@/server/agent/types";
 import { clampLimit } from "@/server/agent/tools/scope";
-import { trendResearchAvailability } from "@/server/agent/tools/research-providers";
 
 const inputSchema = z.object({
   topic: z.string().min(1),
@@ -21,12 +22,25 @@ const outputSchema = z.object({
     z.object({
       title: z.string(),
       url: z.string().nullable(),
+      snippet: z.string().nullable().optional(),
       source: z.string(),
       publishedAt: z.string().nullable(),
       relevance: z.string().nullable(),
+      signalKind: z.literal("web_search_signal"),
     }),
   ),
 });
+
+function buildTrendQuery(input: {
+  topic: string;
+  industry?: string;
+  location?: string;
+}): string {
+  const parts = [input.topic.trim(), "trends", "news"];
+  if (input.industry?.trim()) parts.push(input.industry.trim());
+  if (input.location?.trim()) parts.push(input.location.trim());
+  return parts.join(" ").slice(0, 400);
+}
 
 export const researchFindTrendingTopicsTool: ToolDefinition<
   z.infer<typeof inputSchema>,
@@ -35,27 +49,80 @@ export const researchFindTrendingTopicsTool: ToolDefinition<
   id: "research.findTrendingTopics",
   name: "Find Trending Topics",
   description:
-    "Research-signal foundation for future Trend Intelligence. Does not invent viral scores.",
-  version: "1.0.0",
+    "Collect current public web research signals via Tavily. Does not invent viral scores.",
+  version: "1.1.0",
   inputSchema,
   outputSchema,
   permission: "READ",
   enabled: true,
   async execute(input) {
-    const limit = clampLimit(input.limit, 10, 20);
-    void limit;
-    void input.industry;
-    void input.location;
-    void input.from;
+    const limit = clampLimit(input.limit, 8, 10);
+    const provider = getWebSearchProvider();
 
-    const status = trendResearchAvailability();
-    return {
-      available: false,
-      reason: status.reason,
-      topic: input.topic,
-      signalKind: "none",
-      note: "No wired trend/research provider. Results would be research_signal only — never verified_social_trend or viral scores — until a provider is connected.",
-      signals: [],
-    };
+    if (!provider.isConfigured()) {
+      return {
+        available: false,
+        reason: "TREND_RESEARCH_PROVIDER_NOT_CONFIGURED",
+        topic: input.topic,
+        signalKind: "none",
+        note: "Web search provider is not configured. No trend signals collected.",
+        signals: [],
+      };
+    }
+
+    const query = buildTrendQuery(input);
+    const startDate =
+      input.from && /^\d{4}-\d{2}-\d{2}/.test(input.from)
+        ? input.from.slice(0, 10)
+        : undefined;
+
+    try {
+      const results = await provider.search({
+        query,
+        limit,
+        searchDepth: "basic",
+        topic: "news",
+        startDate,
+      });
+
+      if (results.length === 0) {
+        return {
+          available: true,
+          topic: input.topic,
+          signalKind: "research_signal",
+          note: "No matching public web search signals were returned. These are research signals only — not verified social trends.",
+          signals: [],
+        };
+      }
+
+      return {
+        available: true,
+        topic: input.topic,
+        signalKind: "research_signal",
+        note: "Signals are public web search results (web_search_signal). Not verified social trends. No viral/engagement scores are inferred.",
+        signals: results.map((r) => ({
+          title: r.title,
+          url: r.url,
+          snippet: r.snippet,
+          source: r.source,
+          publishedAt: r.publishedAt ?? null,
+          relevance: null,
+          signalKind: "web_search_signal" as const,
+        })),
+      };
+    } catch (err) {
+      const reason =
+        err instanceof ResearchProviderError
+          ? err.code
+          : "WEB_SEARCH_PROVIDER_ERROR";
+      return {
+        available: false,
+        reason,
+        topic: input.topic,
+        signalKind: "none",
+        note: "Trend research provider request failed.",
+        signals: [],
+      };
+    }
   },
 };

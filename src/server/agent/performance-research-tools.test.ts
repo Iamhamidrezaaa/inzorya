@@ -8,6 +8,11 @@ import {
   runAgentExecution,
 } from "@/server/agent";
 import type { ToolContext } from "@/server/agent/types";
+import {
+  resetResearchProviders,
+  setCrawlProvider,
+  setWebSearchProvider,
+} from "@/server/research";
 
 vi.mock("@/lib/db", () => ({
   prisma: {
@@ -62,6 +67,24 @@ describe("EPIC AGENT-003 — performance + research tools", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetAgentBootstrap();
+    resetResearchProviders();
+    // Keep EPIC-003 analytics tests offline from live research providers.
+    setWebSearchProvider({
+      id: "offline",
+      isConfigured: () => false,
+      search: async () => [],
+    });
+    setCrawlProvider({
+      id: "offline",
+      isConfigured: () => false,
+      crawl: async ({ url }) => ({
+        url,
+        title: null,
+        content: null,
+        metadata: null,
+        source: "offline",
+      }),
+    });
     registry = bootstrapAgentTools(new ToolRegistry());
     db.brand.findFirst.mockResolvedValue({ id: "brand_1" });
     db.analyticsSnapshot.findFirst.mockResolvedValue(null);
@@ -314,7 +337,7 @@ describe("EPIC AGENT-003 — performance + research tools", () => {
       expect(ok.success).toBe(true);
       expect(ok.data).toMatchObject({
         available: false,
-        reason: "WEB_SEARCH_PROVIDER_NOT_WIRED",
+        reason: "WEB_SEARCH_PROVIDER_NOT_CONFIGURED",
         query: "luxury fruit marketing",
         results: [],
       });
@@ -341,7 +364,7 @@ describe("EPIC AGENT-003 — performance + research tools", () => {
       expect(result.success).toBe(true);
       expect(result.data).toMatchObject({
         available: false,
-        reason: "CRAWL_PROVIDER_NOT_WIRED",
+        reason: "CRAWL_PROVIDER_NOT_CONFIGURED",
         url: "https://example.com/page",
       });
     });
@@ -359,7 +382,11 @@ describe("EPIC AGENT-003 — performance + research tools", () => {
           },
         ],
       });
-      db.businessProfile.findUnique.mockResolvedValue(null);
+      db.businessProfile.findUnique.mockResolvedValue({
+        competitors: null,
+        industry: null,
+        businessSummary: null,
+      });
 
       const result = await executeTool(registry, {
         toolId: "research.searchCompetitors",
@@ -372,8 +399,10 @@ describe("EPIC AGENT-003 — performance + research tools", () => {
         competitors: [
           {
             name: "Rival Fruits",
+            stored: true,
             informationSource: "stored",
             findings: [],
+            webFindings: [],
           },
         ],
       });
@@ -381,7 +410,11 @@ describe("EPIC AGENT-003 — performance + research tools", () => {
 
     it("no competitors and no provider", async () => {
       db.marketingStrategy.findUnique.mockResolvedValue({ competitors: [] });
-      db.businessProfile.findUnique.mockResolvedValue({ competitors: null });
+      db.businessProfile.findUnique.mockResolvedValue({
+        competitors: null,
+        industry: null,
+        businessSummary: null,
+      });
       const result = await executeTool(registry, {
         toolId: "research.searchCompetitors",
         input: {},

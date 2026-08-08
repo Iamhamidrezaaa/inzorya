@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { AgentError } from "@/server/agent/errors";
+import { ResearchProviderError } from "@/server/research";
+import { getCrawlProvider } from "@/server/research/registry";
 import type { ToolDefinition } from "@/server/agent/types";
-import {
-  crawlAvailability,
-  isValidHttpUrl,
-} from "@/server/agent/tools/research-providers";
+import { isValidHttpUrl } from "@/server/agent/tools/research-providers";
 
 const inputSchema = z.object({
   url: z.string().min(1),
@@ -17,6 +16,7 @@ const outputSchema = z.object({
   title: z.string().nullable().optional(),
   content: z.string().nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+  source: z.string().optional(),
 });
 
 export const researchCrawlUrlTool: ToolDefinition<
@@ -26,8 +26,8 @@ export const researchCrawlUrlTool: ToolDefinition<
   id: "research.crawlUrl",
   name: "Crawl URL",
   description:
-    "Inspect a public webpage via the existing Firecrawl integration when wired. No general-purpose scraper.",
-  version: "1.0.0",
+    "Inspect a public webpage via Firecrawl when configured. Single-URL only.",
+  version: "1.1.0",
   inputSchema,
   outputSchema,
   permission: "READ",
@@ -39,14 +39,41 @@ export const researchCrawlUrlTool: ToolDefinition<
       });
     }
 
-    const status = crawlAvailability();
-    return {
-      available: false,
-      reason: status.reason,
-      url: input.url,
-      title: null,
-      content: null,
-      metadata: null,
-    };
+    const provider = getCrawlProvider();
+    if (!provider.isConfigured()) {
+      return {
+        available: false,
+        reason: "CRAWL_PROVIDER_NOT_CONFIGURED",
+        url: input.url,
+        title: null,
+        content: null,
+        metadata: null,
+      };
+    }
+
+    try {
+      const page = await provider.crawl({ url: input.url });
+      return {
+        available: true,
+        url: page.url,
+        title: page.title,
+        content: page.content,
+        metadata: page.metadata,
+        source: page.source,
+      };
+    } catch (err) {
+      const reason =
+        err instanceof ResearchProviderError
+          ? err.code
+          : "CRAWL_PROVIDER_ERROR";
+      return {
+        available: false,
+        reason,
+        url: input.url,
+        title: null,
+        content: null,
+        metadata: null,
+      };
+    }
   },
 };

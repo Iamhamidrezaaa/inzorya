@@ -1,7 +1,7 @@
-/**
- * Research provider status for Agent tools.
- * ENV placeholders alone are not enough — no SDK/client is wired in the app.
- */
+import {
+  getCrawlProvider,
+  getWebSearchProvider,
+} from "@/server/research/registry";
 
 export type ProviderUsability = {
   usable: boolean;
@@ -15,58 +15,65 @@ export function getResearchProviderStatus(): {
   apify: ProviderUsability;
   semrush: ProviderUsability;
 } {
+  const tavily = getWebSearchProvider();
+  const firecrawl = getCrawlProvider();
   return {
     firecrawl: {
-      usable: false,
-      reason: "NOT_IMPLEMENTED",
+      usable: firecrawl.isConfigured(),
+      reason: firecrawl.isConfigured()
+        ? "CONFIGURED"
+        : "CRAWL_PROVIDER_NOT_CONFIGURED",
     },
     tavily: {
-      usable: false,
-      reason: "NOT_IMPLEMENTED",
+      usable: tavily.isConfigured(),
+      reason: tavily.isConfigured()
+        ? "CONFIGURED"
+        : "WEB_SEARCH_PROVIDER_NOT_CONFIGURED",
     },
-    exa: {
-      usable: false,
-      reason: "PROVIDER_MISSING",
-    },
-    apify: {
-      usable: false,
-      reason: "PROVIDER_MISSING",
-    },
-    semrush: {
-      usable: false,
-      reason: "PROVIDER_MISSING",
-    },
+    exa: { usable: false, reason: "PROVIDER_MISSING" },
+    apify: { usable: false, reason: "PROVIDER_MISSING" },
+    semrush: { usable: false, reason: "PROVIDER_MISSING" },
   };
 }
 
 export function webSearchAvailability(): {
-  available: false;
-  reason: string;
+  available: boolean;
+  reason?: string;
 } {
-  return {
-    available: false,
-    reason: "WEB_SEARCH_PROVIDER_NOT_WIRED",
-  };
+  const provider = getWebSearchProvider();
+  if (!provider.isConfigured()) {
+    return {
+      available: false,
+      reason: "WEB_SEARCH_PROVIDER_NOT_CONFIGURED",
+    };
+  }
+  return { available: true };
 }
 
 export function crawlAvailability(): {
-  available: false;
-  reason: string;
+  available: boolean;
+  reason?: string;
 } {
-  return {
-    available: false,
-    reason: "CRAWL_PROVIDER_NOT_WIRED",
-  };
+  const provider = getCrawlProvider();
+  if (!provider.isConfigured()) {
+    return {
+      available: false,
+      reason: "CRAWL_PROVIDER_NOT_CONFIGURED",
+    };
+  }
+  return { available: true };
 }
 
 export function trendResearchAvailability(): {
-  available: false;
-  reason: string;
+  available: boolean;
+  reason?: string;
 } {
-  return {
-    available: false,
-    reason: "TREND_RESEARCH_PROVIDER_NOT_WIRED",
-  };
+  return webSearchAvailability().available
+    ? { available: true }
+    : {
+        available: false,
+        reason: "TREND_RESEARCH_PROVIDER_NOT_CONFIGURED",
+      };
 }
 
 const URL_RE = /^https?:\/\/.+/i;
