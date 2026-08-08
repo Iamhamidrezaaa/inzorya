@@ -30,7 +30,8 @@ vi.mock("@/lib/db", () => ({
     campaign: { create: vi.fn() },
     task: { create: vi.fn() },
     analyticsSnapshot: { findFirst: vi.fn() },
-    contentMetric: { count: vi.fn(), findMany: vi.fn() },
+    contentMetric: { count: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
+    socialPublication: { findMany: vi.fn() },
   },
 }));
 

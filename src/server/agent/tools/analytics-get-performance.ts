@@ -4,12 +4,16 @@ import { prisma } from "@/lib/db";
 import type { ToolDefinition } from "@/server/agent/types";
 import {
   parseOptionalDate,
+  resolveMetricQueryScope,
   resolvePerformanceAvailability,
+  sumNullable,
 } from "@/server/agent/tools/analytics-availability";
 import {
   clampLimit,
   resolveScopedBrandId,
 } from "@/server/agent/tools/scope";
+
+const nullableNumber = z.number().nullable();
 
 const inputSchema = z.object({
   brandId: z.string().min(1).optional(),
@@ -23,6 +27,10 @@ const outputSchema = z.object({
   available: z.boolean(),
   reason: z.string().optional(),
   source: z.string().optional(),
+  lastUpdatedAt: z.string().nullable().optional(),
+  dataAgeMs: z.number().nullable().optional(),
+  sampleSize: z.number().optional(),
+  limitations: z.array(z.string()).optional(),
   channel: z.string().nullable(),
   period: z
     .object({
@@ -33,13 +41,13 @@ const outputSchema = z.object({
   metrics: z
     .object({
       contentCount: z.number(),
-      reach: z.number(),
-      impressions: z.number(),
-      likes: z.number(),
-      comments: z.number(),
-      shares: z.number(),
-      saves: z.number(),
-      engagement: z.number(),
+      reach: nullableNumber,
+      impressions: nullableNumber,
+      likes: nullableNumber,
+      comments: nullableNumber,
+      shares: nullableNumber,
+      saves: nullableNumber,
+      engagement: nullableNumber,
     })
     .optional(),
   content: z
@@ -51,14 +59,14 @@ const outputSchema = z.object({
         contentType: z.string(),
         publishedAt: z.string().nullable(),
         metrics: z.object({
-          reach: z.number(),
-          impressions: z.number(),
-          likes: z.number(),
-          comments: z.number(),
-          shares: z.number(),
-          saves: z.number(),
-          engagement: z.number(),
-          ctr: z.number(),
+          reach: nullableNumber,
+          impressions: nullableNumber,
+          likes: nullableNumber,
+          comments: nullableNumber,
+          shares: nullableNumber,
+          saves: nullableNumber,
+          engagement: nullableNumber,
+          ctr: nullableNumber,
         }),
       }),
     )
@@ -72,8 +80,8 @@ export const analyticsGetPerformanceTool: ToolDefinition<
   id: "analytics.getPerformance",
   name: "Analytics Performance",
   description:
-    "Read real stored performance metrics for the brand when a non-mock analytics source exists.",
-  version: "1.0.0",
+    "Read real stored performance metrics for the brand when a non-mock analytics source exists. Missing metrics stay null — never invent zeros.",
+  version: "1.1.0",
   inputSchema,
   outputSchema,
   permission: "READ",
@@ -86,24 +94,40 @@ export const analyticsGetPerformanceTool: ToolDefinition<
         available: false,
         reason: status.reason,
         channel: input.channel ?? null,
+        limitations: status.limitations,
       };
     }
 
     const limit = clampLimit(input.limit, 20, 50);
     const from = parseOptionalDate(input.from);
     const to = parseOptionalDate(input.to);
+    const scope = await resolveMetricQueryScope(brandId);
 
-    const contentIds = (
-      await prisma.contentItem.findMany({
-        where: { brandId, deletedAt: null },
-        select: { id: true },
-        take: 500,
-      })
-    ).map((c) => c.id);
+    const orFilters: Prisma.ContentMetricWhereInput[] = [];
+    if (scope.contentItemIds.length > 0) {
+      orFilters.push({ externalId: { in: scope.contentItemIds } });
+    }
+    if (scope.externalPostIds.length > 0) {
+      orFilters.push({ externalPostId: { in: scope.externalPostIds } });
+    }
+    if (scope.publicationIds.length > 0) {
+      orFilters.push({ socialPublicationId: { in: scope.publicationIds } });
+    }
+
+    if (orFilters.length === 0) {
+      return {
+        available: false,
+        reason: "NO_PERFORMANCE_METRICS_IN_RANGE",
+        channel: input.channel ?? null,
+        period: { from: input.from ?? null, to: input.to ?? null },
+        limitations: ["No content or publications to attribute"],
+      };
+    }
 
     const where: Prisma.ContentMetricWhereInput = {
       brandId,
-      externalId: { in: contentIds },
+      NOT: { source: "mock" },
+      OR: orFilters,
       ...(input.channel
         ? { platform: { equals: input.channel, mode: "insensitive" } }
         : {}),
@@ -123,30 +147,6 @@ export const analyticsGetPerformanceTool: ToolDefinition<
       take: limit,
     });
 
-    const metrics = rows.reduce(
-      (acc, r) => {
-        acc.contentCount += 1;
-        acc.reach += r.reach;
-        acc.impressions += r.impressions;
-        acc.likes += r.likes;
-        acc.comments += r.comments;
-        acc.shares += r.shares;
-        acc.saves += r.saves;
-        acc.engagement += r.engagement;
-        return acc;
-      },
-      {
-        contentCount: 0,
-        reach: 0,
-        impressions: 0,
-        likes: 0,
-        comments: 0,
-        shares: 0,
-        saves: 0,
-        engagement: 0,
-      },
-    );
-
     if (rows.length === 0) {
       return {
         available: false,
@@ -156,20 +156,47 @@ export const analyticsGetPerformanceTool: ToolDefinition<
           from: input.from ?? null,
           to: input.to ?? null,
         },
+        limitations: status.limitations,
       };
     }
+
+    const lastUpdated =
+      status.lastUpdatedAt ??
+      rows
+        .map((r) => r.collectedAt ?? r.updatedAt)
+        .sort((a, b) => b.getTime() - a.getTime())[0]
+        ?.toISOString() ??
+      null;
 
     return {
       available: true,
       source: status.source,
+      lastUpdatedAt: lastUpdated,
+      dataAgeMs: lastUpdated
+        ? Date.now() - new Date(lastUpdated).getTime()
+        : null,
+      sampleSize: rows.length,
+      limitations: [
+        ...(status.limitations ?? []),
+        ...(rows.length < 5 ? ["SMALL_SAMPLE"] : []),
+      ],
       channel: input.channel ?? null,
       period: {
         from: input.from ?? null,
         to: input.to ?? null,
       },
-      metrics,
+      metrics: {
+        contentCount: rows.length,
+        reach: sumNullable(rows.map((r) => r.reach)),
+        impressions: sumNullable(rows.map((r) => r.impressions)),
+        likes: sumNullable(rows.map((r) => r.likes)),
+        comments: sumNullable(rows.map((r) => r.comments)),
+        shares: sumNullable(rows.map((r) => r.shares)),
+        saves: sumNullable(rows.map((r) => r.saves)),
+        engagement: sumNullable(rows.map((r) => r.engagement)),
+      },
       content: rows.map((r) => ({
-        id: r.externalId,
+        id: r.externalPostId ?? r.externalId,
         title: r.title,
         channel: r.platform,
         contentType: r.contentType,

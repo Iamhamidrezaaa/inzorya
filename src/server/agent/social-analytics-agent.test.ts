@@ -24,7 +24,8 @@ vi.mock("@/lib/db", () => ({
     marketingStrategy: { findUnique: vi.fn() },
     contentItem: { count: vi.fn(), findMany: vi.fn() },
     analyticsSnapshot: { findFirst: vi.fn() },
-    contentMetric: { count: vi.fn(), findMany: vi.fn() },
+    contentMetric: { count: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
+    socialPublication: { findMany: vi.fn() },
   },
 }));
 
@@ -76,7 +77,9 @@ const db = prisma as unknown as {
   contentMetric: {
     count: ReturnType<typeof vi.fn>;
     findMany: ReturnType<typeof vi.fn>;
+    findFirst: ReturnType<typeof vi.fn>;
   };
+  socialPublication: { findMany: ReturnType<typeof vi.fn> };
 };
 
 function makePublishTool(): ToolDefinition {
@@ -101,6 +104,8 @@ function intelJson(payload: Record<string, unknown>) {
 
 function mockConnectedMetrics() {
   db.analyticsSnapshot.findFirst.mockResolvedValue(null);
+  db.contentMetric.findFirst.mockResolvedValue(null);
+  db.socialPublication.findMany.mockResolvedValue([]);
   db.contentItem.findMany.mockResolvedValue([{ id: "c1" }, { id: "c2" }]);
   db.contentMetric.count.mockResolvedValue(2);
   db.contentMetric.findMany.mockResolvedValue([
@@ -151,7 +156,9 @@ describe("EPIC AGENT-011 — social.analytics", () => {
     db.contentItem.findMany.mockResolvedValue([]);
     db.analyticsSnapshot.findFirst.mockResolvedValue(null);
     db.contentMetric.count.mockResolvedValue(0);
+    db.contentMetric.findFirst.mockResolvedValue(null);
     db.contentMetric.findMany.mockResolvedValue([]);
+    db.socialPublication.findMany.mockResolvedValue([]);
   });
 
   afterEach(() => {

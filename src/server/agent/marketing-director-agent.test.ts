@@ -23,7 +23,8 @@ vi.mock("@/lib/db", () => ({
     marketingStrategy: { findUnique: vi.fn(async () => null) },
     contentItem: { count: vi.fn(), findMany: vi.fn(async () => []) },
     analyticsSnapshot: { findFirst: vi.fn(async () => null) },
-    contentMetric: { count: vi.fn(), findMany: vi.fn(async () => []) },
+    contentMetric: { count: vi.fn(), findMany: vi.fn(async () => []), findFirst: vi.fn() },
+    socialPublication: { findMany: vi.fn() },
   },
 }));
 

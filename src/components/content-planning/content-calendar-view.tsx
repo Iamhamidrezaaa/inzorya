@@ -41,6 +41,7 @@ type PlanRow = {
     contentPayload?: { primaryHook?: string; caption?: string };
   };
   publicationStatus?: string | null;
+  hasPerformance?: boolean;
 };
 
 type Conflict = {
@@ -127,24 +128,54 @@ export function ContentCalendarView({
       const pubRes = await fetch(`/api/publishing?${pubParams}`);
       if (pubRes.ok) {
         const pubData = await pubRes.json();
-        const bySchedule = new Map<string, string>();
+        const bySchedule = new Map<
+          string,
+          { status: string; publicationId?: string }
+        >();
         for (const pub of pubData.publications || []) {
+          const cur = bySchedule.get(pub.contentScheduleId);
           if (pub.status === "PUBLISHED") {
-            bySchedule.set(pub.contentScheduleId, "PUBLISHED");
-          } else if (
-            !bySchedule.has(pub.contentScheduleId) &&
-            pub.status === "FAILED"
-          ) {
-            bySchedule.set(pub.contentScheduleId, "FAILED");
-          } else if (!bySchedule.has(pub.contentScheduleId)) {
-            bySchedule.set(pub.contentScheduleId, pub.status);
+            bySchedule.set(pub.contentScheduleId, {
+              status: "PUBLISHED",
+              publicationId: pub.id,
+            });
+          } else if (!cur && pub.status === "FAILED") {
+            bySchedule.set(pub.contentScheduleId, { status: "FAILED" });
+          } else if (!cur) {
+            bySchedule.set(pub.contentScheduleId, { status: pub.status });
           }
         }
+
+        let metricPubIds = new Set<string>();
+        try {
+          const analyticsRes = await fetch(
+            `/api/social/analytics?${pubParams}&limit=100`,
+          );
+          if (analyticsRes.ok) {
+            const analytics = await analyticsRes.json();
+            metricPubIds = new Set(
+              (analytics.items || [])
+                .map((i: { socialPublicationId?: string | null }) =>
+                  i.socialPublicationId,
+                )
+                .filter(Boolean),
+            );
+          }
+        } catch {
+          /* optional performance indicator */
+        }
+
         setPlans((prev) =>
-          prev.map((p) => ({
-            ...p,
-            publicationStatus: bySchedule.get(p.id) || null,
-          })),
+          prev.map((p) => {
+            const row = bySchedule.get(p.id);
+            return {
+              ...p,
+              publicationStatus: row?.status || null,
+              hasPerformance: Boolean(
+                row?.publicationId && metricPubIds.has(row.publicationId),
+              ),
+            };
+          }),
         );
       }
     } catch {
@@ -389,6 +420,7 @@ export function ContentCalendarView({
                       {p.publicationStatus === "PUBLISHED" ? (
                         <Badge variant="default" className="mt-1">
                           PUBLISHED
+                          {p.hasPerformance ? " · metrics" : ""}
                         </Badge>
                       ) : null}
                     </button>

@@ -48,7 +48,8 @@ vi.mock("@/lib/db", () => ({
     marketingStrategy: { findUnique: vi.fn() },
     contentItem: { count: vi.fn(), findMany: vi.fn() },
     analyticsSnapshot: { findFirst: vi.fn() },
-    contentMetric: { count: vi.fn(), findMany: vi.fn() },
+    contentMetric: { count: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
+    socialPublication: { findMany: vi.fn() },
   },
 }));
 
@@ -101,7 +102,9 @@ const db = prisma as unknown as {
   contentMetric: {
     count: ReturnType<typeof vi.fn>;
     findMany: ReturnType<typeof vi.fn>;
+    findFirst: ReturnType<typeof vi.fn>;
   };
+  socialPublication: { findMany: ReturnType<typeof vi.fn> };
 };
 
 function makePublishTool(): ToolDefinition {
@@ -156,7 +159,9 @@ describe("EPIC AGENT-008 — viral.content.analyst", () => {
     db.contentItem.findMany.mockResolvedValue([]);
     db.analyticsSnapshot.findFirst.mockResolvedValue(null);
     db.contentMetric.count.mockResolvedValue(0);
+    db.contentMetric.findFirst.mockResolvedValue(null);
     db.contentMetric.findMany.mockResolvedValue([]);
+    db.socialPublication.findMany.mockResolvedValue([]);
   });
 
   afterEach(() => {

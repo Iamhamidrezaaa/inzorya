@@ -4,12 +4,15 @@ import { prisma } from "@/lib/db";
 import type { ToolDefinition } from "@/server/agent/types";
 import {
   parseOptionalDate,
+  resolveMetricQueryScope,
   resolvePerformanceAvailability,
 } from "@/server/agent/tools/analytics-availability";
 import {
   clampLimit,
   resolveScopedBrandId,
 } from "@/server/agent/tools/scope";
+
+const nullableNumber = z.number().nullable();
 
 const inputSchema = z.object({
   brandId: z.string().min(1).optional(),
@@ -24,6 +27,17 @@ const outputSchema = z.object({
   available: z.boolean(),
   reason: z.string().optional(),
   rankingBasis: z.string().optional(),
+  rankingMetric: z.string().optional(),
+  sampleSize: z.number().optional(),
+  period: z
+    .object({
+      from: z.string().nullable(),
+      to: z.string().nullable(),
+    })
+    .optional(),
+  platform: z.string().nullable().optional(),
+  lastUpdatedAt: z.string().nullable().optional(),
+  limitations: z.array(z.string()).optional(),
   items: z
     .array(
       z.object({
@@ -33,13 +47,13 @@ const outputSchema = z.object({
         channel: z.string(),
         publishedAt: z.string().nullable(),
         metrics: z.object({
-          engagement: z.number(),
-          reach: z.number(),
-          impressions: z.number(),
-          likes: z.number(),
-          comments: z.number(),
-          shares: z.number(),
-          saves: z.number(),
+          engagement: nullableNumber,
+          reach: nullableNumber,
+          impressions: nullableNumber,
+          likes: nullableNumber,
+          comments: nullableNumber,
+          shares: nullableNumber,
+          saves: nullableNumber,
         }),
       }),
     )
@@ -53,8 +67,8 @@ export const analyticsGetTopContentTool: ToolDefinition<
   id: "analytics.getTopContent",
   name: "Top Content",
   description:
-    "Rank existing content by real stored engagement metrics. Does not invent ranking.",
-  version: "1.0.0",
+    "Rank existing content by real stored engagement metrics. Explains ranking metric, sample size, and period. Does not invent ranking.",
+  version: "1.1.0",
   inputSchema,
   outputSchema,
   permission: "READ",
@@ -63,24 +77,36 @@ export const analyticsGetTopContentTool: ToolDefinition<
     const brandId = await resolveScopedBrandId(ctx, input.brandId);
     const status = await resolvePerformanceAvailability(brandId);
     if (!status.available) {
-      return { available: false, reason: status.reason };
+      return {
+        available: false,
+        reason: status.reason,
+        limitations: status.limitations,
+      };
     }
 
     const limit = clampLimit(input.limit, 10, 30);
     const from = parseOptionalDate(input.from);
     const to = parseOptionalDate(input.to);
+    const scope = await resolveMetricQueryScope(brandId);
 
-    const contentIds = (
-      await prisma.contentItem.findMany({
-        where: { brandId, deletedAt: null },
-        select: { id: true },
-        take: 500,
-      })
-    ).map((c) => c.id);
+    const orFilters: Prisma.ContentMetricWhereInput[] = [];
+    if (scope.contentItemIds.length > 0) {
+      orFilters.push({ externalId: { in: scope.contentItemIds } });
+    }
+    if (scope.externalPostIds.length > 0) {
+      orFilters.push({ externalPostId: { in: scope.externalPostIds } });
+    }
+    if (scope.publicationIds.length > 0) {
+      orFilters.push({ socialPublicationId: { in: scope.publicationIds } });
+    }
+    if (orFilters.length === 0) {
+      return { available: false, reason: "NO_PERFORMANCE_METRICS" };
+    }
 
     const where: Prisma.ContentMetricWhereInput = {
       brandId,
-      externalId: { in: contentIds },
+      NOT: { source: "mock" },
+      OR: orFilters,
       ...(input.channel
         ? { platform: { equals: input.channel, mode: "insensitive" } }
         : {}),
@@ -113,8 +139,18 @@ export const analyticsGetTopContentTool: ToolDefinition<
     return {
       available: true,
       rankingBasis: "engagement_then_reach",
+      rankingMetric: "engagement",
+      sampleSize: rows.length,
+      period: { from: input.from ?? null, to: input.to ?? null },
+      platform: input.channel ?? null,
+      lastUpdatedAt: status.lastUpdatedAt ?? null,
+      limitations: [
+        ...(status.limitations ?? []),
+        ...(rows.length < 5 ? ["SMALL_SAMPLE"] : []),
+        "Ranking is Top by engagement (then reach) — not 'best content'",
+      ],
       items: rows.map((r) => ({
-        id: r.externalId,
+        id: r.externalPostId ?? r.externalId,
         title: r.title,
         contentType: r.contentType,
         channel: r.platform,

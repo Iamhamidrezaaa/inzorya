@@ -19,7 +19,8 @@ vi.mock("@/lib/db", () => ({
     brand: { findFirst: vi.fn() },
     analyticsSnapshot: { findFirst: vi.fn() },
     contentItem: { findMany: vi.fn() },
-    contentMetric: { count: vi.fn(), findMany: vi.fn() },
+    contentMetric: { count: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
+    socialPublication: { findMany: vi.fn() },
     marketingStrategy: { findUnique: vi.fn() },
     businessProfile: { findUnique: vi.fn() },
   },
@@ -34,7 +35,9 @@ const db = prisma as unknown as {
   contentMetric: {
     count: ReturnType<typeof vi.fn>;
     findMany: ReturnType<typeof vi.fn>;
+    findFirst: ReturnType<typeof vi.fn>;
   };
+  socialPublication: { findMany: ReturnType<typeof vi.fn> };
   marketingStrategy: { findUnique: ReturnType<typeof vi.fn> };
   businessProfile: { findUnique: ReturnType<typeof vi.fn> };
 };
@@ -90,6 +93,8 @@ describe("EPIC AGENT-003 — performance + research tools", () => {
     db.analyticsSnapshot.findFirst.mockResolvedValue(null);
     db.contentItem.findMany.mockResolvedValue([]);
     db.contentMetric.count.mockResolvedValue(0);
+    db.contentMetric.findFirst.mockResolvedValue(null);
+    db.socialPublication.findMany.mockResolvedValue([]);
   });
 
   it("registers eight tools with READ permission", () => {

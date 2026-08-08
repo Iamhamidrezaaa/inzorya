@@ -1582,31 +1582,56 @@ model AudienceSnapshot {
 }
 
 model ContentMetric {
-  id            String   @id @default(cuid())
-  brandId       String
-  externalId    String
-  title         String
-  platform      String
-  contentType   String
-  author        String?
-  status        String   @default("published")
-  publishedAt   DateTime
-  reach         Int      @default(0)
-  likes         Int      @default(0)
-  comments      Int      @default(0)
-  shares        Int      @default(0)
-  saves         Int      @default(0)
-  impressions   Int      @default(0)
-  ctr           Float    @default(0)
-  engagement    Int      @default(0)
-  brand         Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  brandId             String
+  /// EPIC-017 attribution / scoping (nullable for legacy seed rows)
+  workspaceId         String?
+  externalId          String
+  /// SocialPublication.externalPostId — primary attribution key
+  externalPostId      String?
+  socialPublicationId String?
+  socialAccountId     String?
+  contentDraftId      String?
+  title               String
+  platform            String
+  contentType         String
+  author              String?
+  status              String   @default("published")
+  publishedAt         DateTime
+  /// Snapshot day (UTC). Combined with externalId for idempotent sync keys.
+  metricDate          DateTime? @db.Date
+  collectedAt         DateTime?
+  /// LINKEDIN_API | mock | legacy — never use mock for live ingestion
+  source              String   @default("legacy")
+  /// Which fields were actually returned by the provider (null ≠ zero)
+  availability        Json?
+  /// Sanitized provider extras — no credentials / tokens
+  rawSanitized        Json?
+  reach               Int?
+  likes               Int?
+  comments            Int?
+  shares              Int?
+  saves               Int?
+  impressions         Int?
+  views               Int?
+  clicks              Int?
+  ctr                 Float?
+  engagement          Int?
+  brand               Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  socialPublication   SocialPublication? @relation(fields: [socialPublicationId], references: [id], onDelete: SetNull)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@unique([brandId, externalId])
+  @@index([workspaceId, brandId])
   @@index([brandId, publishedAt])
   @@index([brandId, platform])
   @@index([brandId, contentType])
+  @@index([brandId, socialAccountId])
+  @@index([brandId, externalPostId])
+  @@index([brandId, metricDate])
+  @@index([brandId, source])
+  @@index([socialPublicationId])
 }
 
 model CampaignMetric {
@@ -2315,6 +2340,7 @@ model SocialPublication {
   contentDraft       ContentDraft            @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
   contentSchedule    ContentSchedule         @relation(fields: [contentScheduleId], references: [id], onDelete: Cascade)
   socialAccount      SocialAccount           @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  contentMetrics     ContentMetric[]
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
 

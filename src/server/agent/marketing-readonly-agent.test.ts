@@ -21,7 +21,8 @@ vi.mock("@/lib/db", () => ({
     marketingStrategy: { findUnique: vi.fn() },
     contentItem: { count: vi.fn(), findMany: vi.fn() },
     analyticsSnapshot: { findFirst: vi.fn() },
-    contentMetric: { count: vi.fn(), findMany: vi.fn() },
+    contentMetric: { count: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
+    socialPublication: { findMany: vi.fn() },
   },
 }));
 

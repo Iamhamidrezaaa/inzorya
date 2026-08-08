@@ -101,6 +101,18 @@ export function ContentWorkspaceDetail({
       failureMessageSafe?: string | null;
     } | null;
   } | null>(null);
+  const [performance, setPerformance] = useState<{
+    available: boolean;
+    reason?: string;
+    lastUpdatedAt?: string | null;
+    metrics?: {
+      impressions: number | null;
+      likes: number | null;
+      comments: number | null;
+      reach: number | null;
+      engagements: number | null;
+    } | null;
+  } | null>(null);
   const [publishPreview, setPublishPreview] = useState<{
     ok: boolean;
     preview?: {
@@ -163,18 +175,47 @@ export function ContentWorkspaceDetail({
             (p: { contentDraftId: string }) => p.contentDraftId === draftId,
           );
           if (pubs.some((p: { status: string }) => p.status === "PUBLISHED")) {
+            const published = pubs.find(
+              (p: { status: string }) => p.status === "PUBLISHED",
+            );
             setPubStatus({
               status: "PUBLISHED",
-              publication: pubs.find(
-                (p: { status: string }) => p.status === "PUBLISHED",
-              ),
+              publication: published,
             });
+            if (published?.id) {
+              try {
+                const perfRes = await fetch(
+                  `/api/social/analytics/${published.id}?${params}`,
+                );
+                if (perfRes.ok) {
+                  const perf = await perfRes.json();
+                  setPerformance({
+                    available: Boolean(perf.available),
+                    reason: perf.reason,
+                    lastUpdatedAt: perf.lastUpdatedAt ?? null,
+                    metrics: perf.metrics ?? null,
+                  });
+                } else {
+                  setPerformance({
+                    available: false,
+                    reason: "Analytics unavailable",
+                  });
+                }
+              } catch {
+                setPerformance({
+                  available: false,
+                  reason: "Analytics unavailable",
+                });
+              }
+            }
           } else if (pubs[0]) {
+            setPerformance(null);
             setPubStatus({
               status: pubs[0].status === "FAILED" ? "FAILED" : pubs[0].status,
               publication: pubs[0],
             });
           } else {
+            setPerformance(null);
             setPubStatus({ status: "NOT_PUBLISHED", publication: null });
           }
         }
@@ -643,6 +684,38 @@ export function ContentWorkspaceDetail({
             </span>
           ) : null}
         </div>
+        {pubStatus?.status === "PUBLISHED" ? (
+          <div className="rounded-lg border border-border/60 p-3 text-sm space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">عملکرد</p>
+            {performance?.available && performance.metrics ? (
+              <>
+                <p>
+                  {[
+                    performance.metrics.impressions != null
+                      ? `${performance.metrics.impressions.toLocaleString()} impressions`
+                      : null,
+                    performance.metrics.likes != null
+                      ? `${performance.metrics.likes.toLocaleString()} likes`
+                      : null,
+                    performance.metrics.comments != null
+                      ? `${performance.metrics.comments.toLocaleString()} comments`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "Metrics collected (partial)"}
+                </p>
+                {performance.lastUpdatedAt ? (
+                  <p className="text-xs text-muted-foreground">
+                    آخرین به‌روزرسانی:{" "}
+                    {new Date(performance.lastUpdatedAt).toLocaleString()}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <p className="text-muted-foreground">Analytics unavailable</p>
+            )}
+          </div>
+        ) : null}
         {pubStatus?.publication?.failureMessageSafe ? (
           <p className="text-sm text-destructive">
             {pubStatus.publication.failureMessageSafe}

@@ -211,6 +211,7 @@ export class MockAnalyticsRepository implements AnalyticsRepository {
           author: post.author,
           status: post.status,
           publishedAt: new Date(post.publishedAt),
+          source: "mock",
           reach: post.reach,
           likes: post.likes,
           comments: post.comments,
@@ -220,6 +221,7 @@ export class MockAnalyticsRepository implements AnalyticsRepository {
           engagement: post.engagement,
         },
         update: {
+          source: "mock",
           reach: post.reach,
           likes: post.likes,
           comments: post.comments,
