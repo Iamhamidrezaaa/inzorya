@@ -48,6 +48,13 @@ export const FOUNDATION_AGENTS: AgentDefinition[] = [
     description:
       "Transforms an approved Content Blueprint into production-ready creative assets — no strategy replacement, publishing, or business-record persistence.",
   },
+  {
+    id: "social.analytics",
+    name: "Social Analytics",
+    version: "1.0.0",
+    description:
+      "Read-only specialist that turns real connected social performance into evidence-based insights — never invents metrics or generates content.",
+  },
 ];
 
 export class AgentRegistry {

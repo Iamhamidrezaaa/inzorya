@@ -9,6 +9,7 @@ import {
   runContentCreatorAgent,
   runContentStrategistAgent,
   runMarketingReadonlyAgent,
+  runSocialAnalyticsAgent,
   runTrendIntelligenceAgent,
   runViralContentAnalystAgent,
 } from "@/server/agent";
@@ -27,6 +28,7 @@ const debugBodySchema = z.object({
       "viral.content.analyst",
       "content.strategist",
       "content.creator",
+      "social.analytics",
     ])
     .optional()
     .default("marketing.readonly"),

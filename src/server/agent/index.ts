@@ -148,3 +148,23 @@ export type {
   CreativeBlock,
   RunContentCreatorResult,
 } from "@/server/agent/content-creator";
+export {
+  SOCIAL_ANALYTICS_AGENT,
+  SOCIAL_ANALYTICS_AGENT_ID,
+  SOCIAL_ANALYTICS_TOOL_IDS,
+  runSocialAnalyticsAgent,
+  parseSocialAnalyticsIntelligence,
+  socialAnalyticsIntelligenceSchema,
+  isSocialAnalyticsToolId,
+  getSocialAnalyticsProvider,
+  setSocialAnalyticsProvider,
+  resetSocialAnalyticsProvider,
+  statusFromToolAvailability,
+  SOCIAL_ANALYTICS_PLATFORMS,
+} from "@/server/agent/social-analytics";
+export type {
+  SocialAnalyticsIntelligence,
+  RunSocialAnalyticsResult,
+  SocialAnalyticsProvider,
+  PlatformConnectionStatus,
+} from "@/server/agent/social-analytics";
