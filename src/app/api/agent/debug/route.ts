@@ -8,6 +8,7 @@ import {
   runAgentExecution,
   runMarketingReadonlyAgent,
   runTrendIntelligenceAgent,
+  runViralContentAnalystAgent,
 } from "@/server/agent";
 
 const debugBodySchema = z.object({
@@ -18,7 +19,11 @@ const debugBodySchema = z.object({
     .default("echo"),
   message: z.string().optional(),
   agentId: z
-    .enum(["marketing.readonly", "trend.intelligence"])
+    .enum([
+      "marketing.readonly",
+      "trend.intelligence",
+      "viral.content.analyst",
+    ])
     .optional()
     .default("marketing.readonly"),
   toolId: z.string().optional(),
@@ -125,6 +130,16 @@ export async function POST(request: Request) {
           message:
             body.message ||
             "برای برند من ترندهای مهم این هفته را پیدا کن.",
+          ...scope,
+        });
+        return NextResponse.json({ result });
+      }
+
+      if (agentId === "viral.content.analyst") {
+        const result = await runViralContentAnalystAgent({
+          message:
+            body.message ||
+            "محتواهای موفق این حوزه رو بررسی کن.",
           ...scope,
         });
         return NextResponse.json({ result });

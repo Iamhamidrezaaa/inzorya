@@ -99,3 +99,19 @@ export type {
   TrendEvidence,
   RunTrendIntelligenceResult,
 } from "@/server/agent/trend-intelligence";
+export {
+  VIRAL_CONTENT_ANALYST_AGENT,
+  VIRAL_CONTENT_ANALYST_AGENT_ID,
+  VIRAL_CONTENT_ANALYST_TOOL_IDS,
+  runViralContentAnalystAgent,
+  parseViralContentAnalysis,
+  viralContentAnalysisSchema,
+  isViralContentAnalystToolId,
+} from "@/server/agent/viral-content-analyst";
+export type {
+  ViralContentAnalysisResult,
+  AnalyzedContent,
+  ContentPattern,
+  BrandFitItem,
+  RunViralContentAnalystResult,
+} from "@/server/agent/viral-content-analyst";

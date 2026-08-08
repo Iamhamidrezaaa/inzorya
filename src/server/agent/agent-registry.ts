@@ -27,6 +27,13 @@ export const FOUNDATION_AGENTS: AgentDefinition[] = [
     description:
       "Read-only specialist that finds public research signals, evaluates brand relevance, and returns structured trend intelligence.",
   },
+  {
+    id: "viral.content.analyst",
+    name: "Viral Content Analyst",
+    version: "1.0.0",
+    description:
+      "Read-only specialist that analyzes content and research signals to identify observable effectiveness patterns — analysis and blueprint only.",
+  },
 ];
 
 export class AgentRegistry {
